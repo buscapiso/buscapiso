@@ -14,7 +14,7 @@ from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi import Request
 from fastapi.responses import JSONResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from buscapiso import access, almacen, keys, paths
 from buscapiso.ai import ai_from_settings
@@ -46,6 +46,12 @@ class SettingsChange(BaseModel):
     transitous_contact: str | None = None
     motis_url: str | None = None
     google_key: str | None = None
+
+
+class ScheduleChange(BaseModel):
+    hours: int
+    from_: str = Field(default="08:00", alias="from", pattern=r"^([01]\d|2[0-3]):[0-5]\d$")
+    to: str = Field(default="23:00", pattern=r"^([01]\d|2[0-3]):[0-5]\d$")
 
 
 class AIChange(BaseModel):
@@ -421,6 +427,27 @@ def create_app(db_path: pathlib.Path | None = None,
         with db() as con:
             access.rotate_token(con)
             return {"url": access.access_url(con, app.state.port)}
+
+    def _schedule(con) -> dict:
+        a = almacen.leer_ajustes(con)
+        return {"hours": int(a.get("schedule_hours", "0") or 0),
+                "from": a.get("schedule_from", "08:00"), "to": a.get("schedule_to", "23:00"),
+                "last_run": a.get("schedule_last_run")}
+
+    @app.get("/api/schedule")
+    def schedule() -> dict:
+        with db() as con:
+            return _schedule(con)
+
+    @app.put("/api/schedule")
+    def save_schedule(body: ScheduleChange) -> dict:
+        if body.hours and not 2 <= body.hours <= 24:
+            raise HTTPException(422, "Search every 2 to 24 hours, or 0 to turn it off")
+        with db() as con:
+            almacen.guardar_ajuste(con, "schedule_hours", str(body.hours))
+            almacen.guardar_ajuste(con, "schedule_from", body.from_)
+            almacen.guardar_ajuste(con, "schedule_to", body.to)
+            return _schedule(con)
 
     app.state.db = db
     estaticos = static_dir if static_dir is not None else WEB_DIST

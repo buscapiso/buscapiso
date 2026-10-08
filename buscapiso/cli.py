@@ -177,7 +177,21 @@ def cmd_serve(args) -> int:
         temporizador = threading.Timer(1.0, webbrowser.open, args=(url,))
         temporizador.daemon = True
         temporizador.start()
-    uvicorn.run(create_app(require_token=args.lan, port=args.port), host=host,
+    app = create_app(require_token=args.lan, port=args.port)
+    from buscapiso.api.scheduler import Scheduler
+    from buscapiso.seed import active_profile
+
+    def lanzar() -> None:
+        con = almacen.abrir(paths.db_path())
+        try:
+            perfil = active_profile(con)
+        finally:
+            con.close()
+        app.state.runner.start(perfil, SearchOptions(), paths.db_path())
+
+    Scheduler(paths.db_path(), start=lanzar,
+              is_running=lambda: app.state.runner.state()["running"]).start_thread()
+    uvicorn.run(app, host=host,
                 port=args.port, log_level="warning")
     return 0
 
