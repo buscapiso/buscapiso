@@ -70,3 +70,11 @@ def test_settings_choose_the_provider(tmp_path):
     assert p is None and "key" in aviso
     p, _ = provider_from_settings(con, get_key=lambda: "K")
     assert p.name == "google"
+
+
+def test_a_local_motis_server_needs_no_contact(tmp_path):
+    con = almacen.abrir(tmp_path / "t.db")
+    almacen.guardar_ajuste(con, "travel_provider", "transitous")
+    almacen.guardar_ajuste(con, "motis_url", "http://localhost:8080")
+    p, aviso = provider_from_settings(con)
+    assert aviso is None and p.name == "transitous"

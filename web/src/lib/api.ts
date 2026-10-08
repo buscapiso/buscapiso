@@ -116,6 +116,7 @@ export interface TravelSettings {
   travel_provider: 'graph' | 'transitous' | 'google';
   transitous_contact: string;
   has_google_key: boolean;
+  motis_url: string;
 }
 export interface RouteTest {
   graph: { minutes: number; detail: string } | null;

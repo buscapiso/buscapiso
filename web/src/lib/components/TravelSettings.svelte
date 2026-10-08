@@ -22,7 +22,10 @@
     const body: Partial<TravelSettings> & { google_key?: string } = {
       travel_provider: s.travel_provider,
     };
-    if (s.travel_provider === 'transitous') body.transitous_contact = s.transitous_contact;
+    if (s.travel_provider === 'transitous') {
+      body.transitous_contact = s.transitous_contact;
+      body.motis_url = s.motis_url;
+    }
     if (googleKey.trim()) body.google_key = googleKey.trim();
     try {
       s = await saveSettings(body);
@@ -54,8 +57,12 @@
     {/each}
 
     {#if s.travel_provider === 'transitous'}
-      <p class="help">{t('travel.transitousTerms')}</p>
-      <label>{t('travel.contact')}<input bind:value={s.transitous_contact} /></label>
+      <label>{t('travel.server')}<input bind:value={s.motis_url} /></label>
+      <p class="help">{t('travel.serverHelp')}</p>
+      {#if s.motis_url.replace(/\/+$/, '') === 'https://api.transitous.org'}
+        <p class="help">{t('travel.transitousTerms')}</p>
+        <label>{t('travel.contact')}<input bind:value={s.transitous_contact} /></label>
+      {/if}
     {:else if s.travel_provider === 'google'}
       <p class="help">{t('travel.googleHelp')}</p>
       <label>{t('travel.googleKey')}<input type="password" autocomplete="off" bind:value={googleKey} /></label>

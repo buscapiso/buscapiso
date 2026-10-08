@@ -307,9 +307,10 @@ def provider_from_settings(con, get_key=None, cached: bool = True
     cual = ajustes.get("travel_provider", "graph")
     if cual == "transitous":
         contacto = ajustes.get("transitous_contact", "").strip()
-        if not contacto:
+        url = ajustes.get("motis_url", TRANSITOUS_URL).strip() or TRANSITOUS_URL
+        if url.rstrip("/") == TRANSITOUS_URL and not contacto:
             return None, "Transitous needs a contact (email or URL) in the settings"
-        p = TransitousProvider(contacto)
+        p = TransitousProvider(contacto, base_url=url)
         return (CachedProvider(p, con) if cached else p), None
     if cual == "google":
         clave = (get_key or keys.get_google_key)()
