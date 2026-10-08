@@ -1,25 +1,13 @@
 <script lang="ts">
-  import { listListings, setStatus, type Listing, type Status } from '../lib/api';
-  import StatusPicker from '../lib/components/StatusPicker.svelte';
-  import { href } from '../lib/router.svelte';
-  import { t } from '../lib/i18n';
+  import type { Listing, Status } from '../api';
+  import StatusPicker from './StatusPicker.svelte';
+  import { href } from '../router.svelte';
+  import { t } from '../i18n';
 
+  let { items, onmove }: { items: Listing[]; onmove: (l: Listing, s: Status) => void } = $props();
   const COLUMNS: Status[] = ['liked', 'contacted', 'visit_scheduled', 'visited', 'applied', 'got_it', 'rejected'];
-  let items = $state<Listing[]>([]);
-
-  async function load() {
-    items = await listListings({ status: COLUMNS });
-  }
-
-  async function move(l: Listing, s: Status) {
-    const updated = await setStatus(l.id, s);
-    items = items.map((x) => (x.id === l.id ? { ...x, status: updated.status } : x));
-  }
-
-  $effect(() => { load(); });
 </script>
 
-<h1>{t('board.title')}</h1>
 <div class="board">
   {#each COLUMNS as col}
     <section aria-label={t(`status.${col}`)}>
@@ -28,7 +16,7 @@
         <div class="mini">
           <a href={href({ name: 'listing', id: l.id })}>{l.title || l.neighbourhood}</a>
           <small>{l.total_cost ?? '?'} €</small>
-          <StatusPicker value={l.status} onchange={(s) => move(l, s)} />
+          <StatusPicker value={l.status} onchange={(s) => onmove(l, s)} />
         </div>
       {/each}
     </section>

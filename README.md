@@ -72,9 +72,17 @@ npm --prefix web ci && npm --prefix web run build   # una vez, y tras cada cambi
 .venv/bin/buscapiso serve
 ```
 
-Se abre en `http://127.0.0.1:8770`. Desde ahí ves los anuncios, los marcas
-(me gusta, ocultar, contactado, visita...), escribes notas, editas lo que
-buscas y lanzas la búsqueda viendo el progreso. La ventana de Chromium sigue
+Se abre en `http://127.0.0.1:8770` con dos páginas:
+
+- **Rooms**: arriba, "Search now" (busca en los portales; "Skip full
+  listings" la acorta) y "Re-score without browsing" (vuelve a puntuar lo ya
+  descargado, en segundos). Debajo, tus criterios como botones: pulsa uno para
+  cambiarlo ahí mismo y después "Re-score now" para ver el efecto. Los chips
+  New, Liked, In progress, Ask first y Hidden filtran, y List / Map / Board
+  cambian la vista sin perder el filtro.
+- **Settings**: lo que buscas, lugares y trayectos, barrios (desplegable con
+  buscador), búsquedas automáticas, móvil y avisos, e IA (el modelo se elige
+  de la lista que da el propio proveedor). La ventana de Chromium sigue
 abriéndose al buscar, igual que desde el terminal. La pestaña Map enseña los
 anuncios y tus destinos sobre un mapa de OpenStreetMap.
 

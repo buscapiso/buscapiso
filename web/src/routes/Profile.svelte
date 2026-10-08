@@ -1,13 +1,11 @@
 <script lang="ts">
   import {
     ApiError, activateProfile, deleteProfile, getActiveProfile, getMeta, listProfiles,
-    geocode, saveProfile, type Meta, type Place, type ProfileSuggestion, type ProfileSummary,
+    geocode, getNeighbourhoods, saveProfile, type Meta, type Place, type ProfileSuggestion, type ProfileSummary,
     type SearchProfile,
   } from '../lib/api';
   import MapView from '../lib/components/MapView.svelte';
-  import TravelSettings from '../lib/components/TravelSettings.svelte';
-  import AISettings from '../lib/components/AISettings.svelte';
-  import AutoSettings from '../lib/components/AutoSettings.svelte';
+  import NeighbourhoodPicker from '../lib/components/NeighbourhoodPicker.svelte';
   import DescribeProfile from '../lib/components/DescribeProfile.svelte';
   import { fieldErrors } from '../lib/profileErrors';
   import { t } from '../lib/i18n';
@@ -69,23 +67,23 @@
   let meta = $state<Meta | null>(null);
   let errors = $state<Record<string, string>>({});
   let saved = $state(false);
-  let zones = $state({ exclude: '', penalize: '', prefer: '' });
+  let names = $state<string[]>([]);
+  // Que parte del perfil se edita: Settings la parte en secciones.
+  let { part = 'all' }: { part?: 'all' | 'basics' | 'places' | 'zones' } = $props();
+  const show = (x: 'basics' | 'places' | 'zones') => part === 'all' || part === x;
 
-  const lines = (s: string) => s.split('\n').map((x) => x.trim()).filter(Boolean);
 
   async function load() {
     const [perfil, lista, vocab] = await Promise.all([getActiveProfile(), listProfiles(), getMeta()]);
     p = perfil;
     profiles = lista;
     meta = vocab;
-    zones = { exclude: perfil.zones.exclude.join('\n'), penalize: perfil.zones.penalize.join('\n'),
-              prefer: perfil.zones.prefer.join('\n') };
+    if (show('zones')) names = (await getNeighbourhoods().catch(() => ({ names: [] }))).names;
   }
 
   async function save() {
     if (!p) return;
     errors = {};
-    p.zones = { exclude: lines(zones.exclude), penalize: lines(zones.penalize), prefer: lines(zones.prefer) };
     try {
       p = await saveProfile($state.snapshot(p));
       saved = true;
@@ -127,9 +125,12 @@
 </script>
 
 {#if p && meta}
-  <h1>{t('profile.title')}</h1>
+  {#if part === 'all'}<h1>{t('profile.title')}</h1>{/if}
+  {#if show('basics')}
   <DescribeProfile onapply={applySuggestion} />
+  {/if}
 
+  {#if show('basics')}
   <div class="profiles">
     <label>{t('profile.active')}
       <select value={p.name} onchange={(e) => switchTo((e.currentTarget as HTMLSelectElement).value)}>
@@ -141,11 +142,13 @@
       <button onclick={() => remove(pr.name)}>{t('profile.delete')} {pr.name}</button>
     {/each}
   </div>
+  {/if}
 
   {#if Object.keys(errors).length}
     <p class="error" role="alert">{t('profile.fixErrors')}{err('') ? ` ${err('')}` : ''}</p>
   {/if}
 
+  {#if show('basics')}
   <fieldset>
     <legend>{t('profile.sources')}</legend>
     {#each meta.sources as s}
@@ -155,7 +158,9 @@
     {#if err('sources')}<p class="error">{err('sources')}</p>{/if}
     {#each under('sources') as m}<p class="error">{m}</p>{/each}
   </fieldset>
+  {/if}
 
+  {#if show('basics')}
   <fieldset>
     <legend>{t('profile.budget')}</legend>
     <label>{t('profile.idealTotal')}<input type="number" bind:value={p.budget.ideal_total} /></label>
@@ -164,7 +169,9 @@
     {#if err('budget')}<p class="error">{err('budget')}</p>{/if}
     {#each under('budget') as m}<p class="error">{m}</p>{/each}
   </fieldset>
+  {/if}
 
+  {#if show('basics')}
   <fieldset>
     <legend>{t('profile.household')}</legend>
     {#each under('household') as m}<p class="error">{m}</p>{/each}
@@ -182,7 +189,9 @@
       </select>
     </label>
   </fieldset>
+  {/if}
 
+  {#if show('places')}
   <fieldset>
     <legend>{t('profile.destinations')}</legend>
     <p class="help">{t('profile.destinationsHelp')}</p>
@@ -219,16 +228,23 @@
     <MapView label={t('profile.destinationsMap')} places={p.destinations} onpick={pick} height="300px" />
     {#if err('destinations')}<p class="error">{err('destinations')}</p>{/if}
   </fieldset>
+  {/if}
 
+  {#if show('zones')}
   <fieldset>
     <legend>{t('profile.zones')}</legend>
     {#each under('zones') as m}<p class="error">{m}</p>{/each}
     <p class="help">{t('profile.zonesHelp')}</p>
-    <label>{t('profile.zonesExclude')}<textarea rows="3" bind:value={zones.exclude}></textarea></label>
-    <label>{t('profile.zonesPenalize')}<textarea rows="3" bind:value={zones.penalize}></textarea></label>
-    <label>{t('profile.zonesPrefer')}<textarea rows="3" bind:value={zones.prefer}></textarea></label>
+    <NeighbourhoodPicker label={t('profile.zonesPrefer')} options={names} selected={p.zones.prefer}
+      onchange={(v) => (p!.zones.prefer = v)} />
+    <NeighbourhoodPicker label={t('profile.zonesPenalize')} options={names} selected={p.zones.penalize}
+      onchange={(v) => (p!.zones.penalize = v)} />
+    <NeighbourhoodPicker label={t('profile.zonesExclude')} options={names} selected={p.zones.exclude}
+      onchange={(v) => (p!.zones.exclude = v)} />
   </fieldset>
+  {/if}
 
+  {#if show('basics')}
   <fieldset>
     <legend>{t('profile.crawl')}</legend>
     {#each under('crawl') as m}<p class="error">{m}</p>{/each}
@@ -236,7 +252,9 @@
     <label>{t('profile.realTravelTimes')}<input type="number" min="0" max="200" bind:value={p.crawl.real_travel_times} /></label>
     <label>{t('profile.detailsToRead')}<input type="number" min="0" bind:value={p.crawl.details_to_read} /></label>
   </fieldset>
+  {/if}
 
+  {#if show('basics')}
   <details>
     <summary>{t('profile.weights')}</summary>
     {#each under('weights') as m}<p class="error">{m}</p>{/each}
@@ -246,15 +264,13 @@
       {/each}
     </div>
   </details>
+  {/if}
 
   <div class="save">
     <button class="primary" onclick={save}>{t('profile.save')}</button>
     {#if saved}<span class="ok">{t('profile.saved')}</span>{/if}
   </div>
 
-  <TravelSettings />
-  <AISettings />
-  <AutoSettings />
 {/if}
 
 <style>
@@ -268,7 +284,7 @@
     margin: 0 0 16px; padding: 12px 16px; display: grid; gap: 10px; }
   legend { font-weight: 600; padding: 0 4px; }
   label { display: grid; gap: 4px; font-size: 14px; min-width: 0; }
-  label :is(input:not([type='checkbox']), select, textarea) { width: 100%; min-width: 0; }
+  label :is(input:not([type='checkbox']), select) { width: 100%; min-width: 0; }
   label.check { display: flex; gap: 8px; align-items: center; }
   .dest { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;
     align-items: end; padding-bottom: 10px; border-bottom: 1px solid var(--line); }

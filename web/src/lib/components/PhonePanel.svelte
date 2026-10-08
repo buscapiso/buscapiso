@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { ApiError, getAccess, rotateAccess, type AccessInfo } from '../lib/api';
-  import { t } from '../lib/i18n';
+  import { ApiError, getAccess, rotateAccess, type AccessInfo } from '../api';
+  import { t } from '../i18n';
 
   let info = $state<AccessInfo | null>(null);
   let error = $state('');
@@ -26,7 +26,6 @@
   $effect(() => { load(); });
 </script>
 
-<h1>{t('phone.title')}</h1>
 {#if error}<p class="error" role="alert">{error}</p>{/if}
 {#if info}
   {#if info.lan}

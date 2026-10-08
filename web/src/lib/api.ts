@@ -166,3 +166,7 @@ export const getNotify = () => call<NotifySettings>('GET', '/api/notify');
 export const saveNotify = (s: { enabled?: boolean; server?: string; min_score?: number }) =>
   call<NotifySettings>('PUT', '/api/notify', s);
 export const testNotify = () => call<{ ok: boolean }>('POST', '/api/notify/test');
+
+export const getNeighbourhoods = () => call<{ names: string[] }>('GET', '/api/neighbourhoods');
+export const listModels = (base_url: string, key?: string) =>
+  call<{ models: string[] }>('POST', '/api/ai/models', key ? { base_url, key } : { base_url });

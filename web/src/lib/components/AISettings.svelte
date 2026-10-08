@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ApiError, getAI, saveAI, testAI, type AISettings } from '../api';
+  import { ApiError, getAI, listModels, saveAI, testAI, type AISettings } from '../api';
   import { t } from '../i18n';
 
   type Preset = { id: string; label: string; help: string; provider: AISettings['provider'];
@@ -29,6 +29,22 @@
   let saved = $state(false);
   let error = $state('');
   let tested = $state('');
+  let models = $state<string[]>([]);
+  let manual = $state(false);
+  let loading = $state(false);
+
+  async function loadModels() {
+    if (!s) return;
+    loading = true; error = ''; manual = false;
+    try {
+      models = (await listModels(s.base_url, key.trim() || undefined)).models;
+      if (models.length && !models.includes(s.model)) s.model = models[0];
+    } catch (e) {
+      models = [];
+      manual = true;
+      error = e instanceof ApiError ? String(e.detail) : String(e);
+    } finally { loading = false; }
+  }
 
   const current = $derived(PRESETS.find((p) => p.id === preset)!);
 
@@ -47,6 +63,8 @@
     s.base_url = p.base_url;
     if (p.id === 'claude' && !s.model.startsWith('claude-')) s.model = 'claude-opus-5-5';
     if (p.id !== 'claude' && s.model.startsWith('claude-')) s.model = '';
+    models = []; manual = false; error = '';
+    if (p.id === 'ollama') loadModels();
   }
 
   async function load() {
@@ -101,10 +119,26 @@
           </select>
         </label>
       {:else}
-        <label>{t('ai.model')}<input bind:value={s.model} /></label>
-        <p class="help">{t('ai.modelHelp')}</p>
+        {#if current.needsKey}
+          <label>{t('ai.key')}<input type="password" autocomplete="off" bind:value={key} /></label>
+          {#if s.has_key}<p class="help">{t('ai.keySaved')}</p>{/if}
+        {/if}
+        <div class="models">
+          {#if models.length}
+            <label>{t('ai.model')}
+              <select bind:value={s.model}>{#each models as m}<option value={m}>{m}</option>{/each}</select>
+            </label>
+          {:else if s.model && !manual}
+            <p class="help">{t('ai.current', { model: s.model })}</p>
+          {/if}
+          <button onclick={loadModels} disabled={loading}>{t('ai.loadModels')}</button>
+        </div>
+        {#if manual}
+          <label>{t('ai.modelName')}<input bind:value={s.model} /></label>
+          <p class="help">{t('ai.modelHelp')}</p>
+        {/if}
       {/if}
-      {#if current.needsKey}
+      {#if preset === 'claude'}
         <label>{t('ai.key')}<input type="password" autocomplete="off" bind:value={key} /></label>
         {#if s.has_key}<p class="help">{t('ai.keySaved')}</p>{/if}
       {/if}
@@ -131,6 +165,8 @@
   .presets { display: flex; flex-wrap: wrap; gap: 6px 16px; }
   .choice { display: flex; gap: 6px; align-items: center; }
   .help { color: var(--muted); font-size: 13px; margin: 0; }
+  .models { display: flex; gap: 8px; align-items: end; flex-wrap: wrap; }
+  .models label { flex: 1 1 220px; }
   .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
   .error { color: var(--bad); margin: 0; font-size: 13px; }
   .ok { color: var(--ok); }

@@ -1,39 +1,25 @@
 <script lang="ts">
   import { router } from './lib/router.svelte';
   import Nav from './lib/components/Nav.svelte';
-  import Phone from './routes/Phone.svelte';
   import { t } from './lib/i18n';
-  import Listings from './routes/Listings.svelte';
   import ListingDetail from './routes/ListingDetail.svelte';
-  import Board from './routes/Board.svelte';
-  import MapPage from './routes/MapPage.svelte';
-  import Profile from './routes/Profile.svelte';
-  import Search from './routes/Search.svelte';
+  import Rooms from './routes/Rooms.svelte';
+  import Settings from './routes/Settings.svelte';
 
 </script>
 
 <header>
   <a class="brand" href="#/">{t('app.name')}</a>
-  <Nav current={router.route.name} />
+  <Nav route={router.route} />
 </header>
 
 <main>
   {#if router.route.name === 'listing'}
     <ListingDetail id={router.route.id} />
-  {:else if router.route.name === 'board'}
-    <Board />
-  {:else if router.route.name === 'map'}
-    <MapPage />
-  {:else if router.route.name === 'phone'}
-    <Phone />
-  {:else if router.route.name === 'profile'}
-    <Profile />
-  {:else if router.route.name === 'search'}
-    <Search />
+  {:else if router.route.name === 'settings'}
+    <Settings section={router.route.section} />
   {:else}
-    {#key router.route.name}
-      <Listings list={router.route.name} />
-    {/key}
+    <Rooms filter={router.route.filter} view={router.route.view} />
   {/if}
 </main>
 

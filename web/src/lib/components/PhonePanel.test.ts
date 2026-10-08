@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
-import Phone from './Phone.svelte';
+import Phone from './PhonePanel.svelte';
 
 afterEach(() => vi.restoreAllMocks());
 

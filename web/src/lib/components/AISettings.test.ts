@@ -7,6 +7,11 @@ let body: Record<string, unknown> | null = null;
 beforeEach(() => {
   body = null;
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (url, init) => {
+    if (String(url).endsWith('/api/ai/models')) {
+      const b = JSON.parse(init!.body as string);
+      if (b.key === 'BAD') return new Response(JSON.stringify({ detail: 'The provider answered HTTP 401. Check the key.' }), { status: 502 });
+      return new Response(JSON.stringify({ models: ['gemini-flash', 'gemini-pro'] }));
+    }
     if (String(url).endsWith('/api/ai/test')) return new Response(JSON.stringify({ ok: true, model: 'm', message: 'The AI answered.' }));
     if (init?.method === 'PUT') {
       body = JSON.parse(init.body as string);
@@ -21,8 +26,9 @@ afterEach(() => vi.restoreAllMocks());
 test('choosing Gemini fills its OpenAI-compatible address', async () => {
   render(AISettings);
   await userEvent.click(await screen.findByLabelText(/Gemini/));
-  await userEvent.type(screen.getByLabelText('Model'), 'gemini-flash');
   await userEvent.type(screen.getByLabelText('API key'), 'G-KEY');
+  await userEvent.click(screen.getByRole('button', { name: 'Load models' }));
+  await userEvent.selectOptions(await screen.findByLabelText('Model'), 'gemini-flash');
   await userEvent.click(screen.getByRole('button', { name: 'Save AI settings' }));
   expect(body).toMatchObject({ provider: 'openai_compat', model: 'gemini-flash', key: 'G-KEY',
     base_url: 'https://generativelanguage.googleapis.com/v1beta/openai/' });
@@ -41,4 +47,15 @@ test('Ollama needs no key', async () => {
   render(AISettings);
   await userEvent.click(await screen.findByLabelText(/Ollama/));
   expect(screen.queryByLabelText('API key')).toBeNull();
+});
+
+test('if the model list fails, the error shows and the name can be typed', async () => {
+  render(AISettings);
+  await userEvent.click(await screen.findByLabelText(/OpenAI/));
+  await userEvent.type(screen.getByLabelText('API key'), 'BAD');
+  await userEvent.click(screen.getByRole('button', { name: 'Load models' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent('HTTP 401');
+  await userEvent.type(screen.getByLabelText('Model name'), 'gpt-something');
+  await userEvent.click(screen.getByRole('button', { name: 'Save AI settings' }));
+  expect(body).toMatchObject({ provider: 'openai_compat', model: 'gpt-something' });
 });
