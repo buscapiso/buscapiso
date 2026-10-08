@@ -101,5 +101,9 @@
   "search.error": "The search stopped: {message}",
   "search.busy": "A search is already running.",
   "error.generic": "Something went wrong: {message}",
-  "profile.fixErrors": "Some fields need fixing. Nothing was saved."
+  "profile.fixErrors": "Some fields need fixing. Nothing was saved.",
+  "nav.map": "Map",
+  "map.title": "Map of your listings",
+  "map.help": "Blue dots are your best matches. Black dots are your places.",
+  "map.pointSub": "{cost} € a month, {minutes} min to {place}"
 }

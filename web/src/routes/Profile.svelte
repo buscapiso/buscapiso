@@ -139,7 +139,7 @@
         {#each under(`destinations.${i}`) as m}<p class="error">{m}</p>{/each}
       </div>
     {/each}
-    <button onclick={() => p!.destinations.push({ name: '', lat: 41.3874, lon: 2.1686, max_minutes: null, minute_weight: 1 })}>
+    <button onclick={() => p!.destinations.push({ name: '', lat: 41.3874, lon: 2.1686, max_minutes: null, minute_weight: 1, mode: 'transit', depart_at: '08:30' })}>
       {t('profile.addDestination')}</button>
     {#if err('destinations')}<p class="error">{err('destinations')}</p>{/if}
   </fieldset>

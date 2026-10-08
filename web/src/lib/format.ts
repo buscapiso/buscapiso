@@ -36,3 +36,7 @@ export function lineChips(route: string | undefined): string[] {
 export function lineColor(line: string): string | null {
   return LINE_COLOURS[line] ?? null;
 }
+
+export function scoreColor(score: number, best: number): string {
+  return score >= best - Math.abs(best) / 3 ? 'var(--accent)' : 'var(--muted)';
+}

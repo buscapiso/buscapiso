@@ -8,7 +8,7 @@ export interface Listing {
   neighbourhood: string; municipality: string;
   lat: number | null; lon: number | null; approximate_location: boolean;
   photo: string; description: string;
-  travel: Record<string, number>; routes: Record<string, string>;
+  travel: Record<string, number>; routes: Record<string, string>; travel_source: string;
   score: number; reasons: string[];
   gender: 'female_only' | 'male_only' | 'mixed' | 'unknown'; gender_confirmed: boolean;
   roommates: number | null; available_from: string; published: string; also_on: string[];
@@ -22,6 +22,7 @@ export interface ListingDetail extends Listing { history: HistoryEntry[] }
 export interface Destination {
   name: string; lat: number; lon: number;
   max_minutes: number | null; minute_weight: number;
+  mode: 'transit' | 'walk' | 'bike'; depart_at: string;
 }
 
 export interface SearchProfile {
@@ -36,7 +37,8 @@ export interface SearchProfile {
   };
   zones: { exclude: string[]; penalize: string[]; prefer: string[] };
   idealista: Record<string, number | boolean | null>;
-  crawl: { sort: string; fotocasa_sort: string; max_pages: number; details_to_read: number };
+  crawl: { sort: string; fotocasa_sort: string; max_pages: number; details_to_read: number;
+           real_travel_times: number };
   weights: Record<string, number>;
 }
 
@@ -109,3 +111,22 @@ export function streamSearch(onEvent: (e: SearchEvent) => void): () => void {
   };
   return () => source.close();
 }
+
+export interface TravelSettings {
+  travel_provider: 'graph' | 'transitous' | 'google';
+  transitous_contact: string;
+  has_google_key: boolean;
+}
+export interface RouteTest {
+  graph: { minutes: number; detail: string } | null;
+  provider: { name: string; minutes: number; detail: string } | null;
+  error: string | null;
+}
+export interface Place { name: string; lat: number; lon: number }
+
+export const getSettings = () => call<TravelSettings>('GET', '/api/settings');
+export const saveSettings = (s: Partial<TravelSettings> & { google_key?: string }) =>
+  call<TravelSettings>('PUT', '/api/settings', s);
+export const testRoute = () => call<RouteTest>('POST', '/api/settings/test-route');
+export const geocode = (q: string) =>
+  call<Place[]>('GET', `/api/geocode?q=${encodeURIComponent(q)}`);

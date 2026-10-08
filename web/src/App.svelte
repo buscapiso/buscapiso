@@ -4,6 +4,7 @@
   import Listings from './routes/Listings.svelte';
   import ListingDetail from './routes/ListingDetail.svelte';
   import Board from './routes/Board.svelte';
+  import MapPage from './routes/MapPage.svelte';
   import Profile from './routes/Profile.svelte';
   import Search from './routes/Search.svelte';
 
@@ -14,6 +15,7 @@
     { name: 'ask', label: 'nav.ask' },
     { name: 'hidden', label: 'nav.hidden' },
     { name: 'board', label: 'nav.board' },
+    { name: 'map', label: 'nav.map' },
     { name: 'search', label: 'nav.search' },
     { name: 'profile', label: 'nav.profile' },
   ] as const;
@@ -35,6 +37,8 @@
     <ListingDetail id={router.route.id} />
   {:else if router.route.name === 'board'}
     <Board />
+  {:else if router.route.name === 'map'}
+    <MapPage />
   {:else if router.route.name === 'profile'}
     <Profile />
   {:else if router.route.name === 'search'}

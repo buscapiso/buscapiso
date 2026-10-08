@@ -1,4 +1,4 @@
-import { costLine, lineChips, lineColor, LISTS } from './format';
+import { costLine, lineChips, lineColor, LISTS, scoreColor } from './format';
 import type { Listing } from './api';
 
 const base = { price: 450, expenses: 50 } as Listing;
@@ -28,4 +28,9 @@ test('known lines carry their network colour', () => {
   expect(lineColor('L5')).toBe('#0078bd');
   expect(lineColor('L9S')).toBe('#f68b1f');
   expect(lineColor('R2')).toBeNull();
+});
+
+test('the best third of listings is highlighted on the map', () => {
+  expect(scoreColor(95, 100)).toBe('var(--accent)');
+  expect(scoreColor(50, 100)).toBe('var(--muted)');
 });
