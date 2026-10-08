@@ -37,8 +37,10 @@ def run_profile(profile: SearchProfile, options: SearchOptions,
 
 
 class SearchRunner:
-    def __init__(self, run: Run | None = None):
+    def __init__(self, run: Run | None = None,
+                 after: Callable[[SearchResult], None] | None = None):
         self._run = run or run_profile
+        self._after = after
         self._cond = threading.Condition()
         self._thread: threading.Thread | None = None
         self._id: str | None = None
@@ -73,6 +75,11 @@ class SearchRunner:
             with self._cond:
                 self._summary = summary
             events.emit("done", f"Done: {summary['new']} new listings", **summary)
+            if self._after is not None:
+                try:
+                    self._after(r)
+                except Exception:   # noqa: BLE001 - un aviso fallido no rompe la busqueda
+                    traceback.print_exc()
         except Exception as e:      # noqa: BLE001 - el motivo va al usuario
             traceback.print_exc()
             events.emit("error", f"The search stopped: {e}")

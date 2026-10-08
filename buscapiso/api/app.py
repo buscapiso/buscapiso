@@ -16,7 +16,7 @@ from fastapi.responses import JSONResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from buscapiso import access, almacen, keys, paths
+from buscapiso import access, almacen, keys, notify, paths
 from buscapiso.ai import ai_from_settings
 from buscapiso.ai.providers import AIError
 from buscapiso.api.schemas import (Listing, ListingDetail, NoteChange, StatusChange,
@@ -52,6 +52,12 @@ class ScheduleChange(BaseModel):
     hours: int
     from_: str = Field(default="08:00", alias="from", pattern=r"^([01]\d|2[0-3]):[0-5]\d$")
     to: str = Field(default="23:00", pattern=r"^([01]\d|2[0-3]):[0-5]\d$")
+
+
+class NotifyChange(BaseModel):
+    enabled: bool | None = None
+    server: str | None = None
+    min_score: int | None = None
 
 
 class AIChange(BaseModel):
@@ -147,7 +153,15 @@ def create_app(db_path: pathlib.Path | None = None,
             con.close()
 
     geocode = geocode or _geocode_real
-    runner = runner or SearchRunner()
+    def _avisar(resultado) -> None:
+        con = almacen.abrir(app.state.db_path)
+        try:
+            enlace = access.access_url(con, app.state.port) if app.state.lan else None
+            notify.notify_new_listings(con, resultado, click=enlace)
+        finally:
+            con.close()
+
+    runner = runner or SearchRunner(after=_avisar)
     app.state.runner = runner
 
     @contextlib.contextmanager
@@ -448,6 +462,40 @@ def create_app(db_path: pathlib.Path | None = None,
             almacen.guardar_ajuste(con, "schedule_from", body.from_)
             almacen.guardar_ajuste(con, "schedule_to", body.to)
             return _schedule(con)
+
+    @app.get("/api/notify")
+    def notify_settings() -> dict:
+        with db() as con:
+            return notify.settings(con)
+
+    @app.put("/api/notify")
+    def save_notify(body: NotifyChange) -> dict:
+        with db() as con:
+            actual = notify.settings(con)
+            if body.enabled is True and not actual["topic"]:
+                almacen.guardar_ajuste(con, "ntfy_topic", notify.random_topic())
+            if body.enabled is False:
+                almacen.guardar_ajuste(con, "ntfy_topic", "")
+            if body.server is not None:
+                servidor = body.server.strip().rstrip("/") or notify.DEFAULT_SERVER
+                if not servidor.startswith(("http://", "https://")):
+                    raise HTTPException(422, "The ntfy server must start with http:// or https://")
+                almacen.guardar_ajuste(con, "ntfy_server", servidor)
+            if body.min_score is not None:
+                almacen.guardar_ajuste(con, "notify_min_score", str(body.min_score))
+            return notify.settings(con)
+
+    @app.post("/api/notify/test")
+    def test_notify() -> dict:
+        with db() as con:
+            if not notify.settings(con)["topic"]:
+                raise HTTPException(422, "Turn on phone notifications first")
+            try:
+                notify.send(con, "buscapiso is connected",
+                            "You will get a message like this when a good new room appears.")
+            except OSError as e:
+                raise HTTPException(502, f"Could not reach ntfy: {type(e).__name__}")
+        return {"ok": True}
 
     app.state.db = db
     estaticos = static_dir if static_dir is not None else WEB_DIST
