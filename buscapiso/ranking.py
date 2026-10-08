@@ -45,7 +45,7 @@ def filtrar(anuncios: list[Anuncio], cfg: dict, zonas: dict,
     """
     req = cfg["requisitos"]
     pres = cfg["presupuesto"]
-    tr = cfg["transporte"]
+    destinos = cfg.get("destinos", [])
     excluidos = {z.lower() for z in (zonas.get("excluir") or [])}
     descartados = descartados or set()
 
@@ -73,10 +73,14 @@ def filtrar(anuncios: list[Anuncio], cfg: dict, zonas: dict,
         if req.get("visitas_permitidas") == "estricto":
             if a.visitas_permitidas is False or _VISITAS_TEXTO_NO.search(_texto(a)):
                 fuera.append((a, "no se permiten visitas")); continue
-        if a.minutos_fira is None:
+        limitados = [d for d in destinos if d.get("max_minutos") is not None]
+        if any(d["nombre"] not in a.trayectos for d in limitados):
             fuera.append((a, "sin ubicacion utilizable")); continue
-        if a.minutos_fira > tr["max_minutos_principal"]:
-            fuera.append((a, f"{a.minutos_fira:.0f} min a {tr['destino_principal']}")); continue
+        lejos = next((d for d in limitados
+                      if a.trayectos[d["nombre"]] > d["max_minutos"]), None)
+        if lejos is not None:
+            fuera.append((a, f"{a.trayectos[lejos['nombre']]:.0f} min a "
+                             f"{lejos['nombre']}")); continue
         zona = (a.barrio or a.municipio).lower()
         if any(e in zona for e in excluidos):
             fuera.append((a, f"zona excluida por ti: {a.barrio or a.municipio}")); continue
@@ -88,21 +92,18 @@ def puntuar(a: Anuncio, cfg: dict, zonas: dict) -> float:
     """Puntuacion 0-inf. Rellena a.motivos con el desglose."""
     p = cfg["pesos"]
     pres = cfg["presupuesto"]
-    tr = cfg["transporte"]
     motivos: list[str] = []
     total = 100.0
 
-    # Trayecto al trabajo: lo que mas pesa.
-    if a.minutos_fira is not None:
-        exceso = max(0.0, a.minutos_fira - p["minutos_gratis"])
-        castigo = exceso * p["minutos_fira"]
+    # Trayectos: cada destino resta segun su propio peso por minuto.
+    for d in cfg.get("destinos", []):
+        minutos = a.trayectos.get(d["nombre"])
+        if minutos is None:
+            continue
+        exceso = max(0.0, minutos - p["minutos_gratis"])
+        castigo = exceso * d["peso_minuto"]
         total -= castigo
-        motivos.append(f"{a.minutos_fira:.0f} min a {tr['destino_principal']} ({-castigo:+.0f})")
-    if a.minutos_collblanc is not None:
-        exceso = max(0.0, a.minutos_collblanc - p["minutos_gratis"])
-        castigo = exceso * p["minutos_collblanc"]
-        total -= castigo
-        motivos.append(f"{a.minutos_collblanc:.0f} min a {tr['destino_secundario']} ({-castigo:+.0f})")
+        motivos.append(f"{minutos:.0f} min a {d['nombre']} ({-castigo:+.0f})")
 
     # Dinero: penaliza lo que pasa del coste ideal, no el precio absoluto.
     estimado = a.coste_estimado(pres["gastos_si_no_declara"])

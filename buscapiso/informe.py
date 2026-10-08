@@ -70,10 +70,8 @@ def _badges(a, gastos_def: int = 55) -> str:
         bs.append(('', f"+{a.gastos_extra} € gastos"))
     else:
         bs.append(('', f"gastos sin declarar (~{gastos_def} €)"))
-    if a.minutos_fira is not None:
-        bs.append(('ac', f"{a.minutos_fira:.0f} min a Fira"))
-    if a.minutos_collblanc is not None:
-        bs.append(('', f"{a.minutos_collblanc:.0f} min a Collblanc"))
+    for i, (nombre, minutos) in enumerate(a.trayectos.items()):
+        bs.append(('ac' if i == 0 else '', f"{minutos:.0f} min a {nombre}"))
     if a.companeros:
         bs.append(('', f"{a.companeros} compañeros"))
     if a.visitas_permitidas is True:
@@ -135,11 +133,15 @@ def generar(anuncios: list, nuevos_ids: set, fuera: list, cfg: dict,
     por_motivo: dict[str, int] = {}
     for _, m in fuera:
         clave = m.split(":")[0].split("(")[0].strip()
-        clave = clave if not clave[:1].isdigit() else "demasiado lejos del trabajo"
+        clave = clave if not clave[:1].isdigit() else "demasiado lejos de un destino"
         por_motivo[clave] = por_motivo.get(clave, 0) + 1
     lista_fuera = "".join(
         f"<li>{html.escape(k)}: <b>{v}</b></li>"
         for k, v in sorted(por_motivo.items(), key=lambda x: -x[1]))
+
+    limites = "".join(
+        f", máximo {d['max_minutos']:.0f} min a {html.escape(d['nombre'])}"
+        for d in cfg.get("destinos", []) if d.get("max_minutos") is not None)
 
     cuerpo = f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -147,9 +149,7 @@ def generar(anuncios: list, nuevos_ids: set, fuera: list, cfg: dict,
 <div class="wrap">
 <h1>Habitaciones que encajan contigo</h1>
 <p class="meta">Generado el {ahora} &middot; filtro: solo chicas, sin propietario,
- máximo {cfg['presupuesto']['coste_total_maximo']} €/mes totales,
- máximo {cfg['transporte']['max_minutos_principal']} min a
- {html.escape(cfg['transporte']['destino_principal'])}</p>
+ máximo {cfg['presupuesto']['coste_total_maximo']} €/mes totales{limites}</p>
 <div class="resumen">
  <div class="kpi"><b>{stats['rastreados']}</b><span>anuncios rastreados</span></div>
  <div class="kpi"><b>{len(anuncios)}</b><span>cumplen tus requisitos</span></div>

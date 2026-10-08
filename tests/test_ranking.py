@@ -20,9 +20,12 @@ def zonas():
 
 
 def anuncio(**kw) -> Anuncio:
+    fira = kw.pop("minutos_fira", 12.0)
+    trayectos = {"Fira": fira} if fira is not None else {}
+    trayectos["Collblanc"] = 10.0
     base = dict(portal="idealista", id_portal="1", url="https://x/1",
                 precio=450, gastos_extra=50, genero_piso=GENERO_CHICAS,
-                minutos_fira=12.0, minutos_collblanc=10.0, barrio="Sants",
+                trayectos=trayectos, barrio="Sants",
                 municipio="Barcelona", coords_aproximadas=False, companeros=3)
     base.update(kw)
     return Anuncio(**base)
@@ -208,3 +211,26 @@ def test_un_posible_sigue_pasando_los_demas_filtros(cfg, zonas):
     ok, posibles, fuera = filtrar([lejos, caro], cfg, zonas)
     assert posibles == []
     assert len(fuera) == 2
+
+
+def test_every_limited_destination_is_a_hard_filter(cfg, zonas):
+    cfg["destinos"][1]["max_minutos"] = 15
+    a = anuncio()
+    a.trayectos["Collblanc"] = 25.0
+    ok, _posibles, fuera = filtrar([a], cfg, zonas)
+    assert ok == []
+    assert fuera[0][1] == "25 min a Collblanc"
+
+
+def test_without_destinations_nothing_is_dropped_for_distance(cfg, zonas):
+    cfg["destinos"] = []
+    ok, _posibles, _fuera = filtrar([anuncio(minutos_fira=None, trayectos={})],
+                                    cfg, zonas)
+    assert len(ok) == 1
+
+
+def test_each_destination_scores_with_its_own_weight(cfg, zonas):
+    cerca = anuncio()
+    puntuar(cerca, cfg, zonas)
+    assert any("min a Fira" in m for m in cerca.motivos)
+    assert any("min a Collblanc" in m for m in cerca.motivos)

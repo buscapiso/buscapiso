@@ -36,7 +36,12 @@ def cmd_buscar(args) -> int:
     if args.solo_nuevos:
         cfg["filtros_idealista"]["publicado_48h"] = True
     if args.max_minutos:
-        cfg["transporte"]["max_minutos_principal"] = args.max_minutos
+        limitado = next((d for d in cfg["destinos"] if d.get("max_minutos") is not None),
+                        None)
+        if limitado is None:
+            print("--max-minutos necesita un destino con max_minutos en config.yaml")
+            return 2
+        limitado["max_minutos"] = args.max_minutos
     if args.presupuesto:
         cfg["presupuesto"]["coste_total_maximo"] = args.presupuesto
     if args.fuentes:
@@ -56,7 +61,7 @@ def cmd_buscar(args) -> int:
     print(f"\n  {len(r.accepted)} habitaciones ({len(r.new_ids)} nuevas) -> {destino}")
     for a in r.accepted[:5]:
         print(f"    {a.puntuacion:5.0f}  {a.coste_total:>4} €  "
-              f"{(a.minutos_fira or 0):4.0f} min  {a.barrio[:22]:22s}  {a.url}")
+              f"{next(iter(a.trayectos.values()), 0):4.0f} min  {a.barrio[:22]:22s}  {a.url}")
     if not args.no_abrir:
         webbrowser.open(destino.as_uri())
     return 0

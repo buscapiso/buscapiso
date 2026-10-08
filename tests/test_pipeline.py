@@ -43,3 +43,20 @@ def test_run_search_leaves_the_callers_cfg_alone(home, cfg):
     run_search(cfg, {}, SearchOptions(from_cache=True, offline=True),
                almacen.abrir(home / "t.db"))
     assert yaml.safe_dump(cfg) == antes
+
+
+def test_a_destination_off_the_network_is_reported():
+    from buscapiso.modelo import Anuncio
+    from buscapiso.pipeline import compute_routes
+    from buscapiso.transporte import Red
+    montserrat = {"nombre": "Montserrat", "lat": 41.5931, "lon": 1.8378,
+                  "max_minutos": 30, "peso_minuto": 1.0}
+    a = Anuncio(portal="x", id_portal="1", url="u", lat=41.37587, lon=2.11840)
+    seen = []
+    previous = events.set_sink(seen.append)
+    try:
+        compute_routes([a], [montserrat], Red.cargar())
+    finally:
+        events.set_sink(previous)
+    assert a.trayectos == {}
+    assert any(e.kind == "warning" and "Montserrat" in e.message for e in seen)

@@ -52,7 +52,7 @@ descartado no vuelve a aparecer.
 ## Las zonas se calculan solas
 
 No hay lista de zonas que mantener. El buscador coge el límite de
-`transporte.max_minutos_principal` (o `--max-minutos`), calcula con el grafo de
+`max_minutos` del primer destino de `destinos` (o `--max-minutos`), calcula con el grafo de
 metro cuánto se tarda desde cada zona del catálogo hasta Fira, y rastrea las que
 entran. Subir el límite amplía el rastreo de verdad:
 
@@ -86,7 +86,7 @@ Los ajustes que más notarás:
 | Ajuste | Qué hace |
 |---|---|
 | `presupuesto.coste_total_maximo` | descarte duro por precio total (habitación + gastos) |
-| `transporte.max_minutos_principal` | descarte duro por tiempo a Fira |
+| `destinos[].max_minutos` | descarte duro por tiempo a ese destino (`null` = sin límite) |
 | `requisitos.solo_chicas` | `false` incluye pisos mixtos |
 | `pesos.novedad` | cuánto premia un anuncio recién publicado |
 | `presupuesto.gastos_si_no_declara` | gastos que supongo cuando el anuncio los calla |
@@ -94,7 +94,6 @@ Los ajustes que más notarás:
 | `fuentes` | qué portales rastrear |
 | `requisitos.preguntar_si_genero_desconocido` | mostrar los de género sin confirmar |
 | `requisitos.puntos_minimos_para_preguntar` | listón para esa sección |
-| `transporte.max_minutos_principal` | lo mismo que `--max-minutos`, permanente |
 
 **`zonas.yaml`** tiene tus listas de zonas a `excluir`, `penalizar` y `preferir`.
 Viene vacío a propósito: eso lo decides tú, no yo.

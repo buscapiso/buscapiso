@@ -75,20 +75,37 @@ def run_search(cfg: dict, zonas: dict, options: SearchOptions,
 
 
 def _elegir_zonas(cfg: dict, red: Red, options: SearchOptions) -> None:
-    """Las zonas salen del limite de tiempo, no de una lista fija."""
+    """Las zonas salen de los limites de tiempo, no de una lista fija."""
     if options.municipalities:
         cfg["municipios"] = list(options.municipalities)
         return
     catalogo = Catalogo.cargar()
-    tope = cfg["transporte"]["max_minutos_principal"]
-    destino = cfg["transporte"]["destino_principal"]
-    seleccion = catalogo.seleccionar(tope, red, destino)
+    seleccion = catalogo.seleccionar(cfg.get("destinos", []), red)
     cfg["municipios"] = catalogo.slugs(seleccion, "idealista")
     cfg["zonas_fotocasa"] = catalogo.slugs(seleccion, "fotocasa")
-    emit("info", f"Zonas a menos de {tope} min de {destino}: {len(seleccion)}",
+    emit("info", f"Zonas a rastrear: {len(seleccion)}",
          zones=[z["nombre"] for z in seleccion])
-    emit("info", "   " + ", ".join(f"{z['nombre'].split(',')[0]} ({z['minutos']:.0f})"
-                                   for z in seleccion) + "\n")
+    emit("info", "   " + ", ".join(
+        z["nombre"].split(",")[0]
+        + (f" ({z['minutos']:.0f})" if z["minutos"] is not None else "")
+        for z in seleccion) + "\n")
+
+
+def compute_routes(anuncios: list, destinos: list[dict], red: Red) -> None:
+    """Rellena anuncio.trayectos y anuncio.rutas para cada destino."""
+    for d in destinos:
+        if not red.estaciones_cercanas(d["lat"], d["lon"]):
+            emit("warning", f"    {d['nombre']} no tiene ninguna estacion a distancia "
+                            "andable: solo contaran los pisos desde los que se "
+                            "llega andando", destination=d["nombre"])
+    for a in anuncios:
+        if a.lat is None:
+            continue
+        for d in destinos:
+            r = red.ruta_a_punto(a.lat, a.lon, d["lat"], d["lon"])
+            if r is not None:
+                a.trayectos[d["nombre"]] = r.minutos
+                a.rutas[d["nombre"]] = r.detalle
 
 
 def _leer_cache(carpeta: pathlib.Path) -> list:
@@ -179,17 +196,7 @@ def _procesar(anuncios, cfg, zonas, con, geo, red, options, idealista) -> Search
     emit("info", f"    {len(anuncios) - sin_sitio} situados, {sin_sitio} sin ubicacion\n")
 
     _stage(3, "Calculando trayectos...")
-    dest1 = cfg["transporte"]["destino_principal"]
-    dest2 = cfg["transporte"]["destino_secundario"]
-    for a in anuncios:
-        if a.lat is None:
-            continue
-        r1 = red.ruta_desde(a.lat, a.lon, dest1)
-        r2 = red.ruta_desde(a.lat, a.lon, dest2)
-        if r1:
-            a.minutos_fira, a.ruta_fira = r1.minutos, r1.detalle
-        if r2:
-            a.minutos_collblanc = r2.minutos
+    compute_routes(anuncios, cfg.get("destinos", []), red)
 
     ok, posibles, fuera = filtrar(anuncios, cfg, zonas, almacen.descartados(con))
     ok = ordenar(ok, cfg, zonas)
