@@ -60,3 +60,11 @@ def test_a_destination_off_the_network_is_reported():
         events.set_sink(previous)
     assert a.trayectos == {}
     assert any(e.kind == "warning" and "Montserrat" in e.message for e in seen)
+
+
+@pytest.mark.parametrize("genero, url_chicas", [
+    ("chicas", True), ("chicos", False), ("mixto", False), ("cualquiera", False)])
+def test_idealista_url_filter_follows_the_gender(cfg, genero, url_chicas):
+    from buscapiso.pipeline import idealista_filters
+    cfg["requisitos"]["genero"] = genero
+    assert idealista_filters(cfg)["solo_chicas"] is url_chicas

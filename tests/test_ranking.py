@@ -5,7 +5,7 @@ import sys
 import pytest
 import yaml
 
-from buscapiso.modelo import GENERO_CHICAS, GENERO_MIXTO, Anuncio
+from buscapiso.modelo import DESCONOCIDO, GENERO_CHICAS, GENERO_CHICOS, GENERO_MIXTO, Anuncio
 from buscapiso.ranking import filtrar, ordenar, puntuar
 
 
@@ -234,3 +234,26 @@ def test_each_destination_scores_with_its_own_weight(cfg, zonas):
     puntuar(cerca, cfg, zonas)
     assert any("min a Fira" in m for m in cerca.motivos)
     assert any("min a Collblanc" in m for m in cerca.motivos)
+
+
+@pytest.mark.parametrize("genero, piso, pasa", [
+    ("cualquiera", GENERO_MIXTO, True),
+    ("cualquiera", DESCONOCIDO, True),
+    ("chicos", GENERO_CHICOS, True),
+    ("chicos", GENERO_CHICAS, False),
+    ("mixto", GENERO_MIXTO, True),
+    ("mixto", GENERO_CHICAS, False),
+])
+def test_household_gender_filter(cfg, zonas, genero, piso, pasa):
+    cfg["requisitos"]["genero"] = genero
+    cfg["requisitos"]["preguntar_si_genero_desconocido"] = False
+    ok, _posibles, _fuera = filtrar([anuncio(genero_piso=piso)], cfg, zonas)
+    assert (len(ok) == 1) is pasa
+
+
+def test_any_gender_never_sends_unknowns_to_the_ask_list(cfg, zonas):
+    cfg["requisitos"]["genero"] = "cualquiera"
+    cfg["requisitos"]["preguntar_si_genero_desconocido"] = True
+    ok, posibles, _fuera = filtrar([anuncio(genero_piso=DESCONOCIDO)], cfg, zonas)
+    assert len(ok) == 1
+    assert posibles == []

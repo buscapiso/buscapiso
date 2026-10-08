@@ -17,6 +17,7 @@ from buscapiso.cobertura import Catalogo
 from buscapiso.deduplicar import deduplicar
 from buscapiso.events import emit
 from buscapiso.geocodificador import Geocodificador
+from buscapiso.modelo import GENERO_CHICAS
 from buscapiso.ranking import filtrar, ordenar
 from buscapiso.transporte import Red
 
@@ -48,6 +49,7 @@ def _stage(step: int, message: str) -> None:
 def run_search(cfg: dict, zonas: dict, options: SearchOptions,
                con: sqlite3.Connection) -> SearchResult:
     cfg = copy.deepcopy(cfg)
+    cfg["filtros_idealista"] = idealista_filters(cfg)
     geo = Geocodificador(con, offline=options.offline)
     red = Red.cargar()
     paginas = options.pages or cfg["busqueda"]["max_paginas_por_municipio"]
@@ -72,6 +74,15 @@ def run_search(cfg: dict, zonas: dict, options: SearchOptions,
             idealista.cerrar()
             return SearchResult()
     return _procesar(anuncios, cfg, zonas, con, geo, red, options, idealista)
+
+
+def idealista_filters(cfg: dict) -> dict:
+    """Filtros de URL de idealista. El de genero sale de requisitos.genero:
+    idealista solo tiene "admite chicas", asi que para otro genero no se
+    filtra por URL y el filtro estricto lo hace ranking.filtrar."""
+    filtros = dict(cfg.get("filtros_idealista", {}))
+    filtros["solo_chicas"] = cfg["requisitos"].get("genero") == GENERO_CHICAS
+    return filtros
 
 
 def _elegir_zonas(cfg: dict, red: Red, options: SearchOptions) -> None:

@@ -139,6 +139,8 @@ def generar(anuncios: list, nuevos_ids: set, fuera: list, cfg: dict,
         f"<li>{html.escape(k)}: <b>{v}</b></li>"
         for k, v in sorted(por_motivo.items(), key=lambda x: -x[1]))
 
+    genero = {"chicas": "solo chicas", "chicos": "solo chicos", "mixto": "pisos mixtos",
+              "cualquiera": "cualquier género"}[cfg["requisitos"].get("genero", "cualquiera")]
     limites = "".join(
         f", máximo {d['max_minutos']:.0f} min a {html.escape(d['nombre'])}"
         for d in cfg.get("destinos", []) if d.get("max_minutos") is not None)
@@ -148,7 +150,7 @@ def generar(anuncios: list, nuevos_ids: set, fuera: list, cfg: dict,
 <title>Habitaciones en Barcelona</title><style>{CSS}</style></head><body>
 <div class="wrap">
 <h1>Habitaciones que encajan contigo</h1>
-<p class="meta">Generado el {ahora} &middot; filtro: solo chicas, sin propietario,
+<p class="meta">Generado el {ahora} &middot; filtro: {genero}, sin propietario,
  máximo {cfg['presupuesto']['coste_total_maximo']} €/mes totales{limites}</p>
 <div class="resumen">
  <div class="kpi"><b>{stats['rastreados']}</b><span>anuncios rastreados</span></div>
@@ -162,7 +164,7 @@ def generar(anuncios: list, nuevos_ids: set, fuera: list, cfg: dict,
 {bloque(nuevos, "Ninguno nuevo esta vez. Los de abajo siguen disponibles.")}
 <h2>El resto, por puntuación</h2>
 {bloque(resto, "Nada más que mostrar.")}
-<h2>Posibles: el portal no dice si es piso de chicas</h2>
+<h2>Posibles: el portal no dice el género del piso</h2>
 <p class="meta">Cumplen todo lo demás y puntúan bien. Fotocasa y De Piso en Piso
  no publican el género del piso, así que esto solo se resuelve preguntando.</p>
 {bloque(posibles or [], "Ninguno esta vez.")}

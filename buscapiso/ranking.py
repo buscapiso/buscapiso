@@ -9,7 +9,7 @@ from __future__ import annotations
 import datetime as dt
 import re
 
-from buscapiso.modelo import DESCONOCIDO, GENERO_CHICAS, Anuncio
+from buscapiso.modelo import DESCONOCIDO, GENERO_CUALQUIERA, Anuncio
 
 _AMBIENTE_JOVEN = re.compile(
     r"estudiant|j[oó]ven|joven|profesional|trabajador|erasmus|universitari", re.I)
@@ -25,6 +25,9 @@ _AMBIENTE_MALO = re.compile(
 _VISITAS_TEXTO_NO = re.compile(r"no\s+se\s+(permiten|admiten)\s+visitas|"
                                r"prohibid\w+\s+(las\s+)?visitas", re.I)
 _VISITAS_TEXTO_SI = re.compile(r"se\s+(permiten|admiten)\s+visitas", re.I)
+
+_DESCRIPCION_GENERO = {"chicas": "solo chicas", "chicos": "solo chicos",
+                       "mixto": "mixto"}
 
 
 def _texto(a: Anuncio) -> str:
@@ -55,13 +58,14 @@ def filtrar(anuncios: list[Anuncio], cfg: dict, zonas: dict,
         if a.id in descartados:
             fuera.append((a, "lo descartaste antes")); continue
         dudoso = False
-        if req.get("solo_chicas") and a.genero_piso != GENERO_CHICAS:
+        genero = req.get("genero", GENERO_CUALQUIERA)
+        if genero != GENERO_CUALQUIERA and a.genero_piso != genero:
             if a.genero_piso == DESCONOCIDO and preguntar:
                 dudoso = True          # sigue el resto de filtros y va aparte
             else:
                 motivo = ("el portal no dice el genero del piso"
                           if a.genero_piso == DESCONOCIDO
-                          else f"piso {a.genero_piso}, no solo chicas")
+                          else f"piso {a.genero_piso}, no {_DESCRIPCION_GENERO[genero]}")
                 fuera.append((a, motivo)); continue
         estimado = a.coste_estimado(pres["gastos_si_no_declara"])
         if estimado is None:

@@ -10,6 +10,7 @@ GENERO_CHICAS = "chicas"
 GENERO_MIXTO = "mixto"
 GENERO_CHICOS = "chicos"
 DESCONOCIDO = "desconocido"
+GENERO_CUALQUIERA = "cualquiera"
 
 
 @dataclass

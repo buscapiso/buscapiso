@@ -27,11 +27,11 @@ municipios:
   - sant-joan-despi-barcelona
 
 # Filtros nativos de idealista. Reducen el ruido antes de descargar nada.
-# Ojo: "solo_chicas" en idealista significa "admite chicas", asi que el
-# filtro estricto de verdad se aplica luego en requisitos.solo_chicas.
+# El filtro de genero de idealista se deriva de requisitos.genero. Ojo: en
+# idealista significa "admite chicas", asi que el filtro de verdad se aplica
+# despues en local.
 filtros_idealista:
   precio_max: 550          # margen sobre los 500 porque los gastos van aparte
-  solo_chicas: true
   sin_propietario: true
   con_estudiantes: false   # ponlo en true si quieres estrechar mucho la busqueda
   con_trabajadores: false
@@ -45,7 +45,7 @@ presupuesto:
   gastos_si_no_declara: 55   # gastos que supongo cuando el anuncio no los dice
 
 requisitos:
-  solo_chicas: true          # descarta pisos mixtos (el filtro de idealista no)
+  genero: chicas             # chicas | chicos | mixto | cualquiera
   # Fotocasa y De Piso en Piso no publican el genero del piso. Con esto en
   # true, esos anuncios no se tiran: van a una seccion aparte del informe si
   # puntuan bien, para que decidas si merece la pena escribir y preguntar.
