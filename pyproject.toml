@@ -15,6 +15,7 @@ dependencies = [
     "fastapi>=0.140",
     "uvicorn>=0.50",
     "keyring>=25",
+    "anthropic>=1.12",
 ]
 
 [project.optional-dependencies]
