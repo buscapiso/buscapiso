@@ -10,6 +10,7 @@ import datetime as dt
 import json
 import sqlite3
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
@@ -188,4 +189,55 @@ class TransitousProvider:
                 salida.append(None)
         if origins and fallos == len(origins):
             raise TravelError(f"Transitous did not answer: {ultimo}")
+        return salida
+
+
+GOOGLE_MATRIX = "https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix"
+_GOOGLE_MODE = {"transporte": "TRANSIT", "a_pie": "WALK", "bici": "BICYCLE"}
+GOOGLE_BATCH = 100
+
+
+def _post_json(url: str, headers: dict, body: dict) -> list:
+    req = urllib.request.Request(url, data=json.dumps(body).encode(), method="POST",
+                                 headers={**headers, "Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=60) as r:
+        return json.load(r)
+
+
+class GoogleProvider:
+    """Routes API de Google, con la clave de la usuaria. Cobra por elemento
+    (origen x destino), con un cupo gratuito mensual."""
+    name = "google"
+
+    def __init__(self, api_key: str, post: Callable[[str, dict, dict], list] | None = None,
+                 now: Callable[[], dt.datetime] = lambda: dt.datetime.now(dt.timezone.utc)):
+        self.key, self.post, self.now = api_key, post or _post_json, now
+
+    def trips(self, origins, destino):
+        modo = _GOOGLE_MODE[destino.get("modo", "transporte")]
+        headers = {"X-Goog-Api-Key": self.key,
+                   "X-Goog-FieldMask": "originIndex,destinationIndex,duration,condition"}
+        salida: list[Trip | None] = [None] * len(origins)
+        for inicio in range(0, len(origins), GOOGLE_BATCH):
+            bloque = origins[inicio:inicio + GOOGLE_BATCH]
+            body = {
+                "origins": [{"waypoint": {"location": {"latLng":
+                            {"latitude": lat, "longitude": lon}}}} for lat, lon in bloque],
+                "destinations": [{"waypoint": {"location": {"latLng":
+                                 {"latitude": destino["lat"], "longitude": destino["lon"]}}}}],
+                "travelMode": modo,
+            }
+            if modo == "TRANSIT":
+                body["departureTime"] = next_departure(
+                    destino.get("salida", "08:30"), self.now()).strftime("%Y-%m-%dT%H:%M:%SZ")
+            try:
+                elementos = self.post(GOOGLE_MATRIX, headers, body)
+            except urllib.error.HTTPError as e:
+                raise TravelError(f"Google Routes answered HTTP {e.code}") from None
+            except OSError as e:
+                raise TravelError(f"Google Routes did not answer: {e}") from None
+            for el in elementos:
+                if el.get("condition") == "ROUTE_EXISTS" and "duration" in el:
+                    segundos = float(el["duration"].rstrip("s"))
+                    salida[inicio + el["originIndex"]] = Trip(segundos / 60, "Google", self.name)
         return salida
