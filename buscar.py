@@ -19,12 +19,7 @@ import yaml
 
 from buscapiso import almacen, paths
 from buscapiso import informe
-from buscapiso import navegador
-from buscapiso.cobertura import Catalogo
-from buscapiso.deduplicar import deduplicar
-from buscapiso.geocodificador import Geocodificador
-from buscapiso.ranking import filtrar, ordenar
-from buscapiso.transporte import Red
+from buscapiso.pipeline import SearchOptions, run_search
 
 AQUI = pathlib.Path(__file__).resolve().parent
 BD = paths.db_path()
@@ -46,176 +41,20 @@ def cmd_buscar(args) -> int:
         cfg["presupuesto"]["coste_total_maximo"] = args.presupuesto
     if args.fuentes:
         cfg["fuentes"] = args.fuentes
-    paginas = args.paginas or cfg["busqueda"]["max_paginas_por_municipio"]
 
+    opciones = SearchOptions(pages=args.paginas, skip_details=args.sin_fichas,
+                             from_cache=args.desde_cache, offline=args.offline,
+                             municipalities=args.municipios)
     con = almacen.abrir(BD)
-    geo = Geocodificador(con, offline=args.offline)
-    red = Red.cargar()
-
-    # Las zonas salen del limite de tiempo, no de una lista fija.
-    tope = cfg["transporte"]["max_minutos_principal"]
-    destino = cfg["transporte"]["destino_principal"]
-    if args.municipios:
-        seleccion = None
-        cfg["municipios"] = args.municipios
-    else:
-        catalogo = Catalogo.cargar()
-        seleccion = catalogo.seleccionar(tope, red, destino)
-        cfg["municipios"] = catalogo.slugs(seleccion, "idealista")
-        cfg["zonas_fotocasa"] = catalogo.slugs(seleccion, "fotocasa")
-        print(f"Zonas a menos de {tope} min de {destino}: {len(seleccion)}")
-        print("   " + ", ".join(f"{z['nombre'].split(',')[0]} ({z['minutos']:.0f})"
-                                for z in seleccion) + "\n")
-
-    from buscapiso.fuentes.idealista import Idealista, parsear_listado
-    fuente = Idealista(cache_dir=paths.cache_dir())
-
-    if args.desde_cache:
-        print("1/5 Releyendo el HTML ya descargado (sin tocar los portales)...")
-        # Cada fichero se parsea con el parser de SU portal: usar el de
-        # idealista con todos devolvia cero para roomgo y depisoenpiso.
-        from buscapiso.fuentes.roomgo import parsear_listado as parsear_roomgo
-        from buscapiso.fuentes.depisoenpiso import parsear_listado as parsear_dpp
-        from buscapiso.fuentes.fotocasa import parsear_listado as parsear_fotocasa
-        anuncios, vistos = [], set()
-        for f in sorted((paths.cache_dir()).glob("*.html")):
-            nombre = f.name
-            if nombre.startswith("roomgo_"):
-                parser = parsear_roomgo
-            elif nombre.startswith("dpp_"):
-                parser = parsear_dpp
-            elif nombre.startswith("fotocasa_"):
-                parser = parsear_fotocasa
-            else:
-                parser = parsear_listado
-            for a in parser(f.read_text(encoding="utf-8")):
-                clave = (a.portal, a.id_portal)
-                if clave not in vistos:
-                    vistos.add(clave)
-                    anuncios.append(a)
-        brutos = len(anuncios)
-        anuncios, fusionados = deduplicar(anuncios)
-        print(f"    {brutos} anuncios recuperados de cache"
-              f"{f', {fusionados} duplicados fusionados' if fusionados else ''}\n")
-        return _procesar(anuncios, cfg, zonas, con, geo, red, args, fuente,
-                         desde_cache=True)
-
-    activas = cfg.get("fuentes", ["idealista"])
-    print(f"1/5 Rastreando {', '.join(activas)}...")
-    print("    Se abrira una ventana de Chromium: dejala visible, es lo que")
-    print("    evita el bloqueo anti-bot. Si sale un captcha, resuelvelo.\n")
-
-    anuncios: list = []
-    otras: list = []
-    for nombre in activas:
-        f = fuente if nombre == "idealista" else _crear_fuente(nombre)
-        if f is None:
-            print(f"  {nombre}: fuente desconocida, la salto")
-            continue
-        if f is not fuente:
-            otras.append(f)
-        try:
-            anuncios.extend(f.buscar(cfg, max_paginas=paginas))
-        except KeyboardInterrupt:
-            break
-        except Exception as e:
-            # Que un portal falle no debe tumbar la busqueda entera.
-            print(f"  {nombre} ha fallado ({str(e)[:70]}); sigo con el resto")
-    for f in otras:
-        f.cerrar()
-
-    brutos = len(anuncios)
-    anuncios, fusionados = deduplicar(anuncios)
-    if fusionados:
-        print(f"    {brutos} anuncios, {fusionados} eran el mismo piso en "
-              f"dos portales -> {len(anuncios)}\n")
-    else:
-        print(f"    {len(anuncios)} anuncios rastreados\n")
-
-    if not anuncios:
-        print("No se ha podido rastrear nada. Prueba de nuevo en unos minutos:")
-        print("los portales bloquean temporalmente tras varias peticiones seguidas.")
-        fuente.cerrar(); return 1
-    return _procesar(anuncios, cfg, zonas, con, geo, red, args, fuente)
-
-
-def _crear_fuente(nombre: str):
-    if nombre == "roomgo":
-        from buscapiso.fuentes.roomgo import Roomgo
-        return Roomgo(cache_dir=paths.cache_dir())
-    if nombre == "depisoenpiso":
-        from buscapiso.fuentes.depisoenpiso import DePisoEnPiso
-        return DePisoEnPiso(cache_dir=paths.cache_dir())
-    if nombre == "fotocasa":
-        from buscapiso.fuentes.fotocasa import Fotocasa
-        return Fotocasa(cache_dir=paths.cache_dir())
-    return None
-
-
-def _procesar(anuncios, cfg, zonas, con, geo, red, args, fuente,
-              desde_cache: bool = False) -> int:
-    """Geocodifica, calcula rutas, filtra, puntua e informa."""
-    print("2/5 Situando en el mapa (Nominatim, 1 consulta/segundo)...")
-    ya_situados = sum(1 for a in anuncios if a.lat is not None)
-    if ya_situados:
-        print(f"    {ya_situados} ya traen coordenadas del portal")
-    for i, a in enumerate(anuncios, 1):
-        if a.lat is None:
-            geo.situar(a)
-        if i % 25 == 0:
-            print(f"    {i}/{len(anuncios)}")
-    sin_sitio = sum(1 for a in anuncios if a.lat is None)
-    print(f"    {len(anuncios) - sin_sitio} situados, {sin_sitio} sin ubicacion\n")
-
-    print("3/5 Calculando trayectos...")
-    dest1 = cfg["transporte"]["destino_principal"]
-    dest2 = cfg["transporte"]["destino_secundario"]
-    for a in anuncios:
-        if a.lat is None:
-            continue
-        r1 = red.ruta_desde(a.lat, a.lon, dest1)
-        r2 = red.ruta_desde(a.lat, a.lon, dest2)
-        if r1:
-            a.minutos_fira, a.ruta_fira = r1.minutos, r1.detalle
-        if r2:
-            a.minutos_collblanc = r2.minutos
-
-    ok, posibles, fuera = filtrar(anuncios, cfg, zonas, almacen.descartados(con))
-    ok = ordenar(ok, cfg, zonas)
-    posibles = ordenar(posibles, cfg, zonas)
-    minimo = cfg["requisitos"].get("puntos_minimos_para_preguntar", 60)
-    flojos = [p for p in posibles if p.puntuacion < minimo]
-    posibles = [p for p in posibles if p.puntuacion >= minimo]
-    fuera.extend((p, "genero sin confirmar y puntuacion baja") for p in flojos)
-    print(f"    {len(ok)} cumplen todos tus requisitos, "
-          f"{len(posibles)} posibles sin confirmar genero, "
-          f"{len(fuera)} descartados\n")
-
-    fichas = 0
-    if ok and not args.sin_fichas and not desde_cache:
-        de_idealista = [a for a in ok if a.portal == "idealista"]
-        tope = min(cfg["busqueda"]["fichas_a_enriquecer"], len(de_idealista))
-        print(f"4/5 Leyendo las {tope} mejores fichas (visitas, propietario)...")
-        fuente.enriquecer(de_idealista, maximo=tope)
-        fichas = sum(1 for a in ok if a.ficha_leida)
-        ok, _, fuera2 = filtrar(ok, cfg, zonas, almacen.descartados(con))
-        fuera.extend(fuera2)
-        ok = ordenar(ok, cfg, zonas)
-        print(f"    {fichas} fichas leidas, quedan {len(ok)}\n")
-    else:
-        print("4/5 Fichas omitidas\n")
-    fuente.cerrar()
-
-    navegador.cerrar_todo()
-
-    print("5/5 Guardando e informando...")
-    nuevos = almacen.registrar(con, ok + posibles)
+    r = run_search(cfg, zonas, opciones, con)
+    if r.crawled == 0:
+        return 1
     destino = informe.generar(
-        ok, {a.id for a in nuevos}, fuera, cfg, paths.report_path(),
-        {"rastreados": len(anuncios), "fichas": fichas,
-         "portales": len({a.portal for a in anuncios})}, posibles=posibles)
-    print(f"\n  {len(ok)} habitaciones ({len(nuevos)} nuevas) -> {destino}")
-    for a in ok[:5]:
+        r.accepted, r.new_ids, r.rejected, cfg, paths.report_path(),
+        {"rastreados": r.crawled, "fichas": r.details_read, "portales": r.portals},
+        posibles=r.possible)
+    print(f"\n  {len(r.accepted)} habitaciones ({len(r.new_ids)} nuevas) -> {destino}")
+    for a in r.accepted[:5]:
         print(f"    {a.puntuacion:5.0f}  {a.coste_total:>4} €  "
               f"{(a.minutos_fira or 0):4.0f} min  {a.barrio[:22]:22s}  {a.url}")
     if not args.no_abrir:

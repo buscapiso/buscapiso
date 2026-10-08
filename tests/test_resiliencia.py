@@ -91,3 +91,16 @@ def test_un_error_puntual_no_impide_seguir_con_las_demas_zonas():
     resultados = f.buscar(CFG, max_paginas=1)
     assert f.llamadas == 3, "debe intentar las tres zonas"
     assert len(resultados) == 60
+
+
+def test_a_closed_browser_is_reported_as_a_warning():
+    from buscapiso import events
+    seen = []
+    previous = events.set_sink(seen.append)
+    try:
+        MuereEnLaLlamada(morir_en=2,
+                         error="Target page, context or browser has been closed"
+                         ).buscar(CFG, max_paginas=1)
+    finally:
+        events.set_sink(previous)
+    assert any(e.kind == "warning" and "navegador" in e.message for e in seen)

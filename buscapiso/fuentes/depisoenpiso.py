@@ -26,6 +26,7 @@ import time
 from bs4 import BeautifulSoup
 
 from buscapiso import navegador, paths
+from buscapiso.events import emit
 from buscapiso.fuentes.base import BloqueoAntiBot, Fuente, inferir_genero
 from buscapiso.modelo import Anuncio
 
@@ -154,7 +155,7 @@ class DePisoEnPiso(Fuente):
                 previos = ahora
             html = pg.content()
         except Exception as e:
-            print(f"  depisoenpiso: {str(e)[:70]}")
+            emit("warning", f"  depisoenpiso: {str(e)[:70]}")
             return []
         if len(html) < 5000:
             raise BloqueoAntiBot("respuesta vacia en depisoenpiso")
@@ -162,7 +163,7 @@ class DePisoEnPiso(Fuente):
             self.cache_dir.mkdir(parents=True, exist_ok=True)
             (self.cache_dir / "dpp_barcelona.html").write_text(html, encoding="utf-8")
         anuncios = parsear_listado(html)
-        print(f"  depisoenpiso: {len(anuncios)} anuncios, leyendo sus fichas...")
+        emit("info", f"  depisoenpiso: {len(anuncios)} anuncios, leyendo sus fichas...")
 
         # Sin la ficha, este portal no dice el genero y todo se descarta.
         for a in anuncios:
@@ -176,11 +177,11 @@ class DePisoEnPiso(Fuente):
                     a.genero_piso, a.genero_confirmado = genero, confirmado
             except Exception as e:
                 if navegador.esta_muerto(e):
-                    print("  se ha cerrado el navegador; dejo de leer fichas")
+                    emit("warning", "  se ha cerrado el navegador; dejo de leer fichas")
                     break
                 continue    # una ficha ilegible no tumba el resto
         con_genero = sum(1 for a in anuncios if a.genero_piso != "desconocido")
-        print(f"  depisoenpiso: {con_genero} con genero identificado")
+        emit("info", f"  depisoenpiso: {con_genero} con genero identificado")
         return anuncios
 
     def cerrar(self) -> None:

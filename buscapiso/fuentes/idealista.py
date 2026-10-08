@@ -22,6 +22,7 @@ import time
 from bs4 import BeautifulSoup
 
 from buscapiso import navegador, paths
+from buscapiso.events import emit
 from buscapiso.fuentes.base import BloqueoAntiBot, Fuente
 from buscapiso.modelo import (DESCONOCIDO, GENERO_CHICAS, GENERO_CHICOS, GENERO_MIXTO,
                     Anuncio)
@@ -341,7 +342,7 @@ class Idealista(Fuente):
                 raise
             # La ventana es visible por obligacion, asi que cerrarla a mano o
             # una caida de Chromium son accidentes esperables: se levanta otra.
-            print("\n  !! Se cerro la ventana del navegador. Abro otra...\n")
+            emit("warning", "\n  !! Se cerro la ventana del navegador. Abro otra...\n")
             navegador.cerrar_contexto(self._ctx)
             self._ctx = self._pagina = None
             pg = self._navegador()
@@ -351,7 +352,7 @@ class Idealista(Fuente):
         html = pg.content()
 
         if self._bloqueado(html) and reintentos > 0:
-            print("\n  !! Bloqueo anti-bot. Empiezo de cero con un perfil limpio...")
+            emit("warning", "\n  !! Bloqueo anti-bot. Empiezo de cero con un perfil limpio...")
             self._tirar_perfil()
             pg = self._navegador()
             time.sleep(4)
@@ -363,8 +364,9 @@ class Idealista(Fuente):
         if self._bloqueado(html):
             # Ni reintento en bucle ni me rindo: aviso y doy tiempo a que
             # la persona resuelva el captcha en la ventana que ya esta abierta.
-            print("\n  !! Sigue bloqueado. Resuelve el captcha en la ventana")
-            print("     del navegador que tienes abierta; espero 90 segundos.\n")
+            emit("captcha", "\n  !! Sigue bloqueado. Resuelve el captcha en la ventana\n"
+                            "     del navegador que tienes abierta; espero 90 segundos.\n",
+                 portal="idealista", wait_seconds=90)
             time.sleep(90)
             pg.goto(url, wait_until="domcontentloaded", timeout=60000)
             time.sleep(2.5)
@@ -400,21 +402,21 @@ class Idealista(Fuente):
                 try:
                     html = self.abrir(url)
                 except BloqueoAntiBot as e:
-                    print(f"  bloqueado, paro con idealista: {e}")
+                    emit("warning", f"  bloqueado, paro con idealista: {e}")
                     return resultados
                 except Exception as e:
                     if navegador.esta_muerto(e):
                         # Sin navegador no hay nada que reintentar.
-                        print(f"  se ha cerrado el navegador; me quedo con "
+                        emit("warning", f"  se ha cerrado el navegador; me quedo con "
                               f"{len(resultados)} anuncios de idealista")
                         return resultados
-                    print(f"  {slug} p{pagina} ha fallado ({str(e)[:60]}); sigo")
+                    emit("warning", f"  {slug} p{pagina} ha fallado ({str(e)[:60]}); sigo")
                     break
                 lote = parsear_listado(html)
                 nuevos = [a for a in lote if a.id_portal not in vistos]
                 vistos.update(a.id_portal for a in nuevos)
                 resultados.extend(nuevos)
-                print(f"  {slug} p{pagina}: {len(nuevos)} anuncios")
+                emit("info", f"  {slug} p{pagina}: {len(nuevos)} anuncios")
                 if len(lote) < 25:      # ultima pagina
                     break
                 self._dormir()
@@ -427,7 +429,7 @@ class Idealista(Fuente):
             try:
                 html = self.abrir(a.url, reintentos=1)
             except BloqueoAntiBot:
-                print("  bloqueado al leer fichas; me quedo con lo que hay")
+                emit("warning", "  bloqueado al leer fichas; me quedo con lo que hay")
                 return
             for k, v in parsear_ficha(html).items():
                 setattr(a, k, v)

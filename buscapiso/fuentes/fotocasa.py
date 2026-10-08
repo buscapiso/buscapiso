@@ -26,6 +26,7 @@ import re
 import time
 
 from buscapiso import navegador, paths
+from buscapiso.events import emit
 from buscapiso.fuentes.base import BloqueoAntiBot, Fuente, inferir_genero
 from buscapiso.modelo import Anuncio
 
@@ -217,20 +218,20 @@ class Fotocasa(Fuente):
                 try:
                     html = self.abrir(construir_url(zona, pagina, orden))
                 except BloqueoAntiBot as e:
-                    print(f"  fotocasa: {e}")
+                    emit("warning", f"  fotocasa: {e}")
                     break
                 except Exception as e:
                     if navegador.esta_muerto(e):
-                        print(f"  se ha cerrado el navegador; me quedo con "
+                        emit("warning", f"  se ha cerrado el navegador; me quedo con "
                               f"{len(resultados)} anuncios de fotocasa")
                         return resultados
-                    print(f"  fotocasa {zona} p{pagina} ha fallado "
+                    emit("warning", f"  fotocasa {zona} p{pagina} ha fallado "
                           f"({str(e)[:55]}); sigo")
                     break
                 lote = [a for a in parsear_listado(html) if a.id_portal not in vistos]
                 vistos.update(a.id_portal for a in lote)
                 resultados.extend(lote)
-                print(f"  fotocasa {zona.split('/')[0]} p{pagina}: {len(lote)} anuncios")
+                emit("info", f"  fotocasa {zona.split('/')[0]} p{pagina}: {len(lote)} anuncios")
                 if not lote:
                     break
                 # Ordenado de barato a caro: en cuanto la pagina entera supera
@@ -238,7 +239,7 @@ class Fotocasa(Fuente):
                 if orden == "baratos":
                     precios = [a.precio for a in lote if a.precio]
                     if precios and min(precios) > techo:
-                        print(f"     ya por encima de {techo} €, paso de zona")
+                        emit("info", f"     ya por encima de {techo} €, paso de zona")
                         break
                 time.sleep(random.uniform(*self.pausa))
         return resultados

@@ -18,6 +18,7 @@ import time
 from bs4 import BeautifulSoup
 
 from buscapiso import navegador, paths
+from buscapiso.events import emit
 from buscapiso.fuentes.base import BloqueoAntiBot, Fuente, inferir_genero
 from buscapiso.modelo import (DESCONOCIDO, GENERO_CHICAS, GENERO_CHICOS, GENERO_MIXTO,
                     Anuncio)
@@ -160,21 +161,21 @@ class Roomgo(Fuente):
             try:
                 html = self.abrir(construir_url("barcelona", pagina))
             except BloqueoAntiBot as e:
-                print(f"  roomgo: {e}")
+                emit("warning", f"  roomgo: {e}")
                 break
             except Exception as e:
                 # Lo ya rastreado se devuelve igual: un fallo en la pagina N
                 # no invalida las anteriores.
                 if navegador.esta_muerto(e):
-                    print(f"  se ha cerrado el navegador; me quedo con "
+                    emit("warning", f"  se ha cerrado el navegador; me quedo con "
                           f"{len(resultados)} anuncios de roomgo")
                 else:
-                    print(f"  roomgo p{pagina} ha fallado ({str(e)[:55]})")
+                    emit("warning", f"  roomgo p{pagina} ha fallado ({str(e)[:55]})")
                 break
             lote = [a for a in parsear_listado(html) if a.id_portal not in vistos]
             vistos.update(a.id_portal for a in lote)
             resultados.extend(lote)
-            print(f"  roomgo p{pagina}: {len(lote)} anuncios")
+            emit("info", f"  roomgo p{pagina}: {len(lote)} anuncios")
             if not lote:
                 break
             time.sleep(random.uniform(*self.pausa))
