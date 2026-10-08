@@ -22,6 +22,7 @@
       <span>{t('listing.perMonth')}</span> <small>{costLine(listing)}</small></p>
     <h3><a href={link}>{title}</a></h3>
     <p class="where">{place} <span class="portal">{listing.portal}</span></p>
+    {#if listing.summary}<p class="summary">{listing.summary}</p>{/if}
     <ul class="travel">
       {#each Object.entries(listing.travel) as [dest, minutes]}
         <li>
@@ -62,6 +63,7 @@
   h3 a { color: var(--ink); text-decoration: none; }
   h3 a:hover { text-decoration: underline; }
   .where { color: var(--muted); font-size: 14px; margin: 0 0 6px; }
+  .summary { font-size: 14px; margin: 0 0 6px; }
   .portal { margin-left: 8px; font-size: 12px; border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; }
   .travel { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; font-size: 14px; }
   .travel li { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }

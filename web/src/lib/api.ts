@@ -9,6 +9,7 @@ export interface Listing {
   lat: number | null; lon: number | null; approximate_location: boolean;
   photo: string; description: string;
   travel: Record<string, number>; routes: Record<string, string>; travel_source: string;
+  summary: string; pros: string[]; cons: string[]; red_flags: string[];
   score: number; reasons: string[];
   gender: 'female_only' | 'male_only' | 'mixed' | 'unknown'; gender_confirmed: boolean;
   roommates: number | null; available_from: string; published: string; also_on: string[];
@@ -131,3 +132,23 @@ export const saveSettings = (s: Partial<TravelSettings> & { google_key?: string 
 export const testRoute = () => call<RouteTest>('POST', '/api/settings/test-route');
 export const geocode = (q: string) =>
   call<Place[]>('GET', `/api/geocode?q=${encodeURIComponent(q)}`);
+
+export interface AISettings {
+  provider: 'none' | 'anthropic' | 'openai_compat';
+  model: string; base_url: string; has_key: boolean; about_me: string;
+}
+export interface ProfileSuggestion {
+  budget_ideal: number | null; budget_max: number | null;
+  household_gender: 'female_only' | 'male_only' | 'mixed' | 'any' | null;
+  owner_must_not_live_in: boolean | null;
+  visits: 'strict' | 'preferred' | 'indifferent' | null;
+  places: { name: string; address: string; max_minutes: number | null; mode: 'transit' | 'walk' | 'bike' }[];
+}
+
+export const getAI = () => call<AISettings>('GET', '/api/ai');
+export const saveAI = (s: Partial<AISettings> & { key?: string }) => call<AISettings>('PUT', '/api/ai', s);
+export const testAI = () => call<{ ok: boolean; model: string; message: string }>('POST', '/api/ai/test');
+export const draftMessage = (id: string) =>
+  call<{ text: string }>('POST', `/api/listings/${encodeURIComponent(id)}/draft`);
+export const suggestProfile = (text: string) =>
+  call<ProfileSuggestion>('POST', '/api/profiles/suggest', { text });
