@@ -60,6 +60,18 @@ class NotifyChange(BaseModel):
     min_score: int | None = None
 
 
+class ModelsRequest(BaseModel):
+    base_url: str
+    key: str | None = None
+
+
+def _get_json(url: str, headers: dict) -> dict:
+    import urllib.request
+    req = urllib.request.Request(url, headers=headers)
+    with urllib.request.urlopen(req, timeout=20) as r:
+        return json.load(r)
+
+
 class AIChange(BaseModel):
     provider: Literal["none", "anthropic", "openai_compat"] | None = None
     model: str | None = None
@@ -107,7 +119,7 @@ inside it."""
 def create_app(db_path: pathlib.Path | None = None,
                static_dir: pathlib.Path | None = None,
                runner=None, get_key=None, set_key=None, geocode=None, ai_factory=None,
-               require_token: bool = False, port: int = 8770,
+               require_token: bool = False, port: int = 8770, models_fetch=None,
                provider_factory=None) -> FastAPI:
     app = FastAPI(title="buscapiso")
     ruta_db = db_path
@@ -497,6 +509,31 @@ def create_app(db_path: pathlib.Path | None = None,
             except OSError as e:
                 raise HTTPException(502, f"Could not reach ntfy: {type(e).__name__}")
         return {"ok": True}
+
+    @app.post("/api/ai/models")
+    def ai_models(body: ModelsRequest) -> dict:
+        """La lista estandar /models de las APIs compatibles con OpenAI."""
+        import urllib.error
+        clave = (body.key or "").strip() or get_key("openai_compat") or ""
+        cabeceras = {"Authorization": f"Bearer {clave}"} if clave else {}
+        try:
+            datos = (models_fetch or _get_json)(body.base_url.rstrip("/") + "/models", cabeceras)
+        except urllib.error.HTTPError as e:
+            raise HTTPException(502, f"The provider answered HTTP {e.code}. Check the key.")
+        except (OSError, ValueError) as e:
+            raise HTTPException(502, f"Could not reach the provider ({type(e).__name__})")
+        ids = sorted({m["id"] for m in datos.get("data", []) if isinstance(m, dict) and m.get("id")})
+        return {"models": ids}
+
+    @app.get("/api/neighbourhoods")
+    def neighbourhoods() -> dict:
+        from buscapiso.cobertura import Catalogo
+        nombres = {z["nombre"].split(",")[0].strip() for z in Catalogo.cargar().zonas}
+        with db() as con:
+            for fila in almacen.listar_anuncios(con):
+                d = fila["datos"]
+                nombres.update(n.strip() for n in (d.get("barrio"), d.get("municipio")) if n)
+        return {"names": sorted((n for n in nombres if n), key=str.casefold)}
 
     app.state.db = db
     estaticos = static_dir if static_dir is not None else WEB_DIST
