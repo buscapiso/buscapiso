@@ -67,3 +67,13 @@ def test_gemini_style_model_ids_lose_their_prefix(tmp_path):
                                                            {"id": "openai/gpt-x"}]})
     r = TestClient(app).post("/api/ai/models", json={"base_url": "https://g.example/openai/"})
     assert r.json() == {"models": ["gemini-flash", "openai/gpt-x"]}
+
+
+def test_only_chat_models_are_offered(tmp_path):
+    ids = ["models/gemini-2.5-flash", "models/text-embedding-004", "models/imagen-4.0-generate",
+           "models/veo-3.0-generate", "models/gemini-2.5-flash-preview-tts", "models/aqa",
+           "gpt-4o-mini", "whisper-1", "dall-e-3", "omni-moderation-latest", "gemini-embedding-001"]
+    app = create_app(db_path=tmp_path / "p.db", static_dir=tmp_path / "x", get_key=lambda n: "K",
+                     models_fetch=lambda url, h: {"data": [{"id": i} for i in ids]})
+    r = TestClient(app).post("/api/ai/models", json={"base_url": "https://x/v1"})
+    assert r.json() == {"models": ["gemini-2.5-flash", "gpt-4o-mini"]}

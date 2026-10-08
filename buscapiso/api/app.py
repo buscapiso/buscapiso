@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import re
 import secrets
 import contextlib
 import json
@@ -63,6 +64,12 @@ class NotifyChange(BaseModel):
 class ModelsRequest(BaseModel):
     base_url: str
     key: str | None = None
+
+
+# Modelos que la lista /models incluye pero que no conversan: embeddings,
+# imagen, video, voz, moderacion. Elegirlos solo da errores.
+_NO_CHAT = re.compile(r"embed|imagen|image-gen|dall-e|veo|tts|audio|whisper|transcri|"
+                      r"moderation|\baqa\b|/aqa", re.I)
 
 
 def _get_json(url: str, headers: dict) -> dict:
@@ -407,7 +414,8 @@ def create_app(db_path: pathlib.Path | None = None,
         with db() as con:
             ai = _ai(con)
         try:
-            ai.text("Reply with the single word: ready", "Are you there?", max_tokens=20)
+            # Margen amplio: los modelos que razonan gastan tokens antes de contestar.
+            ai.text("Reply with the single word: ready", "Are you there?", max_tokens=2000)
         except AIError as e:
             raise HTTPException(502, str(e))
         return {"ok": True, "model": ai.model, "message": "The AI answered."}
@@ -524,7 +532,7 @@ def create_app(db_path: pathlib.Path | None = None,
             raise HTTPException(502, f"Could not reach the provider ({type(e).__name__})")
         # Gemini nombra sus modelos "models/gemini-..."; su API espera el nombre sin prefijo.
         ids = sorted({m["id"].removeprefix("models/") for m in datos.get("data", [])
-                      if isinstance(m, dict) and m.get("id")})
+                      if isinstance(m, dict) and m.get("id") and not _NO_CHAT.search(m["id"])})
         return {"models": ids}
 
     @app.get("/api/neighbourhoods")
