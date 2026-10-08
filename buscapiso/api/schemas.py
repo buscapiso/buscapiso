@@ -74,6 +74,20 @@ def _web_url(url: str) -> str:
     return url if url.strip().lower().startswith(("http://", "https://")) else ""
 
 
+def _trayectos(d: dict) -> dict[str, float]:
+    """Antes de la fase 0 solo habia dos destinos fijos, guardados aparte."""
+    if "trayectos" in d:
+        return d["trayectos"]
+    viejos = {"Fira": d.get("minutos_fira"), "Collblanc": d.get("minutos_collblanc")}
+    return {k: v for k, v in viejos.items() if v is not None}
+
+
+def _rutas(d: dict) -> dict[str, str]:
+    if "rutas" in d:
+        return d["rutas"]
+    return {"Fira": d["ruta_fira"]} if d.get("ruta_fira") else {}
+
+
 def listing_from_row(row: dict) -> Listing:
     d = row["datos"]
     return Listing(
@@ -84,7 +98,7 @@ def listing_from_row(row: dict) -> Listing:
         lat=d.get("lat"), lon=d.get("lon"),
         approximate_location=d.get("coords_aproximadas", True),
         photo=d.get("foto", ""), description=d.get("descripcion", ""),
-        travel=d.get("trayectos", {}), routes=d.get("rutas", {}),
+        travel=_trayectos(d), routes=_rutas(d),
         travel_source=d.get("trayectos_fuente", "graph"),
         score=d.get("puntuacion", 0.0), reasons=d.get("motivos", []),
         gender=_GENERO.get(d.get("genero_piso", "desconocido"), "unknown"),

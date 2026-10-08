@@ -105,5 +105,9 @@
   "nav.map": "Map",
   "map.title": "Map of your listings",
   "map.help": "Blue dots are your best matches. Black dots are your places.",
-  "map.pointSub": "{cost} € a month, {minutes} min to {place}"
+  "map.pointSub": "{cost} € a month, {minutes} min to {place}",
+  "map.listing": "Where this listing is",
+  "listing.directions": "Directions",
+  "listing.travelSource.graph": "Times estimated from the metro network.",
+  "listing.travelSource.real": "Times from {provider} timetables."
 }

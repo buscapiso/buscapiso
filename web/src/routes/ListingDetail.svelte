@@ -1,11 +1,15 @@
 <script lang="ts">
-  import { getListing, setNote, setStatus, ApiError, type ListingDetail, type Status } from '../lib/api';
+  import { getActiveProfile, getListing, setNote, setStatus, ApiError,
+           type Destination, type ListingDetail, type Status } from '../lib/api';
+  import MapView from '../lib/components/MapView.svelte';
   import StatusPicker from '../lib/components/StatusPicker.svelte';
-  import { costLine, lineChips, lineColor } from '../lib/format';
+  import { costLine, directionsUrl, lineChips, lineColor } from '../lib/format';
   import { t } from '../lib/i18n';
 
   let { id }: { id: string } = $props();
   let l = $state<ListingDetail | null>(null);
+  let places = $state<Destination[]>([]);
+  const placeByName = $derived(new Map(places.map((d) => [d.name, d])));
   let missing = $state(false);
   let note = $state('');
   let saved = $state(false);
@@ -14,6 +18,7 @@
   async function load() {
     try {
       l = await getListing(id);
+      places = (await getActiveProfile()).destinations;
       note = l.note;
     } catch (e) {
       if (e instanceof ApiError && e.status === 404) missing = true;
@@ -62,10 +67,21 @@
             <span class="chip" style:--chip={lineColor(line) ?? 'var(--muted)'}>{line}</span>
           {/each}
           <strong>{t('listing.minutesTo', { minutes: Math.round(minutes), place })}</strong>
-          <small>{l.routes[place] ?? ''}</small></li>
+          <small>{l.routes[place] ?? ''}</small>
+          {#if l.lat !== null && l.lon !== null && placeByName.get(place)}
+            {@const d = placeByName.get(place)!}
+            <a href={directionsUrl({ lat: l.lat, lon: l.lon }, d, d.mode)} target="_blank"
+               rel="noopener">{t('listing.directions')}</a>
+          {/if}</li>
       {/each}
     </ul>
+    <p class="meta">{l.travel_source === 'graph' ? t('listing.travelSource.graph')
+      : t('listing.travelSource.real', { provider: l.travel_source })}</p>
     {#if l.approximate_location}<p class="meta">{t('listing.approximate')}</p>{/if}
+    {#if l.lat !== null && l.lon !== null}
+      <MapView label={t('map.listing')} height="260px" {places}
+        points={[{ id: l.id, lat: l.lat, lon: l.lon, label: l.title || l.neighbourhood, color: 'var(--accent)' }]} />
+    {/if}
 
     <section>
       <h2>{t('listing.note')}</h2>

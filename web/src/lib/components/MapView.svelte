@@ -49,7 +49,12 @@
         .addTo(layer);
       bounds.push([d.lat, d.lon]);
     }
-    if (bounds.length) map.fitBounds(L.latLngBounds(bounds), { padding: [28, 28], maxZoom: 15 });
+    if (bounds.length) {
+      // Sin animacion: si llegan los destinos mientras se anima el primer
+      // encuadre, Leaflet descarta el segundo y el mapa se queda corto.
+      map.invalidateSize();
+      map.fitBounds(L.latLngBounds(bounds), { padding: [28, 28], maxZoom: 15, animate: false });
+    }
   });
 </script>
 
