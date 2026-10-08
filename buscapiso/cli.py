@@ -23,6 +23,7 @@ from buscapiso import almacen, informe, paths
 from buscapiso.pipeline import SearchOptions, run_search
 from buscapiso.profiles import SearchProfile, to_engine_cfg
 from buscapiso.seed import active_profile
+from buscapiso.ai import ai_from_settings
 from buscapiso.travel import provider_from_settings
 
 FUENTES = ["idealista", "roomgo", "depisoenpiso", "fotocasa"]
@@ -63,7 +64,10 @@ def cmd_search(args) -> int:
     provider, aviso = provider_from_settings(con)
     if aviso:
         print(aviso)
-    r = run_search(cfg, zonas, opciones, con, provider=provider)
+    ai, aviso_ia = ai_from_settings(con)
+    if aviso_ia:
+        print(aviso_ia)
+    r = run_search(cfg, zonas, opciones, con, provider=provider, ai=ai)
     if r.crawled == 0:
         return 1
     destino = informe.generar(

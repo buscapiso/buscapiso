@@ -149,6 +149,11 @@ def puntuar(a: Anuncio, cfg: dict, zonas: dict) -> float:
     if _AMBIENTE_MALO.search(_texto(a)):
         total -= p["temporal"]
         motivos.append(f"parece alquiler temporal (-{p['temporal']:.0f})")
+    elif a.ia_temporal is True:
+        total -= p["temporal"]
+        motivos.append(f"AI: looks like a short or seasonal let (-{p['temporal']:.0f})")
+    for alerta in a.ia_alertas:
+        motivos.append(f"AI warning: {alerta}")
 
     if a.companeros and a.companeros > p["companeros_comodos"]:
         castigo = (a.companeros - p["companeros_comodos"]) * p["por_companero_extra"]

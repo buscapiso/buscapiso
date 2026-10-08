@@ -100,3 +100,26 @@ def test_cost_estimate_for_known_models_only():
     u = Usage(calls=10, input_tokens=1_000_000, output_tokens=100_000)
     assert estimate_cost("claude-haiku-5-5", u) == pytest.approx(0.15)
     assert estimate_cost("some-gemini", u) is None
+
+
+def test_settings_choose_the_ai(tmp_path):
+    from buscapiso import almacen
+    from buscapiso.ai import ai_from_settings
+    con = almacen.abrir(tmp_path / "t.db")
+    claves = {}
+    get = claves.get
+    assert ai_from_settings(con, get_key=get) == (None, None)
+    almacen.guardar_ajuste(con, "ai_provider", "anthropic")
+    p, aviso = ai_from_settings(con, get_key=get)
+    assert p is None and "key" in aviso
+    claves["anthropic"] = "K"
+    p, aviso = ai_from_settings(con, get_key=get)
+    assert (p.name, p.model, aviso) == ("anthropic", "claude-opus-5-5", None)
+    almacen.guardar_ajuste(con, "ai_provider", "openai_compat")
+    almacen.guardar_ajuste(con, "ai_base_url", "http://localhost:11434/v1")
+    almacen.guardar_ajuste(con, "ai_model", "llama3.1")
+    p, aviso = ai_from_settings(con, get_key=get)     # Ollama: sin clave
+    assert (p.name, p.model, aviso) == ("openai_compat", "llama3.1", None)
+    almacen.guardar_ajuste(con, "ai_model", "")
+    p, aviso = ai_from_settings(con, get_key=get)
+    assert p is None and "model" in aviso

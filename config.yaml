@@ -105,3 +105,4 @@ busqueda:
   max_paginas_por_municipio: 3
   fichas_a_enriquecer: 12     # cuantas fichas completas abrir (son lentas)
   trayectos_reales: 40        # anuncios a recalcular con horarios reales, si hay proveedor
+  anuncios_ia: 30             # anuncios que lee la IA, si hay clave configurada
