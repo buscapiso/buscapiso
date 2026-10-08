@@ -132,6 +132,36 @@ wget https://download.geofabrik.de/europe/spain/cataluna-latest.osm.pbf   # ~270
 Después, en Settings → Travel times → Transitous, pon `http://localhost:8080`
 como servidor. Con un servidor propio no hace falta poner contacto.
 
+### IA (opcional)
+
+Con una clave de IA propia, cada búsqueda lee la descripción de los mejores
+anuncios (30 por defecto): quién vive en el piso, gastos, normas, si es de
+temporada, edad de los compañeros, fecha de entrada, un resumen de una frase,
+pros, contras y cosas que comprobar antes de pagar. Un anuncio "posible" cuyo
+género confirma la IA pasa a la bandeja principal. Lo que publica el portal
+siempre manda sobre lo que deduce la IA, y cada anuncio solo se paga una vez:
+el resultado se guarda por su texto.
+
+En la ficha, "Draft a message" escribe el primer mensaje al anunciante en su
+idioma, con lo que pongas en "About you". En Settings, "Describe what you're
+looking for" rellena el perfil a partir de una descripción libre (lo revisas
+antes de guardar).
+
+Se configura en Settings → AI:
+
+- Claude: clave en console.anthropic.com → API Keys. Opus 5.5 cuesta $4/$20
+  por millón de tokens de entrada/salida; Haiku 5.5, $0,10/$0,50. Con 30
+  anuncios por búsqueda son unos 45.000 tokens de entrada y 12.000 de salida:
+  unos 0,40 $ con Opus 5.5 y menos de 1 céntimo con Haiku 5.5.
+- Gemini: clave en aistudio.google.com → Get API key (tiene nivel gratuito).
+- OpenAI u OpenRouter: clave en su web.
+- Ollama: gratis y privado, en tu ordenador. Instálalo, ejecuta `ollama pull`
+  con un modelo y escribe su nombre. No necesita clave.
+
+La clave se guarda en el llavero del sistema (o en `BUSCAPISO_<PROVEEDOR>_KEY`,
+por ejemplo `BUSCAPISO_ANTHROPIC_KEY`), nunca en la base de datos. Si la IA
+falla, la búsqueda sigue con las expresiones regulares de siempre y lo avisa.
+
 ## Las zonas se calculan solas
 
 No hay lista de zonas que mantener. El buscador coge el límite de
