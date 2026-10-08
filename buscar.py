@@ -80,7 +80,7 @@ def cmd_estados(args) -> int:
     con = almacen.abrir(BD)
     filas = con.execute(
         "SELECT id, estado, primera_vez, url, nota FROM anuncios "
-        "WHERE estado != 'nuevo' ORDER BY estado, primera_vez").fetchall()
+        "WHERE estado != 'new' ORDER BY estado, primera_vez").fetchall()
     if not filas:
         print("no has marcado nada todavia")
         return 0
@@ -116,7 +116,7 @@ def main(argv=None) -> int:
                         "pesos de config.yaml sin volver a rastrear")
 
     m = sub.add_parser("marcar", help="cambia el estado de un anuncio")
-    m.add_argument("id"); m.add_argument("estado", choices=almacen.ESTADOS)
+    m.add_argument("id"); m.add_argument("estado", choices=list(almacen.ESTADOS) + list(almacen.ESTADOS_ANTIGUOS))
     m.add_argument("nota", nargs="?", default="")
     m.set_defaults(func=cmd_marcar)
 
