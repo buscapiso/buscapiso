@@ -87,3 +87,18 @@ def test_meta_lists_the_vocabularies(client):
 def test_an_empty_database_gives_an_empty_list(tmp_path):
     c = TestClient(create_app(db_path=tmp_path / "vacia.db", static_dir=tmp_path / "x"))
     assert c.get("/api/listings").json() == []
+
+
+@pytest.mark.parametrize("url, sale", [
+    ("https://www.idealista.com/inmueble/1/", "https://www.idealista.com/inmueble/1/"),
+    ("javascript:alert(document.cookie)", ""),
+    ("  JavaScript:alert(1)", ""),
+    ("data:text/html,<script>", ""),
+])
+def test_only_web_links_reach_the_page(url, sale):
+    """Las URLs salen del HTML de terceros: un javascript: se ejecutaria
+    dentro de la app, con acceso a toda su API."""
+    from buscapiso.api.schemas import listing_from_row
+    fila = {"datos": {"id": "x", "portal": "p", "url": url}, "estado": "new", "nota": "",
+            "grupo": "accepted", "primera_vez": "", "ultima_vez": ""}
+    assert listing_from_row(fila).url == sale

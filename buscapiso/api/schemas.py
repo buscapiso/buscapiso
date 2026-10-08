@@ -67,10 +67,16 @@ class NoteChange(BaseModel):
     note: str
 
 
+def _web_url(url: str) -> str:
+    """Solo enlaces web: la URL viene del HTML de un portal, y un javascript:
+    en un href se ejecutaria dentro de la app."""
+    return url if url.strip().lower().startswith(("http://", "https://")) else ""
+
+
 def listing_from_row(row: dict) -> Listing:
     d = row["datos"]
     return Listing(
-        id=d["id"], portal=d["portal"], url=d["url"], title=d.get("titulo", ""),
+        id=d["id"], portal=d["portal"], url=_web_url(d.get("url", "")), title=d.get("titulo", ""),
         price=d.get("precio"), expenses=d.get("gastos_extra"),
         total_cost=d.get("coste_total"),
         neighbourhood=d.get("barrio", ""), municipality=d.get("municipio", ""),
