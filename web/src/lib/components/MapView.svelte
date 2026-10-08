@@ -45,7 +45,7 @@
     for (const d of places) {
       L.circleMarker([d.lat, d.lon], { radius: 9, color: resolve('var(--paper)'), weight: 3,
         fillColor: resolve('var(--ink)'), fillOpacity: 1 })
-        .bindTooltip(d.name, { permanent: true, direction: 'top', offset: [0, -8] })
+        .bindTooltip(popupContent({ label: d.name }), { permanent: true, direction: 'top', offset: [0, -8] })
         .addTo(layer);
       bounds.push([d.lat, d.lon]);
     }
