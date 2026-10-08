@@ -6,7 +6,11 @@ clave y nunca lanza TravelError.
 """
 from __future__ import annotations
 
+import datetime as dt
+import sqlite3
 from dataclasses import dataclass
+from typing import Callable, Protocol
+from zoneinfo import ZoneInfo
 
 from buscapiso.transporte import FACTOR_RODEO, Red, haversine_m, minutos_andando
 
@@ -34,3 +38,74 @@ def graph_trip(red: Red, lat: float, lon: float, destino: dict) -> Trip | None:
         return Trip(metros * FACTOR_RODEO / BICI_M_MIN + BICI_EXTRA_MIN, "bike", "graph")
     r = red.ruta_a_punto(lat, lon, destino["lat"], destino["lon"])
     return Trip(r.minutos, r.detalle, "graph") if r is not None else None
+
+
+MADRID = ZoneInfo("Europe/Madrid")
+
+
+def next_departure(hhmm: str, now: dt.datetime) -> dt.datetime:
+    """Proximo dia laborable, a partir de manana, a esa hora de Madrid, en UTC.
+    Los horarios reales cambian con el dia y la hora: un piso a 20 min a las
+    8:30 de un martes puede estar a 35 un domingo a medianoche."""
+    h, m = (int(x) for x in hhmm.split(":"))
+    dia = now.astimezone(MADRID).date() + dt.timedelta(days=1)
+    while dia.weekday() >= 5:
+        dia += dt.timedelta(days=1)
+    local = dt.datetime(dia.year, dia.month, dia.day, h, m, tzinfo=MADRID)
+    return local.astimezone(dt.timezone.utc)
+
+
+class TravelProvider(Protocol):
+    name: str
+
+    def trips(self, origins: list[tuple[float, float]], destino: dict) -> list[Trip | None]: ...
+
+
+class GraphProvider:
+    name = "graph"
+
+    def __init__(self, red: Red):
+        self.red = red
+
+    def trips(self, origins, destino):
+        return [graph_trip(self.red, lat, lon, destino) for lat, lon in origins]
+
+
+def _celda(x: float) -> float:
+    """Redondeo a 1/2000 de grado: unos 55 m de latitud y 40 de longitud."""
+    return round(x * 2000) / 2000
+
+
+class CachedProvider:
+    def __init__(self, inner: TravelProvider, con: sqlite3.Connection, ttl_days: int = 7,
+                 now: Callable[[], dt.datetime] = lambda: dt.datetime.now(dt.timezone.utc)):
+        self.inner, self.con, self.ttl, self.now = inner, con, dt.timedelta(days=ttl_days), now
+        self.name = inner.name
+
+    def _clave(self, lat, lon, d) -> tuple:
+        return (self.name, d.get("modo", "transporte"), d.get("salida", "08:30"),
+                _celda(lat), _celda(lon), _celda(d["lat"]), _celda(d["lon"]))
+
+    def trips(self, origins, destino):
+        limite = (self.now() - self.ttl).isoformat()
+        resultado: list[Trip | None] = []
+        faltan: list[int] = []
+        for i, (lat, lon) in enumerate(origins):
+            fila = self.con.execute(
+                "SELECT minutos, detalle FROM trayectos WHERE proveedor=? AND modo=? AND "
+                "salida=? AND lat=? AND lon=? AND dlat=? AND dlon=? AND cuando >= ?",
+                (*self._clave(lat, lon, destino), limite)).fetchone()
+            resultado.append(Trip(fila[0], fila[1], self.name) if fila else None)
+            if fila is None:
+                faltan.append(i)
+        if faltan:
+            nuevos = self.inner.trips([origins[i] for i in faltan], destino)
+            with self.con:
+                for i, t in zip(faltan, nuevos):
+                    resultado[i] = t
+                    if t is not None:
+                        self.con.execute(
+                            "INSERT OR REPLACE INTO trayectos VALUES (?,?,?,?,?,?,?,?,?,?)",
+                            (*self._clave(*origins[i], destino), t.minutes, t.detail,
+                             self.now().isoformat()))
+        return resultado

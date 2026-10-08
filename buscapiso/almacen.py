@@ -13,7 +13,7 @@ import sqlite3
 
 from buscapiso.profiles import SearchProfile
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 ESTADOS = ("new", "liked", "hidden", "contacted", "visit_scheduled", "visited",
            "applied", "got_it", "rejected", "discarded")
@@ -108,7 +108,31 @@ def _migrar_a_2(con: sqlite3.Connection) -> None:
     con.execute("PRAGMA user_version = 2")
 
 
-_MIGRACIONES = [_migrar_a_1, _migrar_a_2]
+def _migrar_a_3(con: sqlite3.Connection) -> None:
+    """Ajustes de la app y cache de trayectos de proveedores externos."""
+    con.execute("CREATE TABLE IF NOT EXISTS ajustes ("
+                "clave TEXT PRIMARY KEY, valor TEXT NOT NULL)")
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS trayectos (
+            proveedor TEXT, modo TEXT, salida TEXT,
+            lat REAL, lon REAL, dlat REAL, dlon REAL,
+            minutos REAL NOT NULL, detalle TEXT NOT NULL, cuando TEXT NOT NULL,
+            PRIMARY KEY (proveedor, modo, salida, lat, lon, dlat, dlon))""")
+    con.execute("PRAGMA user_version = 3")
+
+
+_MIGRACIONES = [_migrar_a_1, _migrar_a_2, _migrar_a_3]
+
+
+def leer_ajustes(con: sqlite3.Connection) -> dict[str, str]:
+    return dict(con.execute("SELECT clave, valor FROM ajustes"))
+
+
+def guardar_ajuste(con: sqlite3.Connection, clave: str, valor: str) -> None:
+    with con:
+        con.execute("INSERT INTO ajustes (clave, valor) VALUES (?, ?) "
+                    "ON CONFLICT(clave) DO UPDATE SET valor = excluded.valor",
+                    (clave, valor))
 
 
 def hoy() -> str:
