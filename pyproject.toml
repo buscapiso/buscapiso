@@ -16,6 +16,7 @@ dependencies = [
     "uvicorn>=0.50",
     "keyring>=25",
     "anthropic>=1.12",
+    "segno>=1.6",
 ]
 
 [project.optional-dependencies]

@@ -152,22 +152,33 @@ def cmd_serve(args) -> int:
     import uvicorn
     from buscapiso.api.app import create_app
     import socket
+    host = "0.0.0.0" if args.lan else args.host
     # Antes de nada: si el puerto esta ocupado, abrir el navegador llevaria a
     # la app que lo ocupa, no a buscapiso.
     with socket.socket() as prueba:
         try:
-            prueba.bind((args.host, args.port))
+            prueba.bind((host, args.port))
         except OSError:
             print(f"El puerto {args.port} ya lo usa otro programa. "
                   f"Prueba con otro: buscapiso serve --port {args.port + 1}")
             return 2
-    url = f"http://{args.host}:{args.port}/"
+    url = f"http://127.0.0.1:{args.port}/"
     print(f"buscapiso en {url} (Ctrl+C para parar)")
+    if args.lan:
+        from buscapiso import access
+        con = almacen.abrir(paths.db_path())
+        try:
+            movil = access.access_url(con, args.port)
+        finally:
+            con.close()
+        print(f"Desde el movil (misma Wi-Fi): {movil}")
+        print("O escanea el QR en la pestana Phone de la web.")
     if not args.no_open:
         temporizador = threading.Timer(1.0, webbrowser.open, args=(url,))
         temporizador.daemon = True
         temporizador.start()
-    uvicorn.run(create_app(), host=args.host, port=args.port, log_level="warning")
+    uvicorn.run(create_app(require_token=args.lan, port=args.port), host=host,
+                port=args.port, log_level="warning")
     return 0
 
 
@@ -223,6 +234,8 @@ def main(argv: list[str] | None = None) -> int:
     sv.add_argument("--host", default="127.0.0.1")
     sv.add_argument("--port", type=int, default=8770)
     sv.add_argument("--no-open", action="store_true", help="no abrir el navegador")
+    sv.add_argument("--lan", action="store_true",
+                    help="abrir tambien a la red de casa (el movil entra con un QR)")
     sv.set_defaults(func=cmd_serve)
 
     args = p.parse_args(argv)

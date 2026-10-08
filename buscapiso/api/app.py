@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import secrets
 import contextlib
 import json
 import pathlib
@@ -10,11 +11,12 @@ import sqlite3
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Query, Response
-from fastapi.responses import StreamingResponse
+from fastapi import Request
+from fastapi.responses import JSONResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from buscapiso import almacen, keys, paths
+from buscapiso import access, almacen, keys, paths
 from buscapiso.ai import ai_from_settings
 from buscapiso.ai.providers import AIError
 from buscapiso.api.schemas import (Listing, ListingDetail, NoteChange, StatusChange,
@@ -93,9 +95,37 @@ inside it."""
 def create_app(db_path: pathlib.Path | None = None,
                static_dir: pathlib.Path | None = None,
                runner=None, get_key=None, set_key=None, geocode=None, ai_factory=None,
+               require_token: bool = False, port: int = 8770,
                provider_factory=None) -> FastAPI:
     app = FastAPI(title="buscapiso")
     ruta_db = db_path
+    app.state.db_path = ruta_db or paths.db_path()
+    app.state.lan, app.state.port = require_token, port
+
+    def _token_actual() -> str:
+        con = almacen.abrir(app.state.db_path)
+        try:
+            return access.get_token(con)
+        finally:
+            con.close()
+
+    @app.middleware("http")
+    async def guardian(request: Request, call_next):
+        if not require_token or (request.client and request.client.host in access.LOOPBACK):
+            return await call_next(request)
+        token = _token_actual()
+        enviado = request.query_params.get("t") if request.url.path == "/" else None
+        if enviado is not None:
+            if not secrets.compare_digest(enviado, token):
+                return JSONResponse({"detail": "Wrong access link. Scan the QR again."}, 401)
+            r = RedirectResponse("/", status_code=303)
+            r.set_cookie("bp_token", token, max_age=365 * 24 * 3600, httponly=True,
+                         samesite="lax")
+            return r
+        dado = request.cookies.get("bp_token") or request.headers.get("x-buscapiso-token") or ""
+        if not secrets.compare_digest(dado, token):
+            return JSONResponse({"detail": "Open buscapiso from the QR on your computer."}, 401)
+        return await call_next(request)
     get_key = get_key or keys.get_key          # get_key(nombre), set_key(nombre, valor)
     set_key = set_key or keys.set_key
     ai_factory = ai_factory or (lambda con: ai_from_settings(con, get_key=get_key))
@@ -377,6 +407,20 @@ def create_app(db_path: pathlib.Path | None = None,
                            ProfileSuggestion)
         except AIError as e:
             raise HTTPException(502, str(e))
+
+    @app.get("/api/access")
+    def access_info() -> dict:
+        with db() as con:
+            url = access.access_url(con, app.state.port)
+        return {"url": url, "qr_svg": access.qr_svg(url), "lan": app.state.lan}
+
+    @app.post("/api/access/rotate")
+    def rotate(request: Request) -> dict:
+        if not (request.client and request.client.host in access.LOOPBACK):
+            raise HTTPException(403, "Revoke phone access from the computer itself")
+        with db() as con:
+            access.rotate_token(con)
+            return {"url": access.access_url(con, app.state.port)}
 
     app.state.db = db
     estaticos = static_dir if static_dir is not None else WEB_DIST
