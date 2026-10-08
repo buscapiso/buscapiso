@@ -48,12 +48,13 @@
 
 <style>
   header {
-    position: sticky; top: 0; z-index: 1; background: var(--bg);
-    border-bottom: 1px solid var(--bd); padding: 10px 16px;
+    position: sticky; top: 0; z-index: 1; background: var(--paper);
+    border-bottom: 1px solid var(--line); padding: 10px 16px;
   }
-  .brand { font-weight: 700; text-decoration: none; color: var(--tx); }
+  .brand { font-family: var(--display); font-size: 20px; font-weight: 700; letter-spacing: -0.02em;
+    text-decoration: none; color: var(--ink); }
   nav { display: flex; gap: 14px; overflow-x: auto; margin-top: 6px; scrollbar-width: none; }
-  nav a { color: var(--sub); text-decoration: none; white-space: nowrap; padding: 4px 0; }
-  nav a[aria-current='page'] { color: var(--tx); border-bottom: 2px solid var(--acc); }
+  nav a { color: var(--muted); text-decoration: none; white-space: nowrap; padding: 4px 0; }
+  nav a[aria-current='page'] { color: var(--ink); border-bottom: 2px solid var(--accent); }
   main { max-width: 960px; margin: 0 auto; padding: 16px; }
 </style>
