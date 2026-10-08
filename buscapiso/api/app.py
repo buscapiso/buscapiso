@@ -9,6 +9,7 @@ import sqlite3
 
 from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.responses import StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from buscapiso import almacen, paths
@@ -165,4 +166,13 @@ def create_app(db_path: pathlib.Path | None = None,
                                  headers={"Cache-Control": "no-cache"})
 
     app.state.db = db
+    estaticos = static_dir if static_dir is not None else WEB_DIST
+    if (estaticos / "index.html").exists():
+        app.mount("/", StaticFiles(directory=estaticos, html=True), name="web")
+    else:
+        @app.get("/")
+        def sin_web() -> dict:
+            return {"hint": "The web app is not built yet. Run: "
+                            "npm --prefix web ci && npm --prefix web run build"}
+
     return app

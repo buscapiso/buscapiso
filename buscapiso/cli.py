@@ -139,6 +139,18 @@ def cmd_profile(args) -> int:
     return 0
 
 
+def cmd_serve(args) -> int:
+    import threading
+    import uvicorn
+    from buscapiso.api.app import create_app
+    url = f"http://{args.host}:{args.port}/"
+    print(f"buscapiso en {url} (Ctrl+C para parar)")
+    if not args.no_open:
+        threading.Timer(1.0, webbrowser.open, args=(url,)).start()
+    uvicorn.run(create_app(), host=args.host, port=args.port, log_level="warning")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     # El rastreo tarda minutos: sin esto el progreso no se ve hasta el final.
     sys.stdout.reconfigure(line_buffering=True)
@@ -186,6 +198,12 @@ def main(argv: list[str] | None = None) -> int:
     im.add_argument("fichero")
     im.add_argument("--use", action="store_true", help="dejarlo como perfil activo")
     pr.set_defaults(func=cmd_profile)
+
+    sv = sub.add_parser("serve", help="abre la web app")
+    sv.add_argument("--host", default="127.0.0.1")
+    sv.add_argument("--port", type=int, default=8765)
+    sv.add_argument("--no-open", action="store_true", help="no abrir el navegador")
+    sv.set_defaults(func=cmd_serve)
 
     args = p.parse_args(argv)
     if getattr(args, "func", None):
