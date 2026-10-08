@@ -1,0 +1,1132 @@
+{
+ "lineas": {
+  "L1": {
+   "hop_min": 1.8,
+   "frecuencia_min": 3.5,
+   "estaciones": [
+    "Hospital de Bellvitge",
+    "Bellvitge Rambla Marina",
+    "Avinguda Carrilet",
+    "Rambla Just Oliveras",
+    "Can Serra",
+    "Florida",
+    "Torrassa",
+    "Santa Eulàlia",
+    "Mercat Nou",
+    "Plaça de Sants",
+    "Hostafrancs",
+    "Espanya",
+    "Rocafort",
+    "Urgell",
+    "Universitat",
+    "Catalunya",
+    "Urquinaona",
+    "Arc de Triomf",
+    "Marina",
+    "Glòries",
+    "El Clot",
+    "Navas",
+    "La Sagrera",
+    "Fabra i Puig",
+    "Sant Andreu",
+    "Torras i Bages",
+    "Trinitat Vella",
+    "Baró de Viver",
+    "Santa Coloma",
+    "Fondo"
+   ]
+  },
+  "L2": {
+   "hop_min": 1.8,
+   "frecuencia_min": 4.0,
+   "estaciones": [
+    "Paral·lel",
+    "Sant Antoni",
+    "Universitat",
+    "Passeig de Gràcia",
+    "Tetuan",
+    "Monumental",
+    "Sagrada Família",
+    "Encants",
+    "El Clot",
+    "Bac de Roda",
+    "Sant Martí",
+    "La Pau",
+    "Verneda",
+    "Artigues | Sant Adrià",
+    "Sant Roc",
+    "Gorg",
+    "Pep Ventura",
+    "Badalona Pompeu Fabra"
+   ]
+  },
+  "L3": {
+   "hop_min": 1.8,
+   "frecuencia_min": 3.5,
+   "estaciones": [
+    "Zona Universitària",
+    "Palau Reial",
+    "Maria Cristina",
+    "les Corts",
+    "Plaça del Centre",
+    "Sants Estació",
+    "Tarragona",
+    "Espanya",
+    "El Poble-sec",
+    "Paral·lel",
+    "La Rambla | Drassanes",
+    "Liceu",
+    "Catalunya",
+    "Passeig de Gràcia",
+    "Diagonal",
+    "Fontana",
+    "Lesseps",
+    "Vallcarca",
+    "Penitents",
+    "Vall d’Hebron | Sant Genís",
+    "Montbau",
+    "Mundet",
+    "Valldaura",
+    "Canyelles",
+    "Roquetes",
+    "Trinitat Nova"
+   ]
+  },
+  "L5": {
+   "hop_min": 1.8,
+   "frecuencia_min": 3.5,
+   "estaciones": [
+    "Cornellà Centre",
+    "Gavarra",
+    "Sant Ildefons",
+    "Can Boixeres",
+    "Can Vidalet",
+    "Pubilla Cases",
+    "Collblanc",
+    "Badal",
+    "Plaça de Sants",
+    "Sants Estació",
+    "Entença",
+    "Hospital Clínic",
+    "Diagonal",
+    "Verdaguer",
+    "Sagrada Família",
+    "Sant Pau | Dos de Maig",
+    "Camp de l'Arpa",
+    "La Sagrera",
+    "Congrés | Indians",
+    "Maragall",
+    "Virrei Amat",
+    "Vilapicina",
+    "Horta",
+    "el Carmel",
+    "El Coll | La Teixonera",
+    "Vall d’Hebron | Sant Genís"
+   ]
+  },
+  "L9S": {
+   "hop_min": 1.7,
+   "frecuencia_min": 4.0,
+   "estaciones": [
+    "Zona Universitària",
+    "Collblanc",
+    "Torrassa",
+    "Can Tries - Gornal",
+    "Europa | Fira",
+    "Fira",
+    "Parc Logístic",
+    "Mercabarna",
+    "Les Moreres",
+    "El Prat Estació",
+    "Cèntric",
+    "Parc Nou",
+    "Mas Blau",
+    "Aeroport T2",
+    "Aeroport T1"
+   ]
+  },
+  "L10S": {
+   "hop_min": 1.7,
+   "frecuencia_min": 6.0,
+   "estaciones": [
+    "Collblanc",
+    "Torrassa",
+    "Can Tries - Gornal",
+    "Provençana",
+    "Ciutat de la Justícia",
+    "Foneria",
+    "Foc",
+    "Zona Franca",
+    "Ecoparc",
+    "ZAL | Riu Vell",
+    "Port Comercial | La Factoria"
+   ]
+  },
+  "L8": {
+   "hop_min": 2.0,
+   "frecuencia_min": 10.0,
+   "estaciones": [
+    "Espanya",
+    "Magòria-La Campana",
+    "Ildefons Cerdà",
+    "Europa | Fira",
+    "Gornal",
+    "Sant Josep",
+    "Almeda",
+    "Cornellà-Riera",
+    "Sant Boi",
+    "Molí Nou | Ciutat Cooperativa"
+   ]
+  }
+ },
+ "estaciones": {
+  "Hospital de Bellvitge": {
+   "nombre": "Hospital de Bellvitge",
+   "lat": 41.3446499,
+   "lon": 2.1072007,
+   "lineas": [
+    "L1"
+   ]
+  },
+  "Bellvitge Rambla Marina": {
+   "nombre": "Bellvitge Rambla Marina",
+   "lat": 41.3509646,
+   "lon": 2.1109354,
+   "lineas": [
+    "L1"
+   ]
+  },
+  "Avinguda Carrilet": {
+   "nombre": "Avinguda Carrilet",
+   "lat": 41.3589129,
+   "lon": 2.102483,
+   "lineas": [
+    "L1"
+   ]
+  },
+  "Rambla Just Oliveras": {
+   "nombre": "Rambla Just Oliveras",
+   "lat": 41.3639652,
+   "lon": 2.0998719,
+   "lineas": [
+    "L1"
+   ]
+  },
+  "Can Serra": {
+   "nombre": "Can Serra",
+   "lat": 41.3676843,
+   "lon": 2.1027358,
+   "lineas": [
+    "L1"
+   ]
+  },
+  "Florida": {
+   "nombre": "Florida",
+   "lat": 41.3683228,
+   "lon": 2.1098316,
+   "lineas": [
+    "L1"
+   ]
+  },
+  "Torrassa": {
+   "nombre": "Torrassa",
+   "lat": 41.3684057,
+   "lon": 2.1166305,
+   "lineas": [
+    "L1",
+    "L9S",
+    "L10S"
+   ]
+  },
+  "Santa Eulàlia": {
+   "nombre": "Santa Eulàlia",
+   "lat": 41.3687993,
+   "lon": 2.1286052,
+   "lineas": [
+    "L1"
+   ]
+  },
+  "Mercat Nou": {
+   "nombre": "Mercat Nou",
+   "lat": 41.3727946,
+   "lon": 2.1333313,
+   "lineas": [
+    "L1"
+   ]
+  },
+  "Plaça de Sants": {
+   "nombre": "Plaça de Sants",
+   "lat": 41.3753756,
+   "lon": 2.1379127,
+   "lineas": [
+    "L1",
+    "L5"
+   ]
+  },
+  "Hostafrancs": {
+   "nombre": "Hostafrancs",
+   "lat": 41.3752424,
+   "lon": 2.143419,
+   "lineas": [
+    "L1"
+   ]
+  },
+  "Espanya": {
+   "nombre": "Espanya",
+   "lat": 41.3755685,
+   "lon": 2.149524,
+   "lineas": [
+    "L1",
+    "L3",
+    "L8"
+   ]
+  },
+  "Rocafort": {
+   "nombre": "Rocafort",
+   "lat": 41.3792368,
+   "lon": 2.1545732,
+   "lineas": [
+    "L1"
+   ]
+  },
+  "Urgell": {
+   "nombre": "Urgell",
+   "lat": 41.3824863,
+   "lon": 2.1588888,
+   "lineas": [
+    "L1"
+   ]
+  },
+  "Universitat": {
+   "nombre": "Universitat",
+   "lat": 41.3856938,
+   "lon": 2.1643048,
+   "lineas": [
+    "L1",
+    "L2"
+   ]
+  },
+  "Catalunya": {
+   "nombre": "Catalunya",
+   "lat": 41.3865465,
+   "lon": 2.170084,
+   "lineas": [
+    "L1",
+    "L3"
+   ]
+  },
+  "Urquinaona": {
+   "nombre": "Urquinaona",
+   "lat": 41.3880852,
+   "lon": 2.1733108,
+   "lineas": [
+    "L1"
+   ]
+  },
+  "Arc de Triomf": {
+   "nombre": "Arc de Triomf",
+   "lat": 41.3921143,
+   "lon": 2.1809092,
+   "lineas": [
+    "L1"
+   ]
+  },
+  "Marina": {
+   "nombre": "Marina",
+   "lat": 41.3949958,
+   "lon": 2.1862682,
+   "lineas": [
+    "L1"
+   ]
+  },
+  "Glòries": {
+   "nombre": "Glòries",
+   "lat": 41.4022111,
+   "lon": 2.1875183,
+   "lineas": [
+    "L1"
+   ]
+  },
+  "El Clot": {
+   "nombre": "El Clot",
+   "lat": 41.4101394,
+   "lon": 2.1869158,
+   "lineas": [
+    "L1",
+    "L2"
+   ]
+  },
+  "Navas": {
+   "nombre": "Navas",
+   "lat": 41.4160445,
+   "lon": 2.1869379,
+   "lineas": [
+    "L1"
+   ]
+  },
+  "La Sagrera": {
+   "nombre": "La Sagrera",
+   "lat": 41.4226234,
+   "lon": 2.1870242,
+   "lineas": [
+    "L1",
+    "L5"
+   ]
+  },
+  "Fabra i Puig": {
+   "nombre": "Fabra i Puig",
+   "lat": 41.4297809,
+   "lon": 2.1836388,
+   "lineas": [
+    "L1"
+   ]
+  },
+  "Sant Andreu": {
+   "nombre": "Sant Andreu",
+   "lat": 41.4366293,
+   "lon": 2.1911382,
+   "lineas": [
+    "L1"
+   ]
+  },
+  "Torras i Bages": {
+   "nombre": "Torras i Bages",
+   "lat": 41.4431273,
+   "lon": 2.1907138,
+   "lineas": [
+    "L1"
+   ]
+  },
+  "Trinitat Vella": {
+   "nombre": "Trinitat Vella",
+   "lat": 41.4487676,
+   "lon": 2.1937366,
+   "lineas": [
+    "L1"
+   ]
+  },
+  "Baró de Viver": {
+   "nombre": "Baró de Viver",
+   "lat": 41.4499467,
+   "lon": 2.1995389,
+   "lineas": [
+    "L1"
+   ]
+  },
+  "Santa Coloma": {
+   "nombre": "Santa Coloma",
+   "lat": 41.4510763,
+   "lon": 2.2080493,
+   "lineas": [
+    "L1"
+   ]
+  },
+  "Fondo": {
+   "nombre": "Fondo",
+   "lat": 41.4516735,
+   "lon": 2.2184075,
+   "lineas": [
+    "L1"
+   ]
+  },
+  "Paral·lel": {
+   "nombre": "Paral·lel",
+   "lat": 41.3749406,
+   "lon": 2.1692557,
+   "lineas": [
+    "L2",
+    "L3"
+   ]
+  },
+  "Sant Antoni": {
+   "nombre": "Sant Antoni",
+   "lat": 41.3797864,
+   "lon": 2.1632696,
+   "lineas": [
+    "L2"
+   ]
+  },
+  "Passeig de Gràcia": {
+   "nombre": "Passeig de Gràcia",
+   "lat": 41.3894431,
+   "lon": 2.1682772,
+   "lineas": [
+    "L2",
+    "L3"
+   ]
+  },
+  "Tetuan": {
+   "nombre": "Tetuan",
+   "lat": 41.3948216,
+   "lon": 2.1755213,
+   "lineas": [
+    "L2"
+   ]
+  },
+  "Monumental": {
+   "nombre": "Monumental",
+   "lat": 41.4005241,
+   "lon": 2.1794545,
+   "lineas": [
+    "L2"
+   ]
+  },
+  "Sagrada Família": {
+   "nombre": "Sagrada Família",
+   "lat": 41.4040337,
+   "lon": 2.1738819,
+   "lineas": [
+    "L2",
+    "L5"
+   ]
+  },
+  "Encants": {
+   "nombre": "Encants",
+   "lat": 41.4070747,
+   "lon": 2.1825232,
+   "lineas": [
+    "L2"
+   ]
+  },
+  "Bac de Roda": {
+   "nombre": "Bac de Roda",
+   "lat": 41.4148814,
+   "lon": 2.1951059,
+   "lineas": [
+    "L2"
+   ]
+  },
+  "Sant Martí": {
+   "nombre": "Sant Martí",
+   "lat": 41.4190565,
+   "lon": 2.2007307,
+   "lineas": [
+    "L2"
+   ]
+  },
+  "La Pau": {
+   "nombre": "La Pau",
+   "lat": 41.4240389,
+   "lon": 2.205618,
+   "lineas": [
+    "L2"
+   ]
+  },
+  "Verneda": {
+   "nombre": "Verneda",
+   "lat": 41.4298896,
+   "lon": 2.2097745,
+   "lineas": [
+    "L2"
+   ]
+  },
+  "Artigues | Sant Adrià": {
+   "nombre": "Artigues | Sant Adrià",
+   "lat": 41.4337214,
+   "lon": 2.2175726,
+   "lineas": [
+    "L2"
+   ]
+  },
+  "Sant Roc": {
+   "nombre": "Sant Roc",
+   "lat": 41.4353172,
+   "lon": 2.2278605,
+   "lineas": [
+    "L2"
+   ]
+  },
+  "Gorg": {
+   "nombre": "Gorg",
+   "lat": 41.4404408,
+   "lon": 2.2336924,
+   "lineas": [
+    "L2"
+   ]
+  },
+  "Pep Ventura": {
+   "nombre": "Pep Ventura",
+   "lat": 41.4439389,
+   "lon": 2.2380518,
+   "lineas": [
+    "L2"
+   ]
+  },
+  "Badalona Pompeu Fabra": {
+   "nombre": "Badalona Pompeu Fabra",
+   "lat": 41.4489607,
+   "lon": 2.2442207,
+   "lineas": [
+    "L2"
+   ]
+  },
+  "Zona Universitària": {
+   "nombre": "Zona Universitària",
+   "lat": 41.3842442,
+   "lon": 2.1116863,
+   "lineas": [
+    "L3",
+    "L9S"
+   ]
+  },
+  "Palau Reial": {
+   "nombre": "Palau Reial",
+   "lat": 41.3858079,
+   "lon": 2.1178553,
+   "lineas": [
+    "L3"
+   ]
+  },
+  "Maria Cristina": {
+   "nombre": "Maria Cristina",
+   "lat": 41.38794,
+   "lon": 2.1262221,
+   "lineas": [
+    "L3"
+   ]
+  },
+  "les Corts": {
+   "nombre": "les Corts",
+   "lat": 41.3841337,
+   "lon": 2.1308782,
+   "lineas": [
+    "L3"
+   ]
+  },
+  "Plaça del Centre": {
+   "nombre": "Plaça del Centre",
+   "lat": 41.3818207,
+   "lon": 2.1356301,
+   "lineas": [
+    "L3"
+   ]
+  },
+  "Sants Estació": {
+   "nombre": "Sants Estació",
+   "lat": 41.3814691,
+   "lon": 2.141114,
+   "lineas": [
+    "L3",
+    "L5"
+   ]
+  },
+  "Tarragona": {
+   "nombre": "Tarragona",
+   "lat": 41.378444,
+   "lon": 2.1453675,
+   "lineas": [
+    "L3"
+   ]
+  },
+  "El Poble-sec": {
+   "nombre": "El Poble-sec",
+   "lat": 41.3749795,
+   "lon": 2.1605721,
+   "lineas": [
+    "L3"
+   ]
+  },
+  "La Rambla | Drassanes": {
+   "nombre": "La Rambla | Drassanes",
+   "lat": 41.3766732,
+   "lon": 2.1757735,
+   "lineas": [
+    "L3"
+   ]
+  },
+  "Liceu": {
+   "nombre": "Liceu",
+   "lat": 41.3813959,
+   "lon": 2.1730711,
+   "lineas": [
+    "L3"
+   ]
+  },
+  "Diagonal": {
+   "nombre": "Diagonal",
+   "lat": 41.3959557,
+   "lon": 2.1599634,
+   "lineas": [
+    "L3",
+    "L5"
+   ]
+  },
+  "Fontana": {
+   "nombre": "Fontana",
+   "lat": 41.4020564,
+   "lon": 2.1529786,
+   "lineas": [
+    "L3"
+   ]
+  },
+  "Lesseps": {
+   "nombre": "Lesseps",
+   "lat": 41.4061626,
+   "lon": 2.1500246,
+   "lineas": [
+    "L3"
+   ]
+  },
+  "Vallcarca": {
+   "nombre": "Vallcarca",
+   "lat": 41.4119065,
+   "lon": 2.1445239,
+   "lineas": [
+    "L3"
+   ]
+  },
+  "Penitents": {
+   "nombre": "Penitents",
+   "lat": 41.4175413,
+   "lon": 2.1411326,
+   "lineas": [
+    "L3"
+   ]
+  },
+  "Vall d’Hebron | Sant Genís": {
+   "nombre": "Vall d’Hebron | Sant Genís",
+   "lat": 41.4249128,
+   "lon": 2.1423965,
+   "lineas": [
+    "L3",
+    "L5"
+   ]
+  },
+  "Montbau": {
+   "nombre": "Montbau",
+   "lat": 41.4306331,
+   "lon": 2.1450639,
+   "lineas": [
+    "L3"
+   ]
+  },
+  "Mundet": {
+   "nombre": "Mundet",
+   "lat": 41.4355422,
+   "lon": 2.1483831,
+   "lineas": [
+    "L3"
+   ]
+  },
+  "Valldaura": {
+   "nombre": "Valldaura",
+   "lat": 41.4380037,
+   "lon": 2.1568764,
+   "lineas": [
+    "L3"
+   ]
+  },
+  "Canyelles": {
+   "nombre": "Canyelles",
+   "lat": 41.4417701,
+   "lon": 2.1664392,
+   "lineas": [
+    "L3"
+   ]
+  },
+  "Roquetes": {
+   "nombre": "Roquetes",
+   "lat": 41.447355,
+   "lon": 2.1757834,
+   "lineas": [
+    "L3"
+   ]
+  },
+  "Trinitat Nova": {
+   "nombre": "Trinitat Nova",
+   "lat": 41.4494828,
+   "lon": 2.1841624,
+   "lineas": [
+    "L3"
+   ]
+  },
+  "Cornellà Centre": {
+   "nombre": "Cornellà Centre",
+   "lat": 41.3573028,
+   "lon": 2.0705523,
+   "lineas": [
+    "L5"
+   ]
+  },
+  "Gavarra": {
+   "nombre": "Gavarra",
+   "lat": 41.3579852,
+   "lon": 2.0792152,
+   "lineas": [
+    "L5"
+   ]
+  },
+  "Sant Ildefons": {
+   "nombre": "Sant Ildefons",
+   "lat": 41.3633432,
+   "lon": 2.0843303,
+   "lineas": [
+    "L5"
+   ]
+  },
+  "Can Boixeres": {
+   "nombre": "Can Boixeres",
+   "lat": 41.3665823,
+   "lon": 2.0915183,
+   "lineas": [
+    "L5"
+   ]
+  },
+  "Can Vidalet": {
+   "nombre": "Can Vidalet",
+   "lat": 41.3717369,
+   "lon": 2.0997596,
+   "lineas": [
+    "L5"
+   ]
+  },
+  "Pubilla Cases": {
+   "nombre": "Pubilla Cases",
+   "lat": 41.3738133,
+   "lon": 2.1071207,
+   "lineas": [
+    "L5"
+   ]
+  },
+  "Collblanc": {
+   "nombre": "Collblanc",
+   "lat": 41.3758735,
+   "lon": 2.1184045,
+   "lineas": [
+    "L5",
+    "L9S",
+    "L10S"
+   ]
+  },
+  "Badal": {
+   "nombre": "Badal",
+   "lat": 41.3755518,
+   "lon": 2.1289265,
+   "lineas": [
+    "L5"
+   ]
+  },
+  "Entença": {
+   "nombre": "Entença",
+   "lat": 41.3839818,
+   "lon": 2.1449598,
+   "lineas": [
+    "L5"
+   ]
+  },
+  "Hospital Clínic": {
+   "nombre": "Hospital Clínic",
+   "lat": 41.3881615,
+   "lon": 2.1505425,
+   "lineas": [
+    "L5"
+   ]
+  },
+  "Verdaguer": {
+   "nombre": "Verdaguer",
+   "lat": 41.4000911,
+   "lon": 2.1684275,
+   "lineas": [
+    "L5"
+   ]
+  },
+  "Sant Pau | Dos de Maig": {
+   "nombre": "Sant Pau | Dos de Maig",
+   "lat": 41.4107312,
+   "lon": 2.175983,
+   "lineas": [
+    "L5"
+   ]
+  },
+  "Camp de l'Arpa": {
+   "nombre": "Camp de l'Arpa",
+   "lat": 41.4146858,
+   "lon": 2.1810127,
+   "lineas": [
+    "L5"
+   ]
+  },
+  "Congrés | Indians": {
+   "nombre": "Congrés | Indians",
+   "lat": 41.4234164,
+   "lon": 2.1812853,
+   "lineas": [
+    "L5"
+   ]
+  },
+  "Maragall": {
+   "nombre": "Maragall",
+   "lat": 41.4250282,
+   "lon": 2.176504,
+   "lineas": [
+    "L5"
+   ]
+  },
+  "Virrei Amat": {
+   "nombre": "Virrei Amat",
+   "lat": 41.4295936,
+   "lon": 2.1749989,
+   "lineas": [
+    "L5"
+   ]
+  },
+  "Vilapicina": {
+   "nombre": "Vilapicina",
+   "lat": 41.43046,
+   "lon": 2.1681725,
+   "lineas": [
+    "L5"
+   ]
+  },
+  "Horta": {
+   "nombre": "Horta",
+   "lat": 41.4296898,
+   "lon": 2.1603155,
+   "lineas": [
+    "L5"
+   ]
+  },
+  "el Carmel": {
+   "nombre": "el Carmel",
+   "lat": 41.4243994,
+   "lon": 2.1551138,
+   "lineas": [
+    "L5"
+   ]
+  },
+  "El Coll | La Teixonera": {
+   "nombre": "El Coll | La Teixonera",
+   "lat": 41.4216569,
+   "lon": 2.1493621,
+   "lineas": [
+    "L5"
+   ]
+  },
+  "Can Tries - Gornal": {
+   "nombre": "Can Tries - Gornal",
+   "lat": 41.3607212,
+   "lon": 2.1181989,
+   "lineas": [
+    "L9S",
+    "L10S"
+   ]
+  },
+  "Europa | Fira": {
+   "nombre": "Europa | Fira",
+   "lat": 41.3572488,
+   "lon": 2.1256902,
+   "lineas": [
+    "L9S",
+    "L8"
+   ]
+  },
+  "Fira": {
+   "nombre": "Fira",
+   "lat": 41.3519228,
+   "lon": 2.130679,
+   "lineas": [
+    "L9S"
+   ]
+  },
+  "Parc Logístic": {
+   "nombre": "Parc Logístic",
+   "lat": 41.3418064,
+   "lon": 2.1279825,
+   "lineas": [
+    "L9S"
+   ]
+  },
+  "Mercabarna": {
+   "nombre": "Mercabarna",
+   "lat": 41.3335696,
+   "lon": 2.1112293,
+   "lineas": [
+    "L9S"
+   ]
+  },
+  "Les Moreres": {
+   "nombre": "Les Moreres",
+   "lat": 41.3289845,
+   "lon": 2.1030715,
+   "lineas": [
+    "L9S"
+   ]
+  },
+  "El Prat Estació": {
+   "nombre": "El Prat Estació",
+   "lat": 41.3316672,
+   "lon": 2.0901291,
+   "lineas": [
+    "L9S"
+   ]
+  },
+  "Cèntric": {
+   "nombre": "Cèntric",
+   "lat": 41.321844,
+   "lon": 2.0935651,
+   "lineas": [
+    "L9S"
+   ]
+  },
+  "Parc Nou": {
+   "nombre": "Parc Nou",
+   "lat": 41.3167071,
+   "lon": 2.087351,
+   "lineas": [
+    "L9S"
+   ]
+  },
+  "Mas Blau": {
+   "nombre": "Mas Blau",
+   "lat": 41.3113187,
+   "lon": 2.0734222,
+   "lineas": [
+    "L9S"
+   ]
+  },
+  "Aeroport T2": {
+   "nombre": "Aeroport T2",
+   "lat": 41.3038256,
+   "lon": 2.0731207,
+   "lineas": [
+    "L9S"
+   ]
+  },
+  "Aeroport T1": {
+   "nombre": "Aeroport T1",
+   "lat": 41.2882583,
+   "lon": 2.07104,
+   "lineas": [
+    "L9S"
+   ]
+  },
+  "Provençana": {
+   "nombre": "Provençana",
+   "lat": 41.3613875,
+   "lon": 2.1242931,
+   "lineas": [
+    "L10S"
+   ]
+  },
+  "Ciutat de la Justícia": {
+   "nombre": "Ciutat de la Justícia",
+   "lat": 41.3632435,
+   "lon": 2.1330085,
+   "lineas": [
+    "L10S"
+   ]
+  },
+  "Foneria": {
+   "nombre": "Foneria",
+   "lat": 41.3604907,
+   "lon": 2.1387397,
+   "lineas": [
+    "L10S"
+   ]
+  },
+  "Foc": {
+   "nombre": "Foc",
+   "lat": 41.3558512,
+   "lon": 2.1421622,
+   "lineas": [
+    "L10S"
+   ]
+  },
+  "Zona Franca": {
+   "nombre": "Zona Franca",
+   "lat": 41.3429845,
+   "lon": 2.1449718,
+   "lineas": [
+    "L10S"
+   ]
+  },
+  "Ecoparc": {
+   "nombre": "Ecoparc",
+   "lat": 41.3301838,
+   "lon": 2.1370899,
+   "lineas": [
+    "L10S"
+   ]
+  },
+  "ZAL | Riu Vell": {
+   "nombre": "ZAL | Riu Vell",
+   "lat": 41.3237458,
+   "lon": 2.1331165,
+   "lineas": [
+    "L10S"
+   ]
+  },
+  "Port Comercial | La Factoria": {
+   "nombre": "Port Comercial | La Factoria",
+   "lat": 41.3359835,
+   "lon": 2.1406663,
+   "lineas": [
+    "L10S"
+   ]
+  },
+  "Magòria-La Campana": {
+   "nombre": "Magòria-La Campana",
+   "lat": 41.3678579,
+   "lon": 2.1393675,
+   "lineas": [
+    "L8"
+   ]
+  },
+  "Ildefons Cerdà": {
+   "nombre": "Ildefons Cerdà",
+   "lat": 41.361165,
+   "lon": 2.1301693,
+   "lineas": [
+    "L8"
+   ]
+  },
+  "Gornal": {
+   "nombre": "Gornal",
+   "lat": 41.3547752,
+   "lon": 2.1170729,
+   "lineas": [
+    "L8"
+   ]
+  },
+  "Sant Josep": {
+   "nombre": "Sant Josep",
+   "lat": 41.3609506,
+   "lon": 2.1103613,
+   "lineas": [
+    "L8"
+   ]
+  },
+  "Almeda": {
+   "nombre": "Almeda",
+   "lat": 41.3530362,
+   "lon": 2.0845124,
+   "lineas": [
+    "L8"
+   ]
+  },
+  "Cornellà-Riera": {
+   "nombre": "Cornellà-Riera",
+   "lat": 41.3514715,
+   "lon": 2.0706597,
+   "lineas": [
+    "L8"
+   ]
+  },
+  "Sant Boi": {
+   "nombre": "Sant Boi",
+   "lat": 41.3484877,
+   "lon": 2.0429512,
+   "lineas": [
+    "L8"
+   ]
+  },
+  "Molí Nou | Ciutat Cooperativa": {
+   "nombre": "Molí Nou | Ciutat Cooperativa",
+   "lat": 41.3575245,
+   "lon": 2.0352776,
+   "lineas": [
+    "L8"
+   ]
+  }
+ }
+}

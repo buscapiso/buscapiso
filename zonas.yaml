@@ -1,0 +1,18 @@
+# Tus zonas. Vacio = sin efecto. Escribe los nombres tal y como aparecen en
+# idealista (barrio o municipio); la comparacion no distingue mayusculas y
+# basta con que el nombre este contenido.
+#
+# Yo no relleno esto por ti: quien conoce la ciudad y sabe donde quiere vivir
+# eres tu. Ejemplos comentados para que veas el formato.
+
+excluir: []
+  # - La Mina
+  # - Ciutat Meridiana
+
+penalizar: []
+  # - Bellvitge
+
+preferir: []
+  # - Collblanc
+  # - La Torrassa
+  # - Sants

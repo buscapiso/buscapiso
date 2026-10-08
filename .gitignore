@@ -1,0 +1,12 @@
+.venv/
+.perfil-*/
+cache/
+pisos.db
+*.bak
+informe.html
+__pycache__/
+*.pyc
+.pytest_cache/
+.remember/
+*.egg-info/
+.superpowers/

@@ -1,0 +1,93 @@
+# Configuracion de la busqueda. Todo lo de aqui es tuyo: toca los numeros y
+# vuelve a ejecutar, no hace falta cambiar codigo.
+
+# Portales a rastrear. idealista es el unico con filtro de genero por URL;
+# roomgo lo publica en la tarjeta; depisoenpiso no lo dice, pero a cambio da
+# las coordenadas exactas del piso.
+fuentes:
+  - idealista
+  - fotocasa
+  - roomgo
+  - depisoenpiso
+
+# Zonas de fotocasa (su nomenclatura es distinta de la de idealista).
+# Habitaclia, del mismo grupo, ya no tiene seccion de habitaciones.
+
+# Municipios tal y como los nombra idealista en su URL.
+# Verificados uno a uno contra idealista: los que no salen aqui no tienen
+# pagina de habitaciones (El Prat, por ejemplo, no la tiene).
+# Para Barcelona uso distritos en vez de la ciudad entera: buscar "Barcelona"
+# gasta paginas en Gracia y el Eixample, que caen luego por distancia a Fira.
+municipios:
+  - barcelona/sants-montjuic          # Sants, Poble-sec, la Marina; lo mas cerca de Fira
+  - barcelona/les-corts               # Les Corts, Zona Universitaria
+  - hospitalet-de-llobregat-barcelona # Collblanc, La Torrassa, Santa Eulalia
+  - cornella-de-llobregat-barcelona
+  - esplugues-de-llobregat-barcelona
+  - sant-joan-despi-barcelona
+
+# Filtros nativos de idealista. Reducen el ruido antes de descargar nada.
+# Ojo: "solo_chicas" en idealista significa "admite chicas", asi que el
+# filtro estricto de verdad se aplica luego en requisitos.solo_chicas.
+filtros_idealista:
+  precio_max: 550          # margen sobre los 500 porque los gastos van aparte
+  solo_chicas: true
+  sin_propietario: true
+  con_estudiantes: false   # ponlo en true si quieres estrechar mucho la busqueda
+  con_trabajadores: false
+  exterior: false
+  sin_fumadores: false
+  publicado_48h: false     # true = solo lo publicado en las ultimas 48 h
+
+presupuesto:
+  coste_total_ideal: 500     # habitacion + gastos; a partir de aqui empieza a restar
+  coste_total_maximo: 650    # por encima de esto se descarta
+  gastos_si_no_declara: 55   # gastos que supongo cuando el anuncio no los dice
+
+requisitos:
+  solo_chicas: true          # descarta pisos mixtos (el filtro de idealista no)
+  # Fotocasa y De Piso en Piso no publican el genero del piso. Con esto en
+  # true, esos anuncios no se tiran: van a una seccion aparte del informe si
+  # puntuan bien, para que decidas si merece la pena escribir y preguntar.
+  preguntar_si_genero_desconocido: true
+  puntos_minimos_para_preguntar: 60
+  sin_propietario: true
+  visitas_permitidas: preferible   # estricto | preferible | indiferente
+
+transporte:
+  destino_principal: Fira            # tu trabajo, L9 Sud
+  destino_secundario: Collblanc
+  max_minutos_principal: 30          # descarte duro
+
+pesos:
+  minutos_gratis: 10          # hasta aqui el trayecto no penaliza
+  minutos_fira: 2.0           # puntos que resta cada minuto extra al trabajo
+  minutos_collblanc: 0.6
+  euro_sobre_ideal: 0.12      # puntos que resta cada euro por encima del ideal
+  gastos_incluidos: 8
+  novedad: 25                 # publicado hace poco: entras "ya", esto importa
+  dias_para_ser_nuevo: 7
+  dias_para_estar_rancio: 90
+  rancio: 30                  # castigo a lo lleva meses colgado
+  ambiente_joven: 8
+  temporal: 25                # castigo si huele a alquiler de temporada
+  companeros_comodos: 3
+  por_companero_extra: 4
+  visitas: 10
+  no_admite_parejas: 6        # la senal mas cercana a "prohibidas las visitas"
+  edad_afin: 27               # <-- PON TU EDAD AQUI. Es una suposicion mia:
+                              # se compara con la edad real de las companeras
+                              # que idealista publica en la ficha.
+  margen_edad: 8              # cuanto puede desviarse la media de tus companeras
+  dias_de_espera_tolerables: 21
+  por_dia_de_espera: 0.8
+  espera_maxima: 30
+  zona_preferida: 12
+  zona_penalizada: 20
+  ubicacion_estimada: 6       # solo sabemos el barrio, no la calle
+
+busqueda:
+  orden: nuevos               # nuevos | baratos | relevancia (idealista)
+  orden_fotocasa: baratos     # con 8.000 anuncios, lo barato primero
+  max_paginas_por_municipio: 3
+  fichas_a_enriquecer: 12     # cuantas fichas completas abrir (son lentas)
