@@ -1,15 +1,21 @@
 """API JSON y servidor de la web app."""
 from __future__ import annotations
 
+import asyncio
 import contextlib
+import json
 import pathlib
 import sqlite3
 
 from fastapi import FastAPI, HTTPException, Query, Response
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 
 from buscapiso import almacen, paths
 from buscapiso.api.schemas import (Listing, ListingDetail, NoteChange, StatusChange,
                                    detail_from_row, listing_from_row)
+from buscapiso.api.searches import SearchRunner
+from buscapiso.pipeline import SearchOptions
 from buscapiso.profiles import SearchProfile
 from buscapiso.seed import active_profile
 
@@ -18,11 +24,19 @@ SOURCES = ["idealista", "fotocasa", "roomgo", "depisoenpiso"]
 GENDERS = ["female_only", "male_only", "mixed", "any"]
 
 
+class SearchRequest(BaseModel):
+    skip_details: bool = False
+    from_cache: bool = False
+    pages: int | None = None
+
+
 def create_app(db_path: pathlib.Path | None = None,
                static_dir: pathlib.Path | None = None,
                runner=None) -> FastAPI:
     app = FastAPI(title="buscapiso")
     ruta_db = db_path
+    runner = runner or SearchRunner()
+    app.state.runner = runner
 
     @contextlib.contextmanager
     def db():
@@ -117,6 +131,38 @@ def create_app(db_path: pathlib.Path | None = None,
             if not almacen.borrar_perfil(con, name):
                 raise HTTPException(404, f"no profile {name}")
         return Response(status_code=204)
+
+    @app.post("/api/searches", status_code=202)
+    def start_search(body: SearchRequest) -> dict:
+        with db() as con:
+            perfil = active_profile(con)
+        opciones = SearchOptions(pages=body.pages, skip_details=body.skip_details,
+                                 from_cache=body.from_cache)
+        try:
+            id_ = runner.start(perfil, opciones, ruta_db or paths.db_path())
+        except RuntimeError:
+            raise HTTPException(409, "a search is already running")
+        return {"id": id_}
+
+    @app.get("/api/searches/current")
+    def search_state() -> dict:
+        return runner.state()
+
+    @app.get("/api/searches/current/stream")
+    async def search_stream() -> StreamingResponse:
+        async def fuente():
+            enviados = 0
+            while True:
+                nuevos, sigue = runner.events_since(enviados)
+                for e in nuevos:
+                    yield f"data: {json.dumps(e, ensure_ascii=False)}\n\n"
+                enviados += len(nuevos)
+                if not sigue and not runner.events_since(enviados)[0]:
+                    return
+                await asyncio.sleep(0.25)
+
+        return StreamingResponse(fuente(), media_type="text/event-stream",
+                                 headers={"Cache-Control": "no-cache"})
 
     app.state.db = db
     return app
