@@ -235,3 +235,9 @@ def activar_perfil(con: sqlite3.Connection, nombre: str) -> bool:
     with con:
         con.execute("UPDATE perfiles SET activo = (nombre = ?)", (nombre,))
     return True
+
+
+def borrar_perfil(con: sqlite3.Connection, nombre: str) -> bool:
+    with con:
+        cur = con.execute("DELETE FROM perfiles WHERE nombre = ?", (nombre,))
+    return cur.rowcount > 0
