@@ -97,3 +97,34 @@ def test_the_map_shows_listings_and_moves_a_destination_on_click(servidor):
     con = almacen.abrir(db)
     gym = [d for d in almacen.cargar_perfil(con).destinations if d.name == "Gym"][0]
     assert (gym.lat, gym.lon) != (41.3874, 2.1686)     # se movio del punto por defecto
+
+
+def test_a_phone_on_the_home_network_needs_the_qr_link(tmp_path):
+    """El servidor escucha en todas las interfaces y la pagina se pide por la IP
+    de la red local, que para el servidor no es loopback: como un movil."""
+    from playwright.sync_api import sync_playwright
+    from buscapiso import access
+    ip = access.local_ip()
+    if ip.startswith("127."):
+        pytest.skip("sin red local")
+    almacen.abrir(tmp_path / "pisos.db").close()
+    puerto = _puerto_libre()
+    app = create_app(db_path=tmp_path / "pisos.db", require_token=True, port=puerto)
+    server = uvicorn.Server(uvicorn.Config(app, host="0.0.0.0", port=puerto, log_level="warning"))
+    threading.Thread(target=server.run, daemon=True).start()
+    while not server.started:
+        time.sleep(0.05)
+    try:
+        con = almacen.abrir(tmp_path / "pisos.db")
+        enlace = access.access_url(con, puerto)
+        con.close()
+        with sync_playwright() as pw:
+            browser = pw.chromium.launch(headless=True)
+            page = browser.new_page()
+            r = page.goto(f"http://{ip}:{puerto}/")
+            assert r.status == 401
+            page.goto(enlace)
+            page.get_by_text("No listings yet").wait_for()
+            browser.close()
+    finally:
+        server.should_exit = True
