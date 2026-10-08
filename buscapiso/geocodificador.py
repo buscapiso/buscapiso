@@ -103,3 +103,25 @@ class Geocodificador:
                 anuncio.lat, anuncio.lon = lat, lon
                 anuncio.coords_aproximadas = aproximada
                 return
+
+    BARCELONA = (1.90, 41.60, 2.35, 41.25)
+
+    def buscar(self, consulta: str, limite: int = 5) -> list[dict]:
+        """Varios resultados para elegir, dentro del area de Barcelona. Sin cache:
+        lo escribe la usuaria y lo pide al pulsar, no letra a letra (Nominatim
+        no permite autocompletar)."""
+        espera = PAUSA_MIN_S - (time.time() - self._ultima)
+        if espera > 0:
+            time.sleep(espera)
+        izq, arriba, der, abajo = self.BARCELONA
+        params = urllib.parse.urlencode({
+            "q": consulta, "format": "json", "limit": limite, "countrycodes": "es",
+            "viewbox": f"{izq},{arriba},{der},{abajo}", "bounded": 1})
+        req = urllib.request.Request(f"{NOMINATIM}?{params}", headers={"User-Agent": AGENTE})
+        try:
+            with urllib.request.urlopen(req, timeout=20) as r:
+                datos = json.load(r)
+        finally:
+            self._ultima = time.time()
+        return [{"name": d["display_name"], "lat": float(d["lat"]), "lon": float(d["lon"])}
+                for d in datos]

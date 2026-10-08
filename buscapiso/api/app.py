@@ -7,18 +7,23 @@ import json
 import pathlib
 import sqlite3
 
+from typing import Literal
+
 from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from buscapiso import almacen, paths
+from buscapiso import almacen, keys, paths
 from buscapiso.api.schemas import (Listing, ListingDetail, NoteChange, StatusChange,
                                    detail_from_row, listing_from_row)
 from buscapiso.api.searches import SearchRunner
+from buscapiso.geocodificador import Geocodificador
 from buscapiso.pipeline import SearchOptions
-from buscapiso.profiles import SearchProfile
+from buscapiso.profiles import SearchProfile, to_engine_cfg
 from buscapiso.seed import active_profile
+from buscapiso.transporte import Red
+from buscapiso.travel import GraphProvider, TravelError, provider_from_settings
 
 WEB_DIST = pathlib.Path(__file__).resolve().parents[1] / "web_dist"
 SOURCES = ["idealista", "fotocasa", "roomgo", "depisoenpiso"]
@@ -31,11 +36,31 @@ class SearchRequest(BaseModel):
     pages: int | None = None
 
 
+class SettingsChange(BaseModel):
+    travel_provider: Literal["graph", "transitous", "google"] | None = None
+    transitous_contact: str | None = None
+    google_key: str | None = None
+
+
 def create_app(db_path: pathlib.Path | None = None,
                static_dir: pathlib.Path | None = None,
-               runner=None) -> FastAPI:
+               runner=None, get_key=None, set_key=None, geocode=None,
+               provider_factory=None) -> FastAPI:
     app = FastAPI(title="buscapiso")
     ruta_db = db_path
+    get_key = get_key or keys.get_google_key
+    set_key = set_key or keys.set_google_key
+    provider_factory = provider_factory or (
+        lambda con: provider_from_settings(con, get_key=get_key, cached=False))
+
+    def _geocode_real(q: str) -> list[dict]:
+        con = almacen.abrir(ruta_db or paths.db_path())
+        try:
+            return Geocodificador(con).buscar(q)
+        finally:
+            con.close()
+
+    geocode = geocode or _geocode_real
     runner = runner or SearchRunner()
     app.state.runner = runner
 
@@ -164,6 +189,65 @@ def create_app(db_path: pathlib.Path | None = None,
 
         return StreamingResponse(fuente(), media_type="text/event-stream",
                                  headers={"Cache-Control": "no-cache"})
+
+    def _settings(con) -> dict:
+        a = almacen.leer_ajustes(con)
+        return {"travel_provider": a.get("travel_provider", "graph"),
+                "transitous_contact": a.get("transitous_contact", ""),
+                "has_google_key": bool(get_key())}
+
+    @app.get("/api/settings")
+    def settings() -> dict:
+        with db() as con:
+            return _settings(con)
+
+    @app.put("/api/settings")
+    def save_settings(body: SettingsChange) -> dict:
+        if body.google_key is not None:
+            try:
+                set_key(body.google_key.strip() or None)
+            except keys.KeysUnavailable as e:
+                raise HTTPException(503, str(e))
+        with db() as con:
+            actual = _settings(con)
+            proveedor = body.travel_provider or actual["travel_provider"]
+            contacto = (body.transitous_contact if body.transitous_contact is not None
+                        else actual["transitous_contact"]).strip()
+            if proveedor == "transitous" and not contacto:
+                raise HTTPException(422, "Transitous needs a contact (email or URL)")
+            if proveedor == "google" and not get_key():
+                raise HTTPException(422, "Google Routes needs an API key")
+            almacen.guardar_ajuste(con, "travel_provider", proveedor)
+            almacen.guardar_ajuste(con, "transitous_contact", contacto)
+            return _settings(con)
+
+    @app.post("/api/settings/test-route")
+    def test_route() -> dict:
+        origen = (41.3792, 2.1404)
+        with db() as con:
+            perfil = active_profile(con)
+            cfg, _ = to_engine_cfg(perfil)
+            destino = (cfg["destinos"] or [{"nombre": "Fira", "lat": 41.3519, "lon": 2.1307,
+                                            "modo": "transporte", "salida": "08:30"}])[0]
+            g = GraphProvider(Red.cargar()).trips([origen], destino)[0]
+            provider, aviso = provider_factory(con)
+        salida = {"graph": {"minutes": g.minutes, "detail": g.detail} if g else None,
+                  "provider": None, "error": aviso}
+        if provider is not None:
+            try:
+                t = provider.trips([origen], destino)[0]
+                salida["provider"] = ({"name": provider.name, "minutes": t.minutes,
+                                       "detail": t.detail} if t else None)
+            except TravelError as e:
+                salida["error"] = str(e)
+        return salida
+
+    @app.get("/api/geocode")
+    def geocode_route(q: str = Query(min_length=2)) -> list[dict]:
+        try:
+            return geocode(q)
+        except OSError as e:
+            raise HTTPException(502, f"Address search is unavailable: {e}")
 
     app.state.db = db
     estaticos = static_dir if static_dir is not None else WEB_DIST
