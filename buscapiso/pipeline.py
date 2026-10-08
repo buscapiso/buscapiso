@@ -255,7 +255,8 @@ def _procesar(anuncios, cfg, zonas, con, geo, red, options, idealista) -> Search
     navegador.cerrar_todo()
 
     _stage(5, "Guardando...")
-    nuevos = almacen.registrar(con, ok + posibles)
+    nuevos = almacen.registrar(con, ok) + almacen.registrar(con, posibles,
+                                                            grupo="possible")
     return SearchResult(accepted=ok, possible=posibles, rejected=fuera,
                         new_ids={a.id for a in nuevos}, crawled=len(anuncios),
                         details_read=fichas,

@@ -83,3 +83,20 @@ def test_saving_again_overwrites(tmp_path):
     cambiado = SearchProfile(name="yo", sources=["fotocasa"])
     almacen.guardar_perfil(con, cambiado)
     assert almacen.cargar_perfil(con, "yo") == cambiado
+
+
+
+
+def test_v1_databases_gain_the_group_column(tmp_path):
+    ruta = tmp_path / "pisos.db"
+    base_antigua(ruta)
+    con = almacen.abrir(ruta)
+    assert con.execute("PRAGMA user_version").fetchone() == (almacen.SCHEMA_VERSION,)
+    assert set(r[0] for r in con.execute("SELECT DISTINCT grupo FROM anuncios")) == {"accepted"}
+
+
+def test_each_migration_step_leaves_its_own_backup(tmp_path):
+    ruta = tmp_path / "pisos.db"
+    base_antigua(ruta)
+    almacen.abrir(ruta).close()
+    assert (tmp_path / "pisos.v0.bak").exists()

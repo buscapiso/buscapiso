@@ -13,7 +13,7 @@ import sqlite3
 
 from buscapiso.profiles import SearchProfile
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 ESTADOS = ("new", "liked", "hidden", "contacted", "visit_scheduled", "visited",
            "applied", "got_it", "rejected", "discarded")
@@ -41,11 +41,12 @@ def abrir(ruta: pathlib.Path) -> sqlite3.Connection:
             copia = sqlite3.connect(ruta.with_name(f"{ruta.stem}.v{version}.bak"))
             con.backup(copia)
             copia.close()
-        _migrar(con)
+        for paso in _MIGRACIONES[version:SCHEMA_VERSION]:
+            paso(con)
     return con
 
 
-def _migrar(con: sqlite3.Connection) -> None:
+def _migrar_a_1(con: sqlite3.Connection) -> None:
     """De la version 0 (sin numero de esquema) a la 1."""
     with con:
         con.execute("""
@@ -76,14 +77,25 @@ def _migrar(con: sqlite3.Connection) -> None:
                 datos TEXT NOT NULL,
                 activo INTEGER NOT NULL DEFAULT 0,
                 actualizado TEXT NOT NULL)""")
-        con.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
+        con.execute("PRAGMA user_version = 1")
+
+
+def _migrar_a_2(con: sqlite3.Connection) -> None:
+    """Grupo de cada anuncio: aceptado o posible (genero sin confirmar)."""
+    with con:
+        con.execute("ALTER TABLE anuncios ADD COLUMN grupo TEXT NOT NULL "
+                    "DEFAULT 'accepted'")
+        con.execute("PRAGMA user_version = 2")
+
+
+_MIGRACIONES = [_migrar_a_1, _migrar_a_2]
 
 
 def hoy() -> str:
     return dt.date.today().isoformat()
 
 
-def registrar(con: sqlite3.Connection, anuncios: list) -> list:
+def registrar(con: sqlite3.Connection, anuncios: list, grupo: str = "accepted") -> list:
     """Guarda los anuncios y devuelve solo los que no habiamos visto nunca."""
     nuevos = []
     for a in anuncios:
@@ -93,15 +105,15 @@ def registrar(con: sqlite3.Connection, anuncios: list) -> list:
             a.visto_por_primera_vez = hoy()
             con.execute(
                 "INSERT INTO anuncios (id, portal, id_portal, url, primera_vez,"
-                " ultima_vez, estado, datos) VALUES (?,?,?,?,?,?,?,?)",
+                " ultima_vez, estado, datos, grupo) VALUES (?,?,?,?,?,?,?,?,?)",
                 (a.id, a.portal, a.id_portal, a.url, hoy(), hoy(), "new",
-                 json.dumps(a.como_dict(), ensure_ascii=False)))
+                 json.dumps(a.como_dict(), ensure_ascii=False), grupo))
             nuevos.append(a)
         else:
             a.visto_por_primera_vez = fila[0]
             con.execute(
-                "UPDATE anuncios SET ultima_vez = ?, datos = ? WHERE id = ?",
-                (hoy(), json.dumps(a.como_dict(), ensure_ascii=False), a.id))
+                "UPDATE anuncios SET ultima_vez = ?, datos = ?, grupo = ? WHERE id = ?",
+                (hoy(), json.dumps(a.como_dict(), ensure_ascii=False), grupo, a.id))
     con.commit()
     return nuevos
 
@@ -117,23 +129,68 @@ def _ahora() -> str:
 
 
 def marcar(con: sqlite3.Connection, id_anuncio: str, estado: str,
-           nota: str = "") -> bool:
+           nota: str | None = None) -> bool:
+    """Cambia el estado. Sin nota, la que hubiera se conserva."""
     estado = ESTADOS_ANTIGUOS.get(estado, estado)
     if estado not in ESTADOS:
         raise ValueError(f"estado invalido: {estado}. Validos: {', '.join(ESTADOS)}")
     with con:
-        cur = con.execute("UPDATE anuncios SET estado = ?, nota = ? WHERE id = ?",
-                          (estado, nota, id_anuncio))
+        if nota is None:
+            cur = con.execute("UPDATE anuncios SET estado = ? WHERE id = ?",
+                              (estado, id_anuncio))
+        else:
+            cur = con.execute("UPDATE anuncios SET estado = ?, nota = ? WHERE id = ?",
+                              (estado, nota, id_anuncio))
         if cur.rowcount == 0:
             return False
+        actual = con.execute("SELECT nota FROM anuncios WHERE id = ?",
+                             (id_anuncio,)).fetchone()[0]
         con.execute("INSERT INTO historial (anuncio, estado, nota, cuando) "
-                    "VALUES (?,?,?,?)", (id_anuncio, estado, nota, _ahora()))
+                    "VALUES (?,?,?,?)", (id_anuncio, estado, actual, _ahora()))
     return True
 
 
 def historial(con: sqlite3.Connection, id_anuncio: str) -> list[tuple[str, str, str]]:
     return con.execute("SELECT estado, nota, cuando FROM historial WHERE anuncio = ? "
                        "ORDER BY id", (id_anuncio,)).fetchall()
+
+
+def anotar(con: sqlite3.Connection, id_anuncio: str, nota: str) -> bool:
+    with con:
+        cur = con.execute("UPDATE anuncios SET nota = ? WHERE id = ?",
+                          (nota, id_anuncio))
+    return cur.rowcount > 0
+
+
+_COLUMNAS = "datos, estado, nota, grupo, primera_vez, ultima_vez"
+
+
+def _fila(f: tuple) -> dict:
+    datos, estado, nota, grupo, primera, ultima = f
+    return {"datos": json.loads(datos), "estado": estado, "nota": nota,
+            "grupo": grupo, "primera_vez": primera, "ultima_vez": ultima}
+
+
+def listar_anuncios(con: sqlite3.Connection, estados: list[str] | None = None,
+                    grupo: str | None = None) -> list[dict]:
+    """Anuncios guardados, de mas a menos puntuacion."""
+    sql, args = f"SELECT {_COLUMNAS} FROM anuncios WHERE 1 = 1", []
+    if estados:
+        sql += f" AND estado IN ({','.join('?' * len(estados))})"
+        args += estados
+    if grupo:
+        sql += " AND grupo = ?"
+        args.append(grupo)
+    sql += " ORDER BY json_extract(datos, '$.puntuacion') DESC, primera_vez DESC"
+    return [_fila(f) for f in con.execute(sql, args)]
+
+
+def leer_anuncio(con: sqlite3.Connection, id_anuncio: str) -> dict | None:
+    f = con.execute(f"SELECT {_COLUMNAS} FROM anuncios WHERE id = ?",
+                    (id_anuncio,)).fetchone()
+    if f is None:
+        return None
+    return {**_fila(f), "historial": historial(con, id_anuncio)}
 
 
 def descartados(con: sqlite3.Connection) -> set[str]:

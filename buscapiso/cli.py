@@ -96,7 +96,7 @@ def cmd_search(args) -> int:
 
 def cmd_mark(args) -> int:
     con = almacen.abrir(paths.db_path())
-    if almacen.marcar(con, args.id, args.estado, args.nota or ""):
+    if almacen.marcar(con, args.id, args.estado, args.nota or None):
         print(f"{args.id} -> {almacen.ESTADOS_ANTIGUOS.get(args.estado, args.estado)}")
         return 0
     print(f"no encuentro el anuncio {args.id}")
@@ -186,7 +186,7 @@ def main(argv: list[str] | None = None) -> int:
     m.add_argument("id")
     m.add_argument("estado",
                    choices=list(almacen.ESTADOS) + list(almacen.ESTADOS_ANTIGUOS))
-    m.add_argument("nota", nargs="?", default="")
+    m.add_argument("nota", nargs="?", default=None)
     m.set_defaults(func=cmd_mark)
 
     e = sub.add_parser("statuses", aliases=["estados"], help="lista lo que has marcado")

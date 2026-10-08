@@ -69,3 +69,36 @@ def test_hidden_listings_are_also_left_out(con):
     almacen.registrar(con, [x, y])
     almacen.marcar(con, y.id, "hidden")
     assert almacen.descartados(con) == {y.id}
+
+
+def test_changing_status_without_a_note_keeps_the_note(con):
+    x = a("1"); almacen.registrar(con, [x])
+    almacen.marcar(con, x.id, "liked", "balcony!")
+    almacen.marcar(con, x.id, "contacted")
+    assert almacen.leer_anuncio(con, x.id)["nota"] == "balcony!"
+
+
+def test_a_note_can_change_alone(con):
+    x = a("1"); almacen.registrar(con, [x])
+    almacen.marcar(con, x.id, "liked")
+    assert almacen.anotar(con, x.id, "call after 18h")
+    fila = almacen.leer_anuncio(con, x.id)
+    assert (fila["estado"], fila["nota"]) == ("liked", "call after 18h")
+    assert len(fila["historial"]) == 1
+    assert almacen.anotar(con, "noexiste", "x") is False
+
+
+def test_listings_come_sorted_by_score_and_filtered(con):
+    bajo, alto, posible = a("1"), a("2"), a("3")
+    bajo.puntuacion, alto.puntuacion, posible.puntuacion = 40, 90, 70
+    almacen.registrar(con, [bajo, alto])
+    almacen.registrar(con, [posible], grupo="possible")
+    almacen.marcar(con, bajo.id, "liked")
+    todos = almacen.listar_anuncios(con)
+    assert [f["datos"]["id_portal"] for f in todos] == ["2", "3", "1"]
+    assert [f["datos"]["id_portal"] for f in almacen.listar_anuncios(con, grupo="possible")] == ["3"]
+    assert [f["datos"]["id_portal"] for f in almacen.listar_anuncios(con, estados=["liked"])] == ["1"]
+
+
+def test_reading_an_unknown_listing_gives_none(con):
+    assert almacen.leer_anuncio(con, "noexiste") is None
