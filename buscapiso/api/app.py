@@ -156,7 +156,8 @@ def create_app(db_path: pathlib.Path | None = None,
     def _avisar(resultado) -> None:
         con = almacen.abrir(app.state.db_path)
         try:
-            enlace = access.access_url(con, app.state.port) if app.state.lan else None
+            # Sin la clave: el aviso pasa por un servidor de terceros.
+            enlace = (f"http://{access.local_ip()}:{app.state.port}/" if app.state.lan else None)
             notify.notify_new_listings(con, resultado, click=enlace)
         finally:
             con.close()

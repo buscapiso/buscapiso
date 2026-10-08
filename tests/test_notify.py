@@ -83,3 +83,21 @@ def test_notify_api_generates_a_private_topic_and_sends_a_test(tmp_path, monkeyp
     assert enviados[0][0] == f"https://ntfy.sh/{r['topic']}"
     c.put("/api/notify", json={"enabled": False})
     assert c.get("/api/notify").json()["topic"] == ""
+
+
+def test_the_click_link_never_carries_the_access_token(tmp_path, monkeypatch):
+    """El aviso pasa por ntfy.sh, donde cualquiera que sepa el tema lo lee: el
+    enlace no puede llevar la clave. El movil ya tiene la cookie."""
+    from buscapiso import access
+    from buscapiso.api.app import create_app
+    enviados = []
+    monkeypatch.setattr("buscapiso.notify._post", lambda u, h, b: enviados.append(h))
+    app = create_app(db_path=tmp_path / "p.db", static_dir=tmp_path / "x", require_token=True)
+    con = almacen.abrir(tmp_path / "p.db")
+    almacen.guardar_ajuste(con, "ntfy_topic", "buscapiso-abc123")
+    token = access.get_token(con)
+    con.close()
+    a = anuncio(1, 120)
+    app.state.runner._after(SearchResult(accepted=[a], new_ids={a.id}))
+    assert enviados and token not in enviados[0]["Click"]
+    assert enviados[0]["Click"].endswith("/")
