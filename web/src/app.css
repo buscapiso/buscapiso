@@ -39,3 +39,4 @@ input, select, textarea {
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
+input[type='checkbox'] { min-height: auto; width: 18px; height: 18px; accent-color: var(--accent); }
