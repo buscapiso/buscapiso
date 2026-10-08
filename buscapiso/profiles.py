@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 Source = Literal["idealista", "fotocasa", "roomgo", "depisoenpiso"]
 Sort = Literal["newest", "cheapest", "relevance"]
+Mode = Literal["transit", "walk", "bike"]
 
 DEFAULT_WEIGHTS: dict[str, float] = {
     "minutos_gratis": 10,
@@ -41,6 +42,7 @@ DEFAULT_WEIGHTS: dict[str, float] = {
 
 _GENDER = {"female_only": "chicas", "male_only": "chicos", "mixed": "mixto",
            "any": "cualquiera"}
+_MODE = {"transit": "transporte", "walk": "a_pie", "bike": "bici"}
 _VISITS = {"strict": "estricto", "preferred": "preferible", "indifferent": "indiferente"}
 _SORT = {"newest": "nuevos", "cheapest": "baratos", "relevance": "relevancia"}
 _IDEALISTA = {"no_live_in_owner": "sin_propietario", "with_students": "con_estudiantes",
@@ -58,6 +60,8 @@ class Destination(BaseModel):
     lon: float = Field(ge=-180, le=180)
     max_minutes: float | None = Field(default=None, gt=0)
     minute_weight: float = Field(default=1.0, ge=0)
+    mode: Mode = "transit"
+    depart_at: str = Field(default="08:30", pattern=r"^([01]\d|2[0-3]):[0-5]\d$")
 
 
 class Budget(BaseModel):
@@ -101,6 +105,7 @@ class Crawl(BaseModel):
     fotocasa_sort: Sort = "cheapest"
     max_pages: int = Field(default=3, ge=1, le=20)
     details_to_read: int = Field(default=12, ge=0, le=100)
+    real_travel_times: int = Field(default=40, ge=0, le=200)
 
 
 class SearchProfile(BaseModel):
@@ -155,7 +160,8 @@ def to_engine_cfg(p: SearchProfile) -> tuple[dict, dict]:
         },
         "destinos": [
             {"nombre": d.name, "lat": d.lat, "lon": d.lon,
-             "max_minutos": d.max_minutes, "peso_minuto": d.minute_weight}
+             "max_minutos": d.max_minutes, "peso_minuto": d.minute_weight,
+             "modo": _MODE[d.mode], "salida": d.depart_at}
             for d in p.destinations
         ],
         "pesos": dict(p.weights),
@@ -164,6 +170,7 @@ def to_engine_cfg(p: SearchProfile) -> tuple[dict, dict]:
             "orden_fotocasa": _SORT[p.crawl.fotocasa_sort],
             "max_paginas_por_municipio": p.crawl.max_pages,
             "fichas_a_enriquecer": p.crawl.details_to_read,
+            "trayectos_reales": p.crawl.real_travel_times,
         },
     }
     zonas = {"excluir": list(p.zones.exclude), "penalizar": list(p.zones.penalize),
@@ -182,7 +189,9 @@ def from_engine_cfg(cfg: dict, zonas: dict, name: str) -> SearchProfile:
         destinations=[
             Destination(name=d["nombre"], lat=d["lat"], lon=d["lon"],
                         max_minutes=d.get("max_minutos"),
-                        minute_weight=d.get("peso_minuto", 1.0))
+                        minute_weight=d.get("peso_minuto", 1.0),
+                        mode=_invert(_MODE)[d.get("modo", "transporte")],
+                        depart_at=d.get("salida", "08:30"))
             for d in cfg.get("destinos", [])
         ],
         budget=Budget(ideal_total=pres["coste_total_ideal"],
@@ -205,6 +214,7 @@ def from_engine_cfg(cfg: dict, zonas: dict, name: str) -> SearchProfile:
         crawl=Crawl(sort=_invert(_SORT)[bus.get("orden", "nuevos")],
                     fotocasa_sort=_invert(_SORT)[bus.get("orden_fotocasa", "baratos")],
                     max_pages=bus.get("max_paginas_por_municipio", 3),
-                    details_to_read=bus.get("fichas_a_enriquecer", 12)),
+                    details_to_read=bus.get("fichas_a_enriquecer", 12),
+                    real_travel_times=bus.get("trayectos_reales", 40)),
         weights=cfg.get("pesos", {}),
     )

@@ -16,7 +16,8 @@ from buscapiso.transporte import Red
 
 def fira(max_minutos):
     return [{"nombre": "Fira", "lat": 41.3519228, "lon": 2.130679,
-             "max_minutos": max_minutos, "peso_minuto": 2.0}]
+             "max_minutos": max_minutos, "peso_minuto": 2.0,
+             "modo": "transporte", "salida": "08:30"}]
 
 
 @pytest.fixture(scope="module")
@@ -111,3 +112,11 @@ def test_a_second_limit_can_only_narrow_the_selection(cat, red):
     solo_fira = {z["nombre"] for z in cat.seleccionar(fira(40), red)}
     ambos = {z["nombre"] for z in cat.seleccionar(fira(40) + [collblanc], red)}
     assert ambos and ambos <= solo_fira
+
+
+def test_a_walking_destination_selects_only_nearby_zones(cat, red):
+    andando = [{"nombre": "Fira", "lat": 41.3519228, "lon": 2.130679, "max_minutos": 25,
+                "peso_minuto": 1.0, "modo": "a_pie", "salida": "08:30"}]
+    en_metro = {z["nombre"] for z in cat.seleccionar(fira(25), red)}
+    a_pie = {z["nombre"] for z in cat.seleccionar(andando, red)}
+    assert a_pie and a_pie <= en_metro

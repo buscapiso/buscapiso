@@ -20,6 +20,7 @@ from buscapiso.geocodificador import Geocodificador
 from buscapiso.modelo import GENERO_CHICAS
 from buscapiso.ranking import filtrar, ordenar
 from buscapiso.transporte import Red
+from buscapiso.travel import graph_trip
 
 
 @dataclass
@@ -97,7 +98,8 @@ def _avisar_inalcanzables(destinos: list[dict], red: Red) -> list[dict]:
     """
     salida = []
     for d in destinos:
-        if red.estaciones_cercanas(d["lat"], d["lon"]):
+        # A pie y en bici siempre se llega; solo el tren necesita estacion.
+        if d.get("modo", "transporte") != "transporte" or red.estaciones_cercanas(d["lat"], d["lon"]):
             salida.append(d)
             continue
         emit("warning", f"{d['nombre']} no tiene ninguna estacion a distancia andable: "
@@ -131,10 +133,10 @@ def compute_routes(anuncios: list, destinos: list[dict], red: Red) -> None:
         if a.lat is None:
             continue
         for d in destinos:
-            r = red.ruta_a_punto(a.lat, a.lon, d["lat"], d["lon"])
-            if r is not None:
-                a.trayectos[d["nombre"]] = r.minutos
-                a.rutas[d["nombre"]] = r.detalle
+            t = graph_trip(red, a.lat, a.lon, d)
+            if t is not None:
+                a.trayectos[d["nombre"]] = t.minutes
+                a.rutas[d["nombre"]] = t.detail
 
 
 def _leer_cache(carpeta: pathlib.Path) -> list:

@@ -64,11 +64,15 @@ destinos:
     lon: 2.130679
     max_minutos: 30
     peso_minuto: 2.0
+    modo: transporte                 # transporte | a_pie | bici
+    salida: "08:30"                  # hora a la que sueles ir, dia laborable
   - nombre: Collblanc
     lat: 41.3758735
     lon: 2.1184045
     max_minutos: null
     peso_minuto: 0.6
+    modo: transporte
+    salida: "08:30"
 
 pesos:
   minutos_gratis: 10          # hasta aqui el trayecto no penaliza
@@ -100,3 +104,4 @@ busqueda:
   orden_fotocasa: baratos     # con 8.000 anuncios, lo barato primero
   max_paginas_por_municipio: 3
   fichas_a_enriquecer: 12     # cuantas fichas completas abrir (son lentas)
+  trayectos_reales: 40        # anuncios a recalcular con horarios reales, si hay proveedor
