@@ -102,6 +102,36 @@ Solo se recalculan con horarios reales los mejores anuncios de cada búsqueda
 (40 por defecto); el resto conserva la estimación. Si el proveedor falla, la
 búsqueda sigue con la estimación y lo avisa.
 
+Con Transitous, cada destino cuesta una sola petición: el servidor devuelve
+cuánto antes hay que salir de cada parada para llegar a la hora que pongas en
+"Be there by", y el tiempo de cada piso es el de su mejor parada a menos de
+1,2 km más el tramo a pie. Por eso los minutos incluyen la espera: desde
+plaça de Sants hay que salir 22 minutos antes de las 8:30 para llegar a Fira,
+aunque el tren tarde menos.
+
+#### Tu propio servidor MOTIS
+
+Transitous es una instancia pública de MOTIS, un motor libre (licencia MIT).
+Puedes montar el tuyo y apuntar buscapiso a él; así no dependes del servidor
+público ni de sus condiciones de uso.
+
+```bash
+mkdir motis && cd motis
+wget https://github.com/motis-project/motis/releases/latest/download/motis-linux-amd64.tar.bz2
+tar xf motis-linux-amd64.tar.bz2
+wget https://download.geofabrik.de/europe/spain/cataluna-latest.osm.pbf   # ~270 MB
+# Horarios GTFS: la lista de feeds de Barcelona que usa Transitous está en
+# https://github.com/public-transport/transitous/blob/main/feeds/es.json
+# (metro y bus de TMB, bus metropolitano, Cercanías...). El de TMB pide
+# registrarse en developer.tmb.cat.
+./motis config cataluna-latest.osm.pbf tmb.zip amb.zip rodalies.zip
+./motis import
+./motis server        # escucha en http://localhost:8080
+```
+
+Después, en Settings → Travel times → Transitous, pon `http://localhost:8080`
+como servidor. Con un servidor propio no hace falta poner contacto.
+
 ## Las zonas se calculan solas
 
 No hay lista de zonas que mantener. El buscador coge el límite de
