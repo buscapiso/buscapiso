@@ -36,3 +36,20 @@ def test_serve_defaults_to_port_8770(monkeypatch):
     assert cli.main(["serve", "--no-open"]) == 0
     assert llamadas[0]["port"] == 8770
     assert llamadas[0]["host"] == "127.0.0.1"
+
+
+def test_serve_on_a_busy_port_explains_and_opens_nothing(monkeypatch, capsys):
+    import socket
+    import uvicorn
+    import webbrowser
+    from buscapiso import cli
+    monkeypatch.setattr(uvicorn, "run", lambda *a, **k: (_ for _ in ()).throw(AssertionError("no")))
+    abiertos = []
+    monkeypatch.setattr(webbrowser, "open", abiertos.append)
+    with socket.socket() as ocupado:
+        ocupado.bind(("127.0.0.1", 0))
+        ocupado.listen()
+        puerto = ocupado.getsockname()[1]
+        assert cli.main(["serve", "--port", str(puerto)]) == 2
+    assert "--port" in capsys.readouterr().out
+    assert abiertos == []

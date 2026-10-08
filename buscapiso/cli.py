@@ -143,10 +143,22 @@ def cmd_serve(args) -> int:
     import threading
     import uvicorn
     from buscapiso.api.app import create_app
+    import socket
+    # Antes de nada: si el puerto esta ocupado, abrir el navegador llevaria a
+    # la app que lo ocupa, no a buscapiso.
+    with socket.socket() as prueba:
+        try:
+            prueba.bind((args.host, args.port))
+        except OSError:
+            print(f"El puerto {args.port} ya lo usa otro programa. "
+                  f"Prueba con otro: buscapiso serve --port {args.port + 1}")
+            return 2
     url = f"http://{args.host}:{args.port}/"
     print(f"buscapiso en {url} (Ctrl+C para parar)")
     if not args.no_open:
-        threading.Timer(1.0, webbrowser.open, args=(url,)).start()
+        temporizador = threading.Timer(1.0, webbrowser.open, args=(url,))
+        temporizador.daemon = True
+        temporizador.start()
     uvicorn.run(create_app(), host=args.host, port=args.port, log_level="warning")
     return 0
 
