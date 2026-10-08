@@ -7,7 +7,11 @@ clave y nunca lanza TravelError.
 from __future__ import annotations
 
 import datetime as dt
+import json
 import sqlite3
+import time
+import urllib.parse
+import urllib.request
 from dataclasses import dataclass
 from typing import Callable, Protocol
 from zoneinfo import ZoneInfo
@@ -109,3 +113,79 @@ class CachedProvider:
                             (*self._clave(*origins[i], destino), t.minutes, t.detail,
                              self.now().isoformat()))
         return resultado
+
+
+PROJECT_URL = "https://github.com/feal-ca/buscapiso"
+TRANSITOUS_PLAN = "https://api.transitous.org/api/v4/plan"
+
+
+def transitous_user_agent(contact: str) -> str:
+    return f"buscapiso/0.2 (+{PROJECT_URL}; contact: {contact.strip()})"
+
+
+def _get_json(url: str, headers: dict) -> dict:
+    req = urllib.request.Request(url, headers=headers)
+    with urllib.request.urlopen(req, timeout=30) as r:
+        return json.load(r)
+
+
+def _lineas(itinerario: dict) -> str:
+    lineas = [leg["routeShortName"] for leg in itinerario.get("legs", [])
+              if leg.get("routeShortName")]
+    return " > ".join(lineas) or "walk"
+
+
+class TransitousProvider:
+    """API publica de Transitous (MOTIS). Sus condiciones: proyecto abierto y no
+    comercial, User-Agent con contacto, y avisarles antes de un uso intensivo."""
+    name = "transitous"
+
+    def __init__(self, contact: str, fetch: Callable[[str, dict], dict] | None = None,
+                 pause: float = 1.0,
+                 now: Callable[[], dt.datetime] = lambda: dt.datetime.now(dt.timezone.utc)):
+        if not contact.strip():
+            raise ValueError("Transitous needs a contact (email or URL) in the User-Agent")
+        self.headers = {"User-Agent": transitous_user_agent(contact)}
+        self.fetch = fetch or _get_json
+        self.pause, self.now = pause, now
+
+    def _url(self, lat, lon, d) -> str:
+        cuando = next_departure(d.get("salida", "08:30"), self.now())
+        q = {"fromPlace": f"{lat},{lon}", "toPlace": f"{d['lat']},{d['lon']}",
+             "time": cuando.strftime("%Y-%m-%dT%H:%M:%SZ")}
+        modo = d.get("modo", "transporte")
+        if modo in ("a_pie", "bici"):
+            q["directModes"] = "WALK" if modo == "a_pie" else "BIKE"
+            q["maxDirectTime"] = "7200"
+        return f"{TRANSITOUS_PLAN}?{urllib.parse.urlencode(q)}"
+
+    def _trip(self, datos: dict, modo: str) -> Trip | None:
+        if modo in ("a_pie", "bici"):
+            directos = datos.get("direct") or []
+            if not directos:
+                return None
+            return Trip(directos[0]["duration"] / 60, "walk" if modo == "a_pie" else "bike",
+                        self.name)
+        itinerarios = datos.get("itineraries") or []
+        if not itinerarios:
+            return None
+        mejor = min(itinerarios, key=lambda i: i["duration"])
+        return Trip(mejor["duration"] / 60, _lineas(mejor), self.name)
+
+    def trips(self, origins, destino):
+        modo = destino.get("modo", "transporte")
+        salida: list[Trip | None] = []
+        fallos = 0
+        for i, (lat, lon) in enumerate(origins):
+            if i and self.pause:
+                time.sleep(self.pause)
+            try:
+                salida.append(self._trip(self.fetch(self._url(lat, lon, destino),
+                                                    self.headers), modo))
+            except (OSError, ValueError, KeyError) as e:
+                fallos += 1
+                ultimo = e
+                salida.append(None)
+        if origins and fallos == len(origins):
+            raise TravelError(f"Transitous did not answer: {ultimo}")
+        return salida
