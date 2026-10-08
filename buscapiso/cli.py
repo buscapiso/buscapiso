@@ -68,7 +68,11 @@ def apply_overrides(profile: SearchProfile, args: argparse.Namespace) -> SearchP
 
 def cmd_search(args) -> int:
     con = almacen.abrir(paths.db_path())
-    perfil = apply_overrides(active_profile(con), args)
+    try:
+        perfil = apply_overrides(active_profile(con), args)
+    except ValidationError as e:
+        print(f"opciones no validas para esta busqueda:\n{e}")
+        return 2
     cfg, zonas = to_engine_cfg(perfil)
     opciones = SearchOptions(pages=args.paginas, skip_details=args.sin_fichas,
                              from_cache=args.desde_cache, offline=args.offline,

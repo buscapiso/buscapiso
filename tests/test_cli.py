@@ -88,3 +88,8 @@ def test_a_budget_below_the_ideal_lowers_the_ideal():
     p = SearchProfile(name="x", budget=Budget(ideal_total=500, max_total=650))
     q = cli.apply_overrides(p, _args(presupuesto=400))
     assert (q.budget.ideal_total, q.budget.max_total) == (400, 400)
+
+
+def test_an_out_of_range_override_is_a_clean_error(home, capsys):
+    assert cli.main(["--paginas", "25", "--desde-cache", "--offline", "--no-abrir"]) == 2
+    assert "max_pages" in capsys.readouterr().out

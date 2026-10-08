@@ -45,21 +45,25 @@ def test_run_search_leaves_the_callers_cfg_alone(home, cfg):
     assert yaml.safe_dump(cfg) == antes
 
 
-def test_a_destination_off_the_network_is_reported():
-    from buscapiso.modelo import Anuncio
-    from buscapiso.pipeline import compute_routes
-    from buscapiso.transporte import Red
-    montserrat = {"nombre": "Montserrat", "lat": 41.5931, "lon": 1.8378,
-                  "max_minutos": 30, "peso_minuto": 1.0}
-    a = Anuncio(portal="x", id_portal="1", url="u", lat=41.37587, lon=2.11840)
+def test_an_off_network_destination_is_reported_before_crawling(home, cfg):
+    """Con un destino sin estacion andable, ninguna zona tiene ruta: la
+    seleccion quedaba vacia y el aviso que lo explica nunca llegaba."""
+    from buscapiso.cobertura import Catalogo
+    cfg["destinos"] = [{"nombre": "Montserrat", "lat": 41.5931, "lon": 1.8378,
+                        "max_minutos": 30, "peso_minuto": 1.0}]
     seen = []
     previous = events.set_sink(seen.append)
     try:
-        compute_routes([a], [montserrat], Red.cargar())
+        run_search(cfg, {}, SearchOptions(from_cache=True, offline=True),
+                   almacen.abrir(home / "t.db"))
     finally:
         events.set_sink(previous)
-    assert a.trayectos == {}
-    assert any(e.kind == "warning" and "Montserrat" in e.message for e in seen)
+    primero = next(i for i, e in enumerate(seen) if e.kind == "stage")
+    avisos = [i for i, e in enumerate(seen)
+              if e.kind == "warning" and "Montserrat" in e.message]
+    assert len(avisos) == 1 and avisos[0] < primero
+    zonas = next(e for e in seen if e.message.startswith("Zonas a rastrear"))
+    assert len(zonas.data["zones"]) == len(Catalogo.cargar().zonas)
 
 
 @pytest.mark.parametrize("genero, url_chicas", [

@@ -53,6 +53,7 @@ def run_search(cfg: dict, zonas: dict, options: SearchOptions,
     geo = Geocodificador(con, offline=options.offline)
     red = Red.cargar()
     paginas = options.pages or cfg["busqueda"]["max_paginas_por_municipio"]
+    cfg["destinos"] = _avisar_inalcanzables(cfg.get("destinos", []), red)
     _elegir_zonas(cfg, red, options)
 
     from buscapiso.fuentes.idealista import Idealista
@@ -85,13 +86,35 @@ def idealista_filters(cfg: dict) -> dict:
     return filtros
 
 
+def _avisar_inalcanzables(destinos: list[dict], red: Red) -> list[dict]:
+    """Avisa de los destinos sin estacion andable, antes de rastrear nada.
+
+    Desde ellos no hay ruta en tren, asi que su limite de tiempo no puede
+    elegir zonas: con el, ninguna zona entraria y la busqueda se quedaria
+    vacia sin decir por que. Se conservan para puntuar y para el filtro
+    (solo pasan los pisos desde los que se llega andando), pero se marcan
+    para que la cobertura no los use.
+    """
+    salida = []
+    for d in destinos:
+        if red.estaciones_cercanas(d["lat"], d["lon"]):
+            salida.append(d)
+            continue
+        emit("warning", f"{d['nombre']} no tiene ninguna estacion a distancia andable: "
+                        "solo contaran los pisos desde los que se llega andando, y no "
+                        "se usa para elegir zonas", destination=d["nombre"])
+        salida.append({**d, "fuera_de_red": True})
+    return salida
+
+
 def _elegir_zonas(cfg: dict, red: Red, options: SearchOptions) -> None:
     """Las zonas salen de los limites de tiempo, no de una lista fija."""
     if options.municipalities:
         cfg["municipios"] = list(options.municipalities)
         return
     catalogo = Catalogo.cargar()
-    seleccion = catalogo.seleccionar(cfg.get("destinos", []), red)
+    seleccion = catalogo.seleccionar(
+        [d for d in cfg.get("destinos", []) if not d.get("fuera_de_red")], red)
     cfg["municipios"] = catalogo.slugs(seleccion, "idealista")
     cfg["zonas_fotocasa"] = catalogo.slugs(seleccion, "fotocasa")
     emit("info", f"Zonas a rastrear: {len(seleccion)}",
@@ -104,11 +127,6 @@ def _elegir_zonas(cfg: dict, red: Red, options: SearchOptions) -> None:
 
 def compute_routes(anuncios: list, destinos: list[dict], red: Red) -> None:
     """Rellena anuncio.trayectos y anuncio.rutas para cada destino."""
-    for d in destinos:
-        if not red.estaciones_cercanas(d["lat"], d["lon"]):
-            emit("warning", f"    {d['nombre']} no tiene ninguna estacion a distancia "
-                            "andable: solo contaran los pisos desde los que se "
-                            "llega andando", destination=d["nombre"])
     for a in anuncios:
         if a.lat is None:
             continue
