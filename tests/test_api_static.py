@@ -25,3 +25,14 @@ def test_serve_is_a_cli_command():
     with pytest.raises(SystemExit) as e:
         cli.main(["serve", "--help"])
     assert e.value.code == 0
+
+
+def test_serve_defaults_to_port_8770(monkeypatch):
+    """8765 lo usa otro programa de la usuaria (tds_stats)."""
+    import uvicorn
+    from buscapiso import cli
+    llamadas = []
+    monkeypatch.setattr(uvicorn, "run", lambda app, **kw: llamadas.append(kw))
+    assert cli.main(["serve", "--no-open"]) == 0
+    assert llamadas[0]["port"] == 8770
+    assert llamadas[0]["host"] == "127.0.0.1"

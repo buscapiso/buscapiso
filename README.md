@@ -72,7 +72,7 @@ npm --prefix web ci && npm --prefix web run build   # una vez, y tras cada cambi
 .venv/bin/buscapiso serve
 ```
 
-Se abre en `http://127.0.0.1:8765`. Desde ahí ves los anuncios, los marcas
+Se abre en `http://127.0.0.1:8770`. Desde ahí ves los anuncios, los marcas
 (me gusta, ocultar, contactado, visita...), escribes notas, editas lo que
 buscas y lanzas la búsqueda viendo el progreso. La ventana de Chromium sigue
 abriéndose al buscar, igual que desde el terminal.

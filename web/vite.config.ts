@@ -5,7 +5,7 @@ import { svelteTesting } from '@testing-library/svelte/vite';
 export default defineConfig({
   plugins: [svelte(), svelteTesting()],
   build: { outDir: '../buscapiso/web_dist', emptyOutDir: true },
-  server: { proxy: { '/api': 'http://127.0.0.1:8765' } },
+  server: { proxy: { '/api': 'http://127.0.0.1:8770' } },
   test: {
     environment: 'jsdom',
     globals: true,
