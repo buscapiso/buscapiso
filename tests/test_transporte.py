@@ -73,3 +73,36 @@ def test_andar_directo_gana_si_el_piso_pega_al_destino(red):
 def test_toda_estacion_de_la_red_tiene_coordenadas(red):
     for nombre, est in red.estaciones.items():
         assert est["lat"] and est["lon"], nombre
+
+
+COLLBLANC_LAT, COLLBLANC_LON = 41.37587, 2.11840
+
+
+def test_a_point_on_a_station_matches_the_station_route(red):
+    fira = red.estaciones[FIRA]
+    por_nombre = red.ruta_desde(COLLBLANC_LAT, COLLBLANC_LON, FIRA)
+    por_punto = red.ruta_a_punto(COLLBLANC_LAT, COLLBLANC_LON, fira["lat"], fira["lon"])
+    assert por_punto.minutos == pytest.approx(por_nombre.minutos, abs=0.01)
+
+
+def test_the_last_walk_is_added(red):
+    fira = red.estaciones[FIRA]
+    en_la_estacion = red.ruta_a_punto(COLLBLANC_LAT, COLLBLANC_LON,
+                                      fira["lat"], fira["lon"])
+    # ~400 m al sur de Fira, dentro del recinto; Fira sigue siendo la
+    # estacion mas cercana.
+    al_sur = red.ruta_a_punto(COLLBLANC_LAT, COLLBLANC_LON,
+                              fira["lat"] - 0.0036, fira["lon"])
+    assert al_sur.minutos > en_la_estacion.minutos
+    assert "andando" in al_sur.detalle
+
+
+def test_a_far_destination_outside_the_network_is_unreachable(red):
+    # Montserrat: 40 km y ninguna estacion de la red cerca.
+    assert red.ruta_a_punto(COLLBLANC_LAT, COLLBLANC_LON, 41.5931, 1.8378) is None
+
+
+def test_a_short_trip_is_just_walking(red):
+    r = red.ruta_a_punto(COLLBLANC_LAT, COLLBLANC_LON, 41.37650, 2.11900)
+    assert r.lineas == []
+    assert r.estacion_origen is None
