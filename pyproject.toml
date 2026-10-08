@@ -12,10 +12,12 @@ dependencies = [
     "lxml>=5",
     "PyYAML>=6",
     "pydantic>=2.11",
+    "fastapi>=0.140",
+    "uvicorn>=0.50",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8"]
+dev = ["pytest>=8", "httpx2>=2.13"]
 
 [project.scripts]
 buscapiso = "buscapiso.cli:main"

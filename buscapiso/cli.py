@@ -17,32 +17,14 @@ import pathlib
 import sys
 import webbrowser
 
-import yaml
 from pydantic import ValidationError
 
 from buscapiso import almacen, informe, paths
 from buscapiso.pipeline import SearchOptions, run_search
-from buscapiso.profiles import SearchProfile, from_engine_cfg, to_engine_cfg
+from buscapiso.profiles import SearchProfile, to_engine_cfg
+from buscapiso.seed import active_profile
 
 FUENTES = ["idealista", "roomgo", "depisoenpiso", "fotocasa"]
-
-
-def active_profile(con) -> SearchProfile:
-    perfil = almacen.cargar_perfil(con)
-    if perfil is not None:
-        return perfil
-    config = paths.data_dir() / "config.yaml"
-    if config.exists():
-        cfg = yaml.safe_load(config.read_text(encoding="utf-8"))
-        zonas_yaml = paths.data_dir() / "zonas.yaml"
-        zonas = (yaml.safe_load(zonas_yaml.read_text(encoding="utf-8")) or {}
-                 if zonas_yaml.exists() else {})
-        perfil = from_engine_cfg(cfg, zonas, name="default")
-        print("Perfil 'default' creado a partir de config.yaml y zonas.yaml")
-    else:
-        perfil = SearchProfile(name="default")
-    almacen.guardar_perfil(con, perfil, activar=True)
-    return perfil
 
 
 def apply_overrides(profile: SearchProfile, args: argparse.Namespace) -> SearchProfile:
