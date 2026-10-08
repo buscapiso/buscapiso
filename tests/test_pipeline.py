@@ -72,3 +72,29 @@ def test_idealista_url_filter_follows_the_gender(cfg, genero, url_chicas):
     from buscapiso.pipeline import idealista_filters
     cfg["requisitos"]["genero"] = genero
     assert idealista_filters(cfg)["solo_chicas"] is url_chicas
+
+
+def test_a_failing_provider_falls_back_to_graph_times_with_a_warning(home, cfg):
+    from buscapiso.travel import TravelError
+
+    class Caido:
+        name = "transitous"
+
+        def trips(self, origins, destino):
+            raise TravelError("no network")
+
+    # Fotocasa trae coordenadas en el propio listado: sin ellas (offline, sin
+    # geocodificar) ningun anuncio llegaria a pedir tiempos al proveedor.
+    shutil.copy(RAIZ / "tests" / "fixtures" / "fotocasa_listado.html",
+                home / "cache" / "fotocasa_listado.html")
+    cfg["requisitos"]["genero"] = "cualquiera"
+    seen = []
+    previous = events.set_sink(seen.append)
+    try:
+        r = run_search(cfg, {}, SearchOptions(from_cache=True, offline=True),
+                       almacen.abrir(home / "t.db"), provider=Caido())
+    finally:
+        events.set_sink(previous)
+    assert any(e.kind == "warning" and "transitous" in e.message for e in seen)
+    assert [e.data["step"] for e in seen if e.kind == "stage"] == [1, 2, 3, 4, 5]
+    assert r.crawled > 0

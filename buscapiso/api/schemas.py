@@ -39,6 +39,7 @@ class Listing(BaseModel):
     description: str
     travel: dict[str, float]
     routes: dict[str, str]
+    travel_source: str
     score: float
     reasons: list[str]
     gender: str
@@ -84,6 +85,7 @@ def listing_from_row(row: dict) -> Listing:
         approximate_location=d.get("coords_aproximadas", True),
         photo=d.get("foto", ""), description=d.get("descripcion", ""),
         travel=d.get("trayectos", {}), routes=d.get("rutas", {}),
+        travel_source=d.get("trayectos_fuente", "graph"),
         score=d.get("puntuacion", 0.0), reasons=d.get("motivos", []),
         gender=_GENERO.get(d.get("genero_piso", "desconocido"), "unknown"),
         gender_confirmed=d.get("genero_confirmado", False),

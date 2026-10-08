@@ -55,6 +55,7 @@ class Anuncio:
     # Calculados despues
     trayectos: dict[str, float] = field(default_factory=dict)  # minutos por destino
     rutas: dict[str, str] = field(default_factory=dict)        # detalle por destino
+    trayectos_fuente: str = "graph"   # "graph" o el proveedor
     puntuacion: float = 0.0
     motivos: list[str] = field(default_factory=list)
     visto_por_primera_vez: str = ""

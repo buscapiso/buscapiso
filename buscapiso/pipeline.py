@@ -20,7 +20,7 @@ from buscapiso.geocodificador import Geocodificador
 from buscapiso.modelo import GENERO_CHICAS
 from buscapiso.ranking import filtrar, ordenar
 from buscapiso.transporte import Red
-from buscapiso.travel import graph_trip
+from buscapiso.travel import TravelError, graph_trip
 
 
 @dataclass
@@ -48,7 +48,7 @@ def _stage(step: int, message: str) -> None:
 
 
 def run_search(cfg: dict, zonas: dict, options: SearchOptions,
-               con: sqlite3.Connection) -> SearchResult:
+               con: sqlite3.Connection, provider=None) -> SearchResult:
     cfg = copy.deepcopy(cfg)
     cfg["filtros_idealista"] = idealista_filters(cfg)
     geo = Geocodificador(con, offline=options.offline)
@@ -75,7 +75,7 @@ def run_search(cfg: dict, zonas: dict, options: SearchOptions,
                             "peticiones seguidas.")
             idealista.cerrar()
             return SearchResult()
-    return _procesar(anuncios, cfg, zonas, con, geo, red, options, idealista)
+    return _procesar(anuncios, cfg, zonas, con, geo, red, options, idealista, provider)
 
 
 def idealista_filters(cfg: dict) -> dict:
@@ -137,6 +137,37 @@ def compute_routes(anuncios: list, destinos: list[dict], red: Red) -> None:
             if t is not None:
                 a.trayectos[d["nombre"]] = t.minutes
                 a.rutas[d["nombre"]] = t.detail
+
+
+def refine_routes(anuncios: list, destinos: list[dict], provider, limit: int) -> int:
+    """Sustituye los tiempos del grafo por los del proveedor en los `limit`
+    primeros anuncios con coordenadas."""
+    elegidos = [a for a in anuncios if a.lat is not None][:limit]
+    if not elegidos or not destinos:
+        return 0
+    origenes = [(a.lat, a.lon) for a in elegidos]
+    completos = {a.id: True for a in elegidos}
+    for d in destinos:
+        for a, t in zip(elegidos, provider.trips(origenes, d)):
+            if t is None:
+                completos[a.id] = False
+                continue
+            a.trayectos[d["nombre"]] = t.minutes
+            a.rutas[d["nombre"]] = t.detail
+    for a in elegidos:
+        a.trayectos_fuente = provider.name if completos[a.id] else "graph"
+    return len(elegidos)
+
+
+def _clasificar(anuncios, cfg, zonas, con):
+    ok, posibles, fuera = filtrar(anuncios, cfg, zonas, almacen.descartados(con))
+    ok = ordenar(ok, cfg, zonas)
+    posibles = ordenar(posibles, cfg, zonas)
+    minimo = cfg["requisitos"].get("puntos_minimos_para_preguntar", 60)
+    flojos = [p for p in posibles if p.puntuacion < minimo]
+    posibles = [p for p in posibles if p.puntuacion >= minimo]
+    fuera.extend((p, "genero sin confirmar y puntuacion baja") for p in flojos)
+    return ok, posibles, fuera
 
 
 def _leer_cache(carpeta: pathlib.Path) -> list:
@@ -213,7 +244,8 @@ def _rastrear(cfg: dict, idealista, paginas: int) -> list:
     return anuncios
 
 
-def _procesar(anuncios, cfg, zonas, con, geo, red, options, idealista) -> SearchResult:
+def _procesar(anuncios, cfg, zonas, con, geo, red, options, idealista,
+              provider=None) -> SearchResult:
     _stage(2, "Situando en el mapa (Nominatim, 1 consulta/segundo)...")
     ya_situados = sum(1 for a in anuncios if a.lat is not None)
     if ya_situados:
@@ -229,13 +261,18 @@ def _procesar(anuncios, cfg, zonas, con, geo, red, options, idealista) -> Search
     _stage(3, "Calculando trayectos...")
     compute_routes(anuncios, cfg.get("destinos", []), red)
 
-    ok, posibles, fuera = filtrar(anuncios, cfg, zonas, almacen.descartados(con))
-    ok = ordenar(ok, cfg, zonas)
-    posibles = ordenar(posibles, cfg, zonas)
-    minimo = cfg["requisitos"].get("puntos_minimos_para_preguntar", 60)
-    flojos = [p for p in posibles if p.puntuacion < minimo]
-    posibles = [p for p in posibles if p.puntuacion >= minimo]
-    fuera.extend((p, "genero sin confirmar y puntuacion baja") for p in flojos)
+    ok, posibles, fuera = _clasificar(anuncios, cfg, zonas, con)
+    limite = cfg["busqueda"].get("trayectos_reales", 40)
+    if provider is not None and limite:
+        candidatos = sorted(ok + posibles, key=lambda a: a.puntuacion, reverse=True)
+        try:
+            n = refine_routes(candidatos, cfg.get("destinos", []), provider, limite)
+            emit("info", f"    Tiempos con horarios reales ({provider.name}) para {n} anuncios")
+            ok, posibles, fuera2 = _clasificar(ok + posibles, cfg, zonas, con)
+            fuera.extend(fuera2)
+        except TravelError as e:
+            emit("warning", f"    {provider.name} no ha respondido ({e}); "
+                            "uso los tiempos estimados", provider=provider.name)
     emit("info", f"    {len(ok)} cumplen todos tus requisitos, "
                  f"{len(posibles)} posibles sin confirmar genero, "
                  f"{len(fuera)} descartados\n")

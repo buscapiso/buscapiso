@@ -241,3 +241,25 @@ class GoogleProvider:
                     segundos = float(el["duration"].rstrip("s"))
                     salida[inicio + el["originIndex"]] = Trip(segundos / 60, "Google", self.name)
         return salida
+
+
+def provider_from_settings(con, get_key=None, cached: bool = True
+                           ) -> tuple[object | None, str | None]:
+    """(proveedor, aviso) segun los ajustes. cached=False para la prueba de
+    trayecto de la web, que debe preguntar al proveedor de verdad."""
+    from buscapiso import almacen, keys
+    ajustes = almacen.leer_ajustes(con)
+    cual = ajustes.get("travel_provider", "graph")
+    if cual == "transitous":
+        contacto = ajustes.get("transitous_contact", "").strip()
+        if not contacto:
+            return None, "Transitous needs a contact (email or URL) in the settings"
+        p = TransitousProvider(contacto)
+        return (CachedProvider(p, con) if cached else p), None
+    if cual == "google":
+        clave = (get_key or keys.get_google_key)()
+        if not clave:
+            return None, "Google Routes needs an API key in the settings"
+        p = GoogleProvider(clave)
+        return (CachedProvider(p, con) if cached else p), None
+    return None, None
