@@ -117,7 +117,6 @@ class CachedProvider:
 
 
 PROJECT_URL = "https://github.com/feal-ca/buscapiso"
-TRANSITOUS_PLAN = "https://api.transitous.org/api/v4/plan"
 
 
 def transitous_user_agent(contact: str) -> str:
@@ -136,17 +135,51 @@ def _lineas(itinerario: dict) -> str:
     return " > ".join(lineas) or "walk"
 
 
+TRANSITOUS_URL = "https://api.transitous.org"
+RADIO_PARADA_M = 1200.0
+
+
+def _celda_parada(lat: float, lon: float) -> tuple[int, int]:
+    return int(lat * 100), int(lon * 100)
+
+
+class _Paradas:
+    """Paradas con sus minutos hasta el destino, agrupadas por celdas de 0,01 grados."""
+
+    def __init__(self, todas: list[dict]):
+        self.celdas: dict[tuple[int, int], list[tuple[float, float, float, str]]] = {}
+        for x in todas:
+            p = x["place"]
+            self.celdas.setdefault(_celda_parada(p["lat"], p["lon"]), []).append(
+                (p["lat"], p["lon"], float(x["duration"]), p.get("name", "")))
+
+    def mejor(self, lat: float, lon: float) -> tuple[float, str] | None:
+        ci, cj = _celda_parada(lat, lon)
+        mejor = None
+        for di in (-1, 0, 1):
+            for dj in (-1, 0, 1):
+                for plat, plon, minutos, nombre in self.celdas.get((ci + di, cj + dj), ()):
+                    m = haversine_m(lat, lon, plat, plon)
+                    if m <= RADIO_PARADA_M:
+                        total = minutos + minutos_andando(m)
+                        if mejor is None or total < mejor[0]:
+                            mejor = (total, nombre)
+        return mejor
+
+
 class TransitousProvider:
     """API publica de Transitous (MOTIS). Sus condiciones: proyecto abierto y no
     comercial, User-Agent con contacto, y avisarles antes de un uso intensivo."""
     name = "transitous"
 
-    def __init__(self, contact: str, fetch: Callable[[str, dict], dict] | None = None,
-                 pause: float = 1.0,
+    def __init__(self, contact: str = "", base_url: str = TRANSITOUS_URL,
+                 fetch: Callable[[str, dict], dict] | None = None, pause: float = 1.0,
                  now: Callable[[], dt.datetime] = lambda: dt.datetime.now(dt.timezone.utc)):
-        if not contact.strip():
+        self.base = base_url.rstrip("/")
+        if self.base == TRANSITOUS_URL and not contact.strip():
             raise ValueError("Transitous needs a contact (email or URL) in the User-Agent")
-        self.headers = {"User-Agent": transitous_user_agent(contact)}
+        self.headers = {"User-Agent": transitous_user_agent(contact) if contact.strip()
+                        else "buscapiso/0.2"}
         self.fetch = fetch or _get_json
         self.pause, self.now = pause, now
 
@@ -158,7 +191,27 @@ class TransitousProvider:
         if modo in ("a_pie", "bici"):
             q["directModes"] = "WALK" if modo == "a_pie" else "BIKE"
             q["maxDirectTime"] = "7200"
-        return f"{TRANSITOUS_PLAN}?{urllib.parse.urlencode(q)}"
+        return f"{self.base}/api/v4/plan?{urllib.parse.urlencode(q)}"
+
+    def _url_todos(self, d) -> str:
+        """Una consulta para todos los origenes: desde cada parada, cuanto antes
+        hay que salir para llegar al destino a la hora fijada."""
+        llegada = next_departure(d.get("salida", "08:30"), self.now())
+        q = {"one": f"{d['lat']},{d['lon']}", "time": llegada.strftime("%Y-%m-%dT%H:%M:%SZ"),
+             "arriveBy": "true", "maxTravelTime": "90"}
+        return f"{self.base}/api/v1/one-to-all?{urllib.parse.urlencode(q)}"
+
+    def _todos_a_uno(self, origins, destino):
+        try:
+            datos = self.fetch(self._url_todos(destino), self.headers)
+            paradas = _Paradas(datos["all"])
+        except (OSError, ValueError, KeyError) as e:
+            raise TravelError(f"Transitous did not answer: {e}") from None
+        salida: list[Trip | None] = []
+        for lat, lon in origins:
+            mejor = paradas.mejor(lat, lon)
+            salida.append(Trip(mejor[0], f"via {mejor[1]}", self.name) if mejor else None)
+        return salida
 
     def _trip(self, datos: dict, modo: str) -> Trip | None:
         if modo in ("a_pie", "bici"):
@@ -175,6 +228,8 @@ class TransitousProvider:
 
     def trips(self, origins, destino):
         modo = destino.get("modo", "transporte")
+        if modo == "transporte":
+            return self._todos_a_uno(origins, destino)
         salida: list[Trip | None] = []
         fallos = 0
         for i, (lat, lon) in enumerate(origins):
@@ -228,7 +283,7 @@ class GoogleProvider:
                 "travelMode": modo,
             }
             if modo == "TRANSIT":
-                body["departureTime"] = next_departure(
+                body["arrivalTime"] = next_departure(
                     destino.get("salida", "08:30"), self.now()).strftime("%Y-%m-%dT%H:%M:%SZ")
             try:
                 elementos = self.post(GOOGLE_MATRIX, headers, body)
