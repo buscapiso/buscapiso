@@ -91,3 +91,41 @@ def test_events_do_not_leak_into_the_global_sink(home, capsys):
 def test_state_before_any_search(home):
     s = client_with(SearchRunner(run=fake_run()), home).get("/api/searches/current").json()
     assert s == {"running": False, "id": None, "events": [], "summary": None}
+
+
+def test_a_failed_run_does_not_poison_the_next_one(home):
+    """Caso real de la revision: Playwright arrancado en el hilo de una busqueda
+    que falla queda ligado a ese hilo muerto, y la siguiente busqueda revienta
+    con 'cannot switch to a different thread'."""
+    from buscapiso import navegador
+
+    def run_que_falla(profile, options, db_path):
+        navegador.playwright()
+        raise RuntimeError("nothing crawled")
+
+    def run_que_usa_playwright(profile, options, db_path):
+        navegador.playwright().chromium     # en un Playwright de otro hilo, revienta
+        return SearchResult()
+
+    runner = SearchRunner(run=run_que_falla)
+    c = client_with(runner, home)
+    c.post("/api/searches", json={})
+    runner.wait(30)
+    assert navegador._PW is None, "la busqueda fallida debe cerrar Playwright"
+    runner._run = run_que_usa_playwright
+    c.post("/api/searches", json={})
+    runner.wait(30)
+    assert c.get("/api/searches/current").json()["events"][-1]["kind"] == "done"
+
+
+def test_playwright_started_in_a_dead_thread_is_replaced():
+    import threading
+    from buscapiso import navegador
+    viejo = []
+    h = threading.Thread(target=lambda: viejo.append(navegador.playwright()))
+    h.start(); h.join()
+    nuevo = navegador.playwright()
+    try:
+        assert nuevo is not viejo[0]
+    finally:
+        navegador.cerrar_todo()

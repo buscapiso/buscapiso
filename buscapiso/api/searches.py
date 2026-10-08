@@ -9,7 +9,7 @@ import uuid
 from dataclasses import asdict
 from typing import Callable
 
-from buscapiso import almacen, events
+from buscapiso import almacen, events, navegador
 from buscapiso.pipeline import SearchOptions, SearchResult, run_search
 from buscapiso.profiles import SearchProfile, to_engine_cfg
 
@@ -69,6 +69,9 @@ class SearchRunner:
             traceback.print_exc()
             events.emit("error", f"The search stopped: {e}")
         finally:
+            # Siempre, tambien si fallo: un Playwright vivo en este hilo, que
+            # muere ahora, envenenaria la siguiente busqueda.
+            navegador.cerrar_todo()
             events.set_sink(previous)
             with self._cond:
                 self._running = False
