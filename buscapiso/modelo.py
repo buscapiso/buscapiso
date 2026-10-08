@@ -56,6 +56,12 @@ class Anuncio:
     trayectos: dict[str, float] = field(default_factory=dict)  # minutos por destino
     rutas: dict[str, str] = field(default_factory=dict)        # detalle por destino
     trayectos_fuente: str = "graph"   # "graph" o el proveedor
+    # Lo que ha leido la IA de la descripcion (vacio sin IA)
+    ia_resumen: str = ""
+    ia_pros: list[str] = field(default_factory=list)
+    ia_contras: list[str] = field(default_factory=list)
+    ia_alertas: list[str] = field(default_factory=list)
+    ia_temporal: bool | None = None
     puntuacion: float = 0.0
     motivos: list[str] = field(default_factory=list)
     visto_por_primera_vez: str = ""
