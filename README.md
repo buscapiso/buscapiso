@@ -64,6 +64,26 @@ cambio queda en un historial.
 .venv/bin/buscapiso profile import p.json --use   # tras editar el JSON
 ```
 
+## La web app
+
+```bash
+.venv/bin/pip install -e '.[dev]'
+npm --prefix web ci && npm --prefix web run build   # una vez, y tras cada cambio en web/
+.venv/bin/buscapiso serve
+```
+
+Se abre en `http://127.0.0.1:8765`. Desde ahí ves los anuncios, los marcas
+(me gusta, ocultar, contactado, visita...), escribes notas, editas lo que
+buscas y lanzas la búsqueda viendo el progreso. La ventana de Chromium sigue
+abriéndose al buscar, igual que desde el terminal.
+
+Para trabajar en el frontend: `buscapiso serve --no-open` en un terminal y
+`npm --prefix web run dev` en otro, que recarga al guardar y reenvía `/api`
+al servidor.
+
+Los motivos de la puntuación y los mensajes de progreso de la búsqueda siguen
+en español, porque los genera el motor; traducirlos queda pendiente.
+
 ## Las zonas se calculan solas
 
 No hay lista de zonas que mantener. El buscador coge el límite de
