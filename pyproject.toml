@@ -17,6 +17,9 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=8"]
 
+[project.scripts]
+buscapiso = "buscapiso.cli:main"
+
 [tool.setuptools.packages.find]
 include = ["buscapiso*"]
 

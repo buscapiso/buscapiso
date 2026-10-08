@@ -171,8 +171,9 @@ def generar(anuncios: list, nuevos_ids: set, fuera: list, cfg: dict,
 <h2>Qué se ha quedado fuera y por qué</h2>
 <ul class="fuera">{lista_fuera or '<li>Nada descartado.</li>'}</ul>
 <p class="meta" style="margin-top:26px">Para marcar uno:
- <code>python buscar.py marcar &lt;id&gt; contactado</code> &middot;
- estados: interesa, contactado, visita, descartado</p>
+ <code>buscapiso mark &lt;id&gt; contacted</code> &middot;
+ estados: liked, hidden, contacted, visit_scheduled, visited, applied,
+ got_it, rejected, discarded</p>
 </div></body></html>"""
     destino.write_text(cuerpo, encoding="utf-8")
     return destino

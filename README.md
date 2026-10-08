@@ -8,8 +8,12 @@ deja un informe HTML ordenado, marcando lo que es nuevo desde la última vez.
 
 ```bash
 cd ~/buscapiso
-.venv/bin/python buscar.py
+.venv/bin/buscapiso
 ```
+
+La primera vez crea el perfil `default` a partir de `config.yaml` y
+`zonas.yaml`. Desde entonces los ajustes viven en `pisos.db`; los flags solo
+cambian la búsqueda en curso.
 
 Se abre una ventana de Chromium. **Déjala visible**: es lo que evita el bloqueo
 anti-bot de Idealista. Tarda unos minutos y al terminar abre `informe.html`.
@@ -20,15 +24,15 @@ y sigue solo.
 ### Opciones
 
 ```bash
-.venv/bin/python buscar.py --paginas 5        # rastrea más (por defecto 3)
-.venv/bin/python buscar.py --solo-nuevos      # solo lo publicado en 48 h
-.venv/bin/python buscar.py --sin-fichas       # más rápido, sin abrir fichas
-.venv/bin/python buscar.py --no-abrir         # no abre el navegador al acabar
-.venv/bin/python buscar.py --municipios barcelona/sants-montjuic
-.venv/bin/python buscar.py --desde-cache      # reusa lo descargado
-.venv/bin/python buscar.py --max-minutos 60   # amplía el límite de trayecto
-.venv/bin/python buscar.py --presupuesto 700  # amplía el coste máximo
-.venv/bin/python buscar.py --fuentes idealista fotocasa
+.venv/bin/buscapiso --paginas 5        # rastrea más (por defecto 3)
+.venv/bin/buscapiso --solo-nuevos      # solo lo publicado en 48 h
+.venv/bin/buscapiso --sin-fichas       # más rápido, sin abrir fichas
+.venv/bin/buscapiso --no-abrir         # no abre el navegador al acabar
+.venv/bin/buscapiso --municipios barcelona/sants-montjuic
+.venv/bin/buscapiso --desde-cache      # reusa lo descargado
+.venv/bin/buscapiso --max-minutos 60   # amplía el límite de trayecto
+.venv/bin/buscapiso --presupuesto 700  # amplía el coste máximo
+.venv/bin/buscapiso --fuentes idealista fotocasa
 ```
 
 Una búsqueda completa con los tres portales tarda unos **12-15 minutos**: la
@@ -36,18 +40,29 @@ mayor parte se va en geocodificar (Nominatim solo permite 1 consulta/segundo) y
 en abrir fichas. Con `--sin-fichas` baja a la mitad.
 
 `--desde-cache` es la que más usarás después de la primera vez: reprocesa el
-HTML ya guardado sin tocar Idealista, así puedes cambiar pesos en
-`config.yaml` y ver el efecto al instante sin arriesgarte a un bloqueo.
+HTML ya guardado sin tocar Idealista, así puedes cambiar los pesos del perfil
+(ver "Qué tocar") y ver el efecto al instante sin arriesgarte a un bloqueo.
 
 ### Seguimiento
 
 ```bash
-.venv/bin/python buscar.py marcar a1b2c3d4e5f6 contactado "escrito el lunes"
-.venv/bin/python buscar.py estados
+.venv/bin/buscapiso mark a1b2c3d4e5f6 contacted "escrito el lunes"
+.venv/bin/buscapiso statuses
 ```
 
-Estados: `interesa`, `contactado`, `visita`, `descartado`. Lo que marcas como
-descartado no vuelve a aparecer.
+Estados: `liked`, `hidden`, `contacted`, `visit_scheduled`, `visited`,
+`applied`, `got_it`, `rejected`, `discarded`. Lo que marcas como `hidden` o
+`discarded` no vuelve a aparecer. Los nombres antiguos (`marcar`, `estados`,
+`interesa`, `contactado`, `visita`, `descartado`) siguen funcionando. Cada
+cambio queda en un historial.
+
+### Perfiles
+
+```bash
+.venv/bin/buscapiso profile list                  # el activo lleva *
+.venv/bin/buscapiso profile export default p.json
+.venv/bin/buscapiso profile import p.json --use   # tras editar el JSON
+```
 
 ## Las zonas se calculan solas
 
@@ -78,8 +93,12 @@ Si prefieres no verlos, pon `preguntar_si_genero_desconocido: false`.
 
 ## Qué tocar
 
-**`config.yaml`** contiene el presupuesto, los requisitos, los pesos del ranking y las zonas a
-rastrear. Todo son números: cámbialos y vuelve a ejecutar.
+`config.yaml` y `zonas.yaml` solo se leen la primera vez, para crear el perfil
+`default`. Para cambiar ajustes después, exporta el perfil, edita el JSON e
+impórtalo (ver "Perfiles").
+
+**`config.yaml`** contiene el presupuesto, los requisitos, los pesos del ranking y
+los destinos con los que se crea ese primer perfil.
 
 Los ajustes que más notarás:
 
