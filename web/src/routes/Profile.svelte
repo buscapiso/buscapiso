@@ -7,6 +7,7 @@
   import MapView from '../lib/components/MapView.svelte';
   import TravelSettings from '../lib/components/TravelSettings.svelte';
   import AISettings from '../lib/components/AISettings.svelte';
+  import AutoSettings from '../lib/components/AutoSettings.svelte';
   import DescribeProfile from '../lib/components/DescribeProfile.svelte';
   import { fieldErrors } from '../lib/profileErrors';
   import { t } from '../lib/i18n';
@@ -253,6 +254,7 @@
 
   <TravelSettings />
   <AISettings />
+  <AutoSettings />
 {/if}
 
 <style>

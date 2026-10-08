@@ -152,3 +152,17 @@ export const draftMessage = (id: string) =>
   call<{ text: string }>('POST', `/api/listings/${encodeURIComponent(id)}/draft`);
 export const suggestProfile = (text: string) =>
   call<ProfileSuggestion>('POST', '/api/profiles/suggest', { text });
+
+export interface AccessInfo { url: string; qr_svg: string; lan: boolean }
+export interface Schedule { hours: number; from: string; to: string; last_run: string | null }
+export interface NotifySettings { server: string; topic: string; min_score: number }
+
+export const getAccess = () => call<AccessInfo>('GET', '/api/access');
+export const rotateAccess = () => call<{ url: string }>('POST', '/api/access/rotate');
+export const getSchedule = () => call<Schedule>('GET', '/api/schedule');
+export const saveSchedule = (s: { hours: number; from: string; to: string }) =>
+  call<Schedule>('PUT', '/api/schedule', s);
+export const getNotify = () => call<NotifySettings>('GET', '/api/notify');
+export const saveNotify = (s: { enabled?: boolean; server?: string; min_score?: number }) =>
+  call<NotifySettings>('PUT', '/api/notify', s);
+export const testNotify = () => call<{ ok: boolean }>('POST', '/api/notify/test');
