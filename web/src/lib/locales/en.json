@@ -184,5 +184,9 @@
   "describe.place": "Place: {name} ({address})",
   "describe.placeLimit": "Place: {name} ({address}), {minutes} min",
   "describe.notFound": "Could not find \"{address}\" on the map. Add that place by hand.",
-  "describe.review": "Review the changes below and press Save to keep them."
+  "describe.review": "Review the changes below and press Save to keep them.",
+  "nav.phone": "Phone",
+  "nav.more": "More",
+  "nav.main": "Main",
+  "nav.mainPhone": "Main (phone)"
 }
