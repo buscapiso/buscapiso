@@ -18,8 +18,8 @@ def ctx(tmp_path, monkeypatch):
     llavero = {}
     app = create_app(
         db_path=tmp_path / "p.db", static_dir=tmp_path / "x",
-        get_key=lambda: llavero.get("k"),
-        set_key=lambda k: llavero.update(k=k) if k else llavero.pop("k", None),
+        get_key=lambda name: llavero.get("k") if name == "google" else None,
+        set_key=lambda name, k: llavero.update(k=k) if k else llavero.pop("k", None),
         geocode=lambda q: [{"name": f"{q}, Barcelona", "lat": 41.38, "lon": 2.17}],
         provider_factory=lambda con: (Fijo(), None))
     return TestClient(app), llavero
