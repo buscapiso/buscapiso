@@ -17,8 +17,10 @@ def ai_from_settings(con, get_key=None):
         return ClaudeProvider(clave, model=a.get("ai_model") or "claude-opus-5-5"), None
     if cual == "openai_compat":
         url, modelo = a.get("ai_base_url", "").strip(), a.get("ai_model", "").strip()
-        if not url or not modelo:
-            return None, "AI: set the server address and the model name in the settings"
+        if not modelo:
+            return None, "AI: Choose a model in Settings → AI (Load models), then test it"
+        if not url:
+            return None, "AI: choose a provider again in Settings → AI"
         local = url.startswith(("http://localhost", "http://127.0.0.1"))
         if not clave and not local:
             return None, "AI: this provider needs an API key in the settings"

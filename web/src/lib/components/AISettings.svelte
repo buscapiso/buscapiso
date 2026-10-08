@@ -39,6 +39,8 @@
     try {
       models = (await listModels(s.base_url, key.trim() || undefined)).models;
       if (models.length && !models.includes(s.model)) s.model = models[0];
+      // Se guarda ya: elegir el modelo no debe depender de pulsar Save despues.
+      if (models.length) await save();
     } catch (e) {
       models = [];
       manual = true;
@@ -88,7 +90,9 @@
   }
 
   async function test() {
-    error = ''; tested = '';
+    tested = '';
+    await save();             // se prueba lo que hay en pantalla, no lo guardado antes
+    if (error) return;
     try { tested = (await testAI()).message; } catch (e) {
       error = e instanceof ApiError ? String(e.detail) : String(e);
     }

@@ -58,3 +58,12 @@ def test_neighbourhoods_mix_listings_and_catalog(ctx):
     assert "L'Hospitalet de Llobregat" in names
     assert any("Eixample" in n for n in names)            # del catalogo de zonas
     assert names == sorted(set(names), key=str.casefold)
+
+
+def test_gemini_style_model_ids_lose_their_prefix(tmp_path):
+    app = create_app(db_path=tmp_path / "p.db", static_dir=tmp_path / "x",
+                     get_key=lambda name: "K",
+                     models_fetch=lambda url, h: {"data": [{"id": "models/gemini-flash"},
+                                                           {"id": "openai/gpt-x"}]})
+    r = TestClient(app).post("/api/ai/models", json={"base_url": "https://g.example/openai/"})
+    assert r.json() == {"models": ["gemini-flash", "openai/gpt-x"]}

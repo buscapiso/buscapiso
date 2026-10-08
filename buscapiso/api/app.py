@@ -522,7 +522,9 @@ def create_app(db_path: pathlib.Path | None = None,
             raise HTTPException(502, f"The provider answered HTTP {e.code}. Check the key.")
         except (OSError, ValueError) as e:
             raise HTTPException(502, f"Could not reach the provider ({type(e).__name__})")
-        ids = sorted({m["id"] for m in datos.get("data", []) if isinstance(m, dict) and m.get("id")})
+        # Gemini nombra sus modelos "models/gemini-..."; su API espera el nombre sin prefijo.
+        ids = sorted({m["id"].removeprefix("models/") for m in datos.get("data", [])
+                      if isinstance(m, dict) and m.get("id")})
         return {"models": ids}
 
     @app.get("/api/neighbourhoods")
