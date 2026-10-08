@@ -1,12 +1,11 @@
 import pathlib
 import sys
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
 import pytest
 
-import almacen
-from modelo import Anuncio
+from buscapiso import almacen
+from buscapiso.modelo import Anuncio
 
 
 @pytest.fixture

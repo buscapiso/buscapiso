@@ -17,13 +17,13 @@ import time
 
 from bs4 import BeautifulSoup
 
-import navegador
-from fuentes.base import BloqueoAntiBot, Fuente, inferir_genero
-from modelo import (DESCONOCIDO, GENERO_CHICAS, GENERO_CHICOS, GENERO_MIXTO,
+from buscapiso import navegador, paths
+from buscapiso.fuentes.base import BloqueoAntiBot, Fuente, inferir_genero
+from buscapiso.modelo import (DESCONOCIDO, GENERO_CHICAS, GENERO_CHICOS, GENERO_MIXTO,
                     Anuncio)
 
 BASE = "https://www.roomgo.es"
-PERFIL = pathlib.Path(__file__).resolve().parents[1] / ".perfil-roomgo"
+PERFIL = paths.browser_profile("roomgo")
 
 _PRECIO = re.compile(r"([\d.]+)\s*€")
 _COMPAS = re.compile(r"(\d+)\s+compa[nñ]er")

@@ -1,13 +1,12 @@
 import pathlib
 import sys
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
 import pytest
 import yaml
 
-from modelo import GENERO_CHICAS, GENERO_MIXTO, Anuncio
-from ranking import filtrar, ordenar, puntuar
+from buscapiso.modelo import GENERO_CHICAS, GENERO_MIXTO, Anuncio
+from buscapiso.ranking import filtrar, ordenar, puntuar
 
 
 @pytest.fixture
@@ -173,7 +172,7 @@ def test_no_confunde_una_fecha_de_entrada_con_temporalidad(cfg, zonas):
 def test_el_descarte_distingue_mixto_de_genero_desconocido(cfg, zonas):
     """No es lo mismo saber que es mixto que no saberlo: lo primero se
     descarta, lo segundo se puede resolver preguntando."""
-    from modelo import DESCONOCIDO
+    from buscapiso.modelo import DESCONOCIDO
     cfg["requisitos"]["preguntar_si_genero_desconocido"] = False
     _, _posibles, fuera = filtrar([anuncio(id_portal="a", genero_piso=GENERO_MIXTO),
                                    anuncio(id_portal="b", genero_piso=DESCONOCIDO)],
@@ -185,7 +184,7 @@ def test_el_descarte_distingue_mixto_de_genero_desconocido(cfg, zonas):
 
 # --- posibles: genero sin confirmar ------------------------------------
 def test_genero_desconocido_va_a_posibles_no_a_la_basura(cfg, zonas):
-    from modelo import DESCONOCIDO
+    from buscapiso.modelo import DESCONOCIDO
     cfg["requisitos"]["preguntar_si_genero_desconocido"] = True
     ok, posibles, fuera = filtrar([anuncio(genero_piso=DESCONOCIDO)], cfg, zonas)
     assert ok == [] and fuera == []
@@ -202,7 +201,7 @@ def test_un_piso_mixto_nunca_es_un_posible(cfg, zonas):
 def test_un_posible_sigue_pasando_los_demas_filtros(cfg, zonas):
     """Sin género confirmado pero demasiado lejos o demasiado caro sigue
     siendo un descarte: lo dudoso es el género, no el resto."""
-    from modelo import DESCONOCIDO
+    from buscapiso.modelo import DESCONOCIDO
     cfg["requisitos"]["preguntar_si_genero_desconocido"] = True
     lejos = anuncio(id_portal="a", genero_piso=DESCONOCIDO, minutos_fira=90.0)
     caro = anuncio(id_portal="b", genero_piso=DESCONOCIDO, precio=900, gastos_extra=0)

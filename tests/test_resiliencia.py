@@ -9,11 +9,10 @@ import pathlib
 import re
 import sys
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
 import pytest
 
-from fuentes.idealista import Idealista
+from buscapiso.fuentes.idealista import Idealista
 
 FIXTURE = (pathlib.Path(__file__).parent / "fixtures" /
            "idealista_listado.html").read_text(encoding="utf-8")

@@ -2,11 +2,10 @@
 import pathlib
 import sys
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
 import pytest
 
-from transporte import Red, haversine_m, minutos_andando
+from buscapiso.transporte import Red, haversine_m, minutos_andando
 
 FIRA = "Fira"
 COLLBLANC = "Collblanc"

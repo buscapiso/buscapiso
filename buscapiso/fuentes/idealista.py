@@ -21,13 +21,13 @@ import time
 
 from bs4 import BeautifulSoup
 
-import navegador
-from fuentes.base import BloqueoAntiBot, Fuente
-from modelo import (DESCONOCIDO, GENERO_CHICAS, GENERO_CHICOS, GENERO_MIXTO,
+from buscapiso import navegador, paths
+from buscapiso.fuentes.base import BloqueoAntiBot, Fuente
+from buscapiso.modelo import (DESCONOCIDO, GENERO_CHICAS, GENERO_CHICOS, GENERO_MIXTO,
                     Anuncio)
 
 BASE = "https://www.idealista.com"
-PERFIL = pathlib.Path(__file__).resolve().parents[1] / ".perfil-chrome"
+PERFIL = paths.browser_profile("chrome")
 
 # Vocabulario real de filtros, extraido del propio HTML de idealista.
 # El orden importa: idealista lo normaliza asi y cambiarlo provoca redirecciones.

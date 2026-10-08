@@ -13,9 +13,9 @@ import sqlite3
 import sys
 
 AQUI = pathlib.Path(__file__).parent
-sys.path.insert(0, str(AQUI.parent))
 
-from geocodificador import Geocodificador
+from buscapiso import paths
+from buscapiso.geocodificador import Geocodificador
 
 # slug_idealista = None  -> ese portal no tiene pagina de habitaciones ahi.
 # En fotocasa los distritos de Barcelona ya los cubre barcelona-capital, asi
@@ -65,7 +65,7 @@ DENTRO = (41.25, 41.47, 1.95, 2.30)   # lat_min, lat_max, lon_min, lon_max
 
 
 def main() -> int:
-    con = sqlite3.connect(AQUI.parent / "pisos.db")
+    con = sqlite3.connect(paths.db_path())
     geo = Geocodificador(con)
     zonas, fallos = [], []
     for nombre, idealista, fotocasa in ZONAS:

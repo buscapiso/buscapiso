@@ -9,7 +9,7 @@ from __future__ import annotations
 import datetime as dt
 import re
 
-from modelo import DESCONOCIDO, GENERO_CHICAS, Anuncio
+from buscapiso.modelo import DESCONOCIDO, GENERO_CHICAS, Anuncio
 
 _AMBIENTE_JOVEN = re.compile(
     r"estudiant|j[oó]ven|joven|profesional|trabajador|erasmus|universitari", re.I)

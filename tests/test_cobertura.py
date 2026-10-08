@@ -7,12 +7,11 @@ busqueda no tenia.
 import pathlib
 import sys
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
 import pytest
 
-from cobertura import Catalogo
-from transporte import Red
+from buscapiso.cobertura import Catalogo
+from buscapiso.transporte import Red
 
 
 @pytest.fixture(scope="module")

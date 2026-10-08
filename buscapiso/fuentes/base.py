@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 
 import re
 
-from modelo import DESCONOCIDO, GENERO_CHICAS, GENERO_CHICOS, GENERO_MIXTO, Anuncio
+from buscapiso.modelo import DESCONOCIDO, GENERO_CHICAS, GENERO_CHICOS, GENERO_MIXTO, Anuncio
 
 # Solo idealista y roomgo publican el genero del piso como dato. En el resto
 # hay que leerlo del texto libre, con dos reglas: exigir senales explicitas, y

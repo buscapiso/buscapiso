@@ -24,10 +24,11 @@ import json
 import pathlib
 import time
 
-from fuentes.base import Fuente
-from modelo import DESCONOCIDO, GENERO_CHICAS, GENERO_CHICOS, GENERO_MIXTO, Anuncio
+from buscapiso.fuentes.base import Fuente
+from buscapiso import paths
+from buscapiso.modelo import DESCONOCIDO, GENERO_CHICAS, GENERO_CHICOS, GENERO_MIXTO, Anuncio
 
-PERFIL = pathlib.Path(__file__).resolve().parents[1] / ".perfil-badi"
+PERFIL = paths.browser_profile("badi")
 API = "https://api.badiapp.com"
 WEB = "https://badi.com/es"
 

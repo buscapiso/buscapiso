@@ -25,12 +25,12 @@ import random
 import re
 import time
 
-import navegador
-from fuentes.base import BloqueoAntiBot, Fuente, inferir_genero
-from modelo import Anuncio
+from buscapiso import navegador, paths
+from buscapiso.fuentes.base import BloqueoAntiBot, Fuente, inferir_genero
+from buscapiso.modelo import Anuncio
 
 BASE = "https://www.fotocasa.es"
-PERFIL = pathlib.Path(__file__).resolve().parents[1] / ".perfil-fotocasa"
+PERFIL = paths.browser_profile("fotocasa")
 
 ORDENES = {
     "baratos": "?sortType=price&sortOrderDesc=false",

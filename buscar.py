@@ -17,17 +17,17 @@ import webbrowser
 
 import yaml
 
-import almacen
-import informe
-import navegador
-from cobertura import Catalogo
-from deduplicar import deduplicar
-from geocodificador import Geocodificador
-from ranking import filtrar, ordenar
-from transporte import Red
+from buscapiso import almacen, paths
+from buscapiso import informe
+from buscapiso import navegador
+from buscapiso.cobertura import Catalogo
+from buscapiso.deduplicar import deduplicar
+from buscapiso.geocodificador import Geocodificador
+from buscapiso.ranking import filtrar, ordenar
+from buscapiso.transporte import Red
 
 AQUI = pathlib.Path(__file__).resolve().parent
-BD = AQUI / "pisos.db"
+BD = paths.db_path()
 
 
 def cargar_cfg():
@@ -67,18 +67,18 @@ def cmd_buscar(args) -> int:
         print("   " + ", ".join(f"{z['nombre'].split(',')[0]} ({z['minutos']:.0f})"
                                 for z in seleccion) + "\n")
 
-    from fuentes.idealista import Idealista, parsear_listado
-    fuente = Idealista(cache_dir=AQUI / "cache")
+    from buscapiso.fuentes.idealista import Idealista, parsear_listado
+    fuente = Idealista(cache_dir=paths.cache_dir())
 
     if args.desde_cache:
         print("1/5 Releyendo el HTML ya descargado (sin tocar los portales)...")
         # Cada fichero se parsea con el parser de SU portal: usar el de
         # idealista con todos devolvia cero para roomgo y depisoenpiso.
-        from fuentes.roomgo import parsear_listado as parsear_roomgo
-        from fuentes.depisoenpiso import parsear_listado as parsear_dpp
-        from fuentes.fotocasa import parsear_listado as parsear_fotocasa
+        from buscapiso.fuentes.roomgo import parsear_listado as parsear_roomgo
+        from buscapiso.fuentes.depisoenpiso import parsear_listado as parsear_dpp
+        from buscapiso.fuentes.fotocasa import parsear_listado as parsear_fotocasa
         anuncios, vistos = [], set()
-        for f in sorted((AQUI / "cache").glob("*.html")):
+        for f in sorted((paths.cache_dir()).glob("*.html")):
             nombre = f.name
             if nombre.startswith("roomgo_"):
                 parser = parsear_roomgo
@@ -141,14 +141,14 @@ def cmd_buscar(args) -> int:
 
 def _crear_fuente(nombre: str):
     if nombre == "roomgo":
-        from fuentes.roomgo import Roomgo
-        return Roomgo(cache_dir=AQUI / "cache")
+        from buscapiso.fuentes.roomgo import Roomgo
+        return Roomgo(cache_dir=paths.cache_dir())
     if nombre == "depisoenpiso":
-        from fuentes.depisoenpiso import DePisoEnPiso
-        return DePisoEnPiso(cache_dir=AQUI / "cache")
+        from buscapiso.fuentes.depisoenpiso import DePisoEnPiso
+        return DePisoEnPiso(cache_dir=paths.cache_dir())
     if nombre == "fotocasa":
-        from fuentes.fotocasa import Fotocasa
-        return Fotocasa(cache_dir=AQUI / "cache")
+        from buscapiso.fuentes.fotocasa import Fotocasa
+        return Fotocasa(cache_dir=paths.cache_dir())
     return None
 
 
@@ -211,7 +211,7 @@ def _procesar(anuncios, cfg, zonas, con, geo, red, args, fuente,
     print("5/5 Guardando e informando...")
     nuevos = almacen.registrar(con, ok + posibles)
     destino = informe.generar(
-        ok, {a.id for a in nuevos}, fuera, cfg, AQUI / "informe.html",
+        ok, {a.id for a in nuevos}, fuera, cfg, paths.report_path(),
         {"rastreados": len(anuncios), "fichas": fichas,
          "portales": len({a.portal for a in anuncios})}, posibles=posibles)
     print(f"\n  {len(ok)} habitaciones ({len(nuevos)} nuevas) -> {destino}")

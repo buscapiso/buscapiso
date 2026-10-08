@@ -6,11 +6,10 @@ Estos tests fijan la extraccion de ese JSON, que es la parte fragil.
 import pathlib
 import sys
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
 import pytest
 
-from fuentes.fotocasa import construir_url, extraer_json, parsear_listado
+from buscapiso.fuentes.fotocasa import construir_url, extraer_json, parsear_listado
 
 FIXTURE = pathlib.Path(__file__).parent / "fixtures" / "fotocasa_listado.html"
 

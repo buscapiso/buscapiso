@@ -25,12 +25,12 @@ import time
 
 from bs4 import BeautifulSoup
 
-import navegador
-from fuentes.base import BloqueoAntiBot, Fuente, inferir_genero
-from modelo import Anuncio
+from buscapiso import navegador, paths
+from buscapiso.fuentes.base import BloqueoAntiBot, Fuente, inferir_genero
+from buscapiso.modelo import Anuncio
 
 BASE = "https://www.depisoenpiso.com"
-PERFIL = pathlib.Path(__file__).resolve().parents[1] / ".perfil-dpp"
+PERFIL = paths.browser_profile("dpp")
 
 _PRECIO = re.compile(r"([\d.,]+)\s*€")
 _COORDS = re.compile(r"showMap\(\s*'([^']+)'\s*,\s*\[\s*(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)\s*\]")
