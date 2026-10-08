@@ -37,55 +37,75 @@ def abrir(ruta: pathlib.Path) -> sqlite3.Connection:
         raise RuntimeError(f"{ruta} es de una version mas nueva de buscapiso "
                            f"(esquema {version}, esta entiende hasta {SCHEMA_VERSION})")
     if version < SCHEMA_VERSION:
-        if tenia_datos:
-            copia = sqlite3.connect(ruta.with_name(f"{ruta.stem}.v{version}.bak"))
-            con.backup(copia)
-            copia.close()
+        copia = ruta.with_name(f"{ruta.stem}.v{version}.bak")
+        if tenia_datos and not copia.exists():
+            destino = sqlite3.connect(copia)
+            con.backup(destino)
+            destino.close()
+        _migrar(con)
+    return con
+
+
+def _migrar(con: sqlite3.Connection) -> None:
+    """Todos los pasos en una sola transaccion con el bloqueo de escritura.
+
+    La web abre una conexion por peticion y la primera carga tras actualizar
+    lanza varias a la vez: la version se relee ya con el bloqueo puesto, asi
+    que solo una migra y las demas ven el esquema nuevo.
+    """
+    nivel = con.isolation_level
+    con.isolation_level = None          # transaccion manual
+    try:
+        con.execute("BEGIN IMMEDIATE")
+        version = con.execute("PRAGMA user_version").fetchone()[0]
         for paso in _MIGRACIONES[version:SCHEMA_VERSION]:
             paso(con)
-    return con
+        con.execute("COMMIT")
+    except BaseException:
+        con.execute("ROLLBACK")
+        raise
+    finally:
+        con.isolation_level = nivel
 
 
 def _migrar_a_1(con: sqlite3.Connection) -> None:
     """De la version 0 (sin numero de esquema) a la 1."""
-    with con:
-        con.execute("""
-            CREATE TABLE IF NOT EXISTS anuncios (
-                id TEXT PRIMARY KEY,
-                portal TEXT, id_portal TEXT, url TEXT,
-                primera_vez TEXT, ultima_vez TEXT,
-                estado TEXT DEFAULT 'new',
-                nota TEXT DEFAULT '',
-                datos TEXT)""")
-        for viejo, nuevo in ESTADOS_ANTIGUOS.items():
-            con.execute("UPDATE anuncios SET estado = ? WHERE estado = ?", (nuevo, viejo))
-        con.execute("""
-            CREATE TABLE IF NOT EXISTS historial (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                anuncio TEXT NOT NULL,
-                estado TEXT NOT NULL,
-                nota TEXT NOT NULL DEFAULT '',
-                cuando TEXT NOT NULL)""")
-        # El estado actual es lo unico que sabemos del pasado; su fecha
-        # aproximada es la ultima vez que se vio el anuncio.
-        con.execute("""
-            INSERT INTO historial (anuncio, estado, nota, cuando)
-            SELECT id, estado, nota, ultima_vez FROM anuncios WHERE estado != 'new'""")
-        con.execute("""
-            CREATE TABLE IF NOT EXISTS perfiles (
-                nombre TEXT PRIMARY KEY,
-                datos TEXT NOT NULL,
-                activo INTEGER NOT NULL DEFAULT 0,
-                actualizado TEXT NOT NULL)""")
-        con.execute("PRAGMA user_version = 1")
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS anuncios (
+            id TEXT PRIMARY KEY,
+            portal TEXT, id_portal TEXT, url TEXT,
+            primera_vez TEXT, ultima_vez TEXT,
+            estado TEXT DEFAULT 'new',
+            nota TEXT DEFAULT '',
+            datos TEXT)""")
+    for viejo, nuevo in ESTADOS_ANTIGUOS.items():
+        con.execute("UPDATE anuncios SET estado = ? WHERE estado = ?", (nuevo, viejo))
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS historial (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            anuncio TEXT NOT NULL,
+            estado TEXT NOT NULL,
+            nota TEXT NOT NULL DEFAULT '',
+            cuando TEXT NOT NULL)""")
+    # El estado actual es lo unico que sabemos del pasado; su fecha
+    # aproximada es la ultima vez que se vio el anuncio.
+    con.execute("""
+        INSERT INTO historial (anuncio, estado, nota, cuando)
+        SELECT id, estado, nota, ultima_vez FROM anuncios WHERE estado != 'new'""")
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS perfiles (
+            nombre TEXT PRIMARY KEY,
+            datos TEXT NOT NULL,
+            activo INTEGER NOT NULL DEFAULT 0,
+            actualizado TEXT NOT NULL)""")
+    con.execute("PRAGMA user_version = 1")
 
 
 def _migrar_a_2(con: sqlite3.Connection) -> None:
     """Grupo de cada anuncio: aceptado o posible (genero sin confirmar)."""
-    with con:
-        con.execute("ALTER TABLE anuncios ADD COLUMN grupo TEXT NOT NULL "
-                    "DEFAULT 'accepted'")
-        con.execute("PRAGMA user_version = 2")
+    con.execute("ALTER TABLE anuncios ADD COLUMN grupo TEXT NOT NULL "
+                "DEFAULT 'accepted'")
+    con.execute("PRAGMA user_version = 2")
 
 
 _MIGRACIONES = [_migrar_a_1, _migrar_a_2]

@@ -100,3 +100,28 @@ def test_each_migration_step_leaves_its_own_backup(tmp_path):
     base_antigua(ruta)
     almacen.abrir(ruta).close()
     assert (tmp_path / "pisos.v0.bak").exists()
+
+
+def test_concurrent_first_opens_migrate_once(tmp_path):
+    """La web abre una conexion por peticion: tras actualizar, la primera
+    carga lanza varias a la vez y todas intentaban migrar."""
+    import threading
+    for ronda in range(5):
+        ruta = tmp_path / f"p{ronda}.db"
+        base_antigua(ruta)
+        errores = []
+
+        def abrir():
+            try:
+                almacen.abrir(ruta).close()
+            except Exception as e:      # noqa: BLE001
+                errores.append(e)
+
+        hilos = [threading.Thread(target=abrir) for _ in range(4)]
+        for h in hilos: h.start()
+        for h in hilos: h.join()
+        assert errores == []
+        con = sqlite3.connect(ruta)
+        assert con.execute("PRAGMA user_version").fetchone() == (almacen.SCHEMA_VERSION,)
+        copia = sqlite3.connect(tmp_path / f"p{ronda}.v0.bak")
+        assert copia.execute("PRAGMA user_version").fetchone() == (0,)
