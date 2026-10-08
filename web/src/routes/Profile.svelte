@@ -60,6 +60,11 @@
   }
 
   const err = (path: string) => errors[path];
+  // Pydantic senala el campo hoja (budget.ideal_total): cada bloque muestra
+  // todo lo que cae dentro de el, para que ningun error quede sin ver.
+  const under = (prefix: string) => Object.entries(errors)
+    .filter(([k]) => k.startsWith(`${prefix}.`))
+    .map(([k, m]) => `${k.slice(prefix.length + 1)}: ${m}`);
   $effect(() => { load(); });
 </script>
 
@@ -78,7 +83,9 @@
     {/each}
   </div>
 
-  {#if err('')}<p class="error" role="alert">{err('')}</p>{/if}
+  {#if Object.keys(errors).length}
+    <p class="error" role="alert">{t('profile.fixErrors')}{err('') ? ` ${err('')}` : ''}</p>
+  {/if}
 
   <fieldset>
     <legend>{t('profile.sources')}</legend>
@@ -87,6 +94,7 @@
         onchange={(e) => toggleSource(s, (e.currentTarget as HTMLInputElement).checked)} /> {s}</label>
     {/each}
     {#if err('sources')}<p class="error">{err('sources')}</p>{/if}
+    {#each under('sources') as m}<p class="error">{m}</p>{/each}
   </fieldset>
 
   <fieldset>
@@ -95,10 +103,12 @@
     <label>{t('profile.maxTotal')}<input type="number" bind:value={p.budget.max_total} /></label>
     <label>{t('profile.assumedExpenses')}<input type="number" bind:value={p.budget.assumed_expenses} /></label>
     {#if err('budget')}<p class="error">{err('budget')}</p>{/if}
+    {#each under('budget') as m}<p class="error">{m}</p>{/each}
   </fieldset>
 
   <fieldset>
     <legend>{t('profile.household')}</legend>
+    {#each under('household') as m}<p class="error">{m}</p>{/each}
     <label>{t('profile.gender')}
       <select bind:value={p.household.gender}>
         {#each meta.genders as g}<option value={g}>{t(`gender.${g}`)}</option>{/each}
@@ -126,9 +136,7 @@
           oninput={(e) => { const v = (e.currentTarget as HTMLInputElement).value; d.max_minutes = v === '' ? null : Number(v); }} /></label>
         <label>{t('profile.destWeight')}<input type="number" step="0.1" bind:value={d.minute_weight} /></label>
         <button onclick={() => p!.destinations.splice(i, 1)}>{t('profile.remove')}</button>
-        {#each ['name', 'lat', 'lon', 'max_minutes'] as f}
-          {#if err(`destinations.${i}.${f}`)}<p class="error">{err(`destinations.${i}.${f}`)}</p>{/if}
-        {/each}
+        {#each under(`destinations.${i}`) as m}<p class="error">{m}</p>{/each}
       </div>
     {/each}
     <button onclick={() => p!.destinations.push({ name: '', lat: 41.3874, lon: 2.1686, max_minutes: null, minute_weight: 1 })}>
@@ -138,6 +146,7 @@
 
   <fieldset>
     <legend>{t('profile.zones')}</legend>
+    {#each under('zones') as m}<p class="error">{m}</p>{/each}
     <p class="help">{t('profile.zonesHelp')}</p>
     <label>{t('profile.zonesExclude')}<textarea rows="3" bind:value={zones.exclude}></textarea></label>
     <label>{t('profile.zonesPenalize')}<textarea rows="3" bind:value={zones.penalize}></textarea></label>
@@ -146,12 +155,14 @@
 
   <fieldset>
     <legend>{t('profile.crawl')}</legend>
+    {#each under('crawl') as m}<p class="error">{m}</p>{/each}
     <label>{t('profile.maxPages')}<input type="number" min="1" max="20" bind:value={p.crawl.max_pages} /></label>
     <label>{t('profile.detailsToRead')}<input type="number" min="0" bind:value={p.crawl.details_to_read} /></label>
   </fieldset>
 
   <details>
     <summary>{t('profile.weights')}</summary>
+    {#each under('weights') as m}<p class="error">{m}</p>{/each}
     <div class="weights">
       {#each Object.keys(p.weights) as k}
         <label>{k}<input type="number" step="any" bind:value={p.weights[k]} /></label>

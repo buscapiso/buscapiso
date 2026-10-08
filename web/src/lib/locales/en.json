@@ -100,5 +100,6 @@
   "search.seeInbox": "See your inbox",
   "search.error": "The search stopped: {message}",
   "search.busy": "A search is already running.",
-  "error.generic": "Something went wrong: {message}"
+  "error.generic": "Something went wrong: {message}",
+  "profile.fixErrors": "Some fields need fixing. Nothing was saved."
 }

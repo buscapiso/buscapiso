@@ -21,6 +21,11 @@ beforeEach(() => {
     const u = String(url);
     if (init?.method === 'PUT') {
       saved = JSON.parse(init.body as string);
+      if ((saved as typeof profile).budget.ideal_total === 0) {
+        return new Response(JSON.stringify({ detail: [
+          { loc: ['body', 'budget', 'ideal_total'], msg: 'Input should be greater than 0' }] }),
+          { status: 422 });
+      }
       if ((saved as typeof profile).budget.ideal_total > (saved as typeof profile).budget.max_total) {
         return new Response(JSON.stringify({ detail: [
           { loc: ['body', 'budget'], msg: 'Value error, ideal_total cannot be above max_total' }] }),
@@ -62,4 +67,15 @@ test('destinations can be added and removed', async () => {
   expect(screen.getAllByLabelText('Name')).toHaveLength(2);
   await userEvent.click(screen.getAllByRole('button', { name: 'Remove' })[0]);
   expect(screen.queryByDisplayValue('Fira')).toBeNull();
+});
+
+
+test('errors on nested fields are shown, not swallowed', async () => {
+  render(Profile);
+  const ideal = await screen.findByLabelText('Ideal monthly cost (rent + bills)');
+  await userEvent.clear(ideal);
+  await userEvent.type(ideal, '0');
+  await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+  expect(await screen.findByText(/Input should be greater than 0/)).toBeInTheDocument();
+  expect(screen.getByRole('alert')).toHaveTextContent('Some fields need fixing');
 });
