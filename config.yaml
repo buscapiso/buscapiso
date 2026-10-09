@@ -27,11 +27,11 @@ municipios:
   - sant-joan-despi-barcelona
 
 # Filtros nativos de idealista. Reducen el ruido antes de descargar nada.
-# Ojo: "solo_chicas" en idealista significa "admite chicas", asi que el
-# filtro estricto de verdad se aplica luego en requisitos.solo_chicas.
+# El filtro de genero de idealista se deriva de requisitos.genero. Ojo: en
+# idealista significa "admite chicas", asi que el filtro de verdad se aplica
+# despues en local.
 filtros_idealista:
   precio_max: 550          # margen sobre los 500 porque los gastos van aparte
-  solo_chicas: true
   sin_propietario: true
   con_estudiantes: false   # ponlo en true si quieres estrechar mucho la busqueda
   con_trabajadores: false
@@ -45,7 +45,7 @@ presupuesto:
   gastos_si_no_declara: 55   # gastos que supongo cuando el anuncio no los dice
 
 requisitos:
-  solo_chicas: true          # descarta pisos mixtos (el filtro de idealista no)
+  genero: chicas             # chicas | chicos | mixto | cualquiera
   # Fotocasa y De Piso en Piso no publican el genero del piso. Con esto en
   # true, esos anuncios no se tiran: van a una seccion aparte del informe si
   # puntuan bien, para que decidas si merece la pena escribir y preguntar.
@@ -54,15 +54,24 @@ requisitos:
   sin_propietario: true
   visitas_permitidas: preferible   # estricto | preferible | indiferente
 
-transporte:
-  destino_principal: Fira            # tu trabajo, L9 Sud
-  destino_secundario: Collblanc
-  max_minutos_principal: 30          # descarte duro
+# Sitios a los que vas a menudo. max_minutos es un descarte duro (null = sin
+# limite); peso_minuto son los puntos que resta cada minuto por encima de
+# pesos.minutos_gratis. Las coordenadas son las de la estacion, pero vale
+# cualquier punto de Barcelona.
+destinos:
+  - nombre: Fira                     # tu trabajo, L9 Sud
+    lat: 41.3519228
+    lon: 2.130679
+    max_minutos: 30
+    peso_minuto: 2.0
+  - nombre: Collblanc
+    lat: 41.3758735
+    lon: 2.1184045
+    max_minutos: null
+    peso_minuto: 0.6
 
 pesos:
   minutos_gratis: 10          # hasta aqui el trayecto no penaliza
-  minutos_fira: 2.0           # puntos que resta cada minuto extra al trabajo
-  minutos_collblanc: 0.6
   euro_sobre_ideal: 0.12      # puntos que resta cada euro por encima del ideal
   gastos_incluidos: 8
   novedad: 25                 # publicado hace poco: entras "ya", esto importa

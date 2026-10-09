@@ -2,12 +2,11 @@
 import pathlib
 import sys
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
 import pytest
 
-from fuentes.roomgo import construir_url, parsear_listado
-from modelo import DESCONOCIDO, GENERO_MIXTO
+from buscapiso.fuentes.roomgo import construir_url, parsear_listado
+from buscapiso.modelo import DESCONOCIDO, GENERO_MIXTO
 
 FIXTURE = pathlib.Path(__file__).parent / "fixtures" / "roomgo_listado.html"
 

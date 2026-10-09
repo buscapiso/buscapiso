@@ -6,12 +6,11 @@ dicen exactamente que se rompio.
 import pathlib
 import sys
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
 import pytest
 
-from fuentes.idealista import construir_url, parsear_listado
-from modelo import GENERO_CHICAS, GENERO_MIXTO
+from buscapiso.fuentes.idealista import construir_url, parsear_listado
+from buscapiso.modelo import GENERO_CHICAS, GENERO_MIXTO
 
 FIXTURE = pathlib.Path(__file__).parent / "fixtures" / "idealista_listado.html"
 

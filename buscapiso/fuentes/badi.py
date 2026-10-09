@@ -24,10 +24,12 @@ import json
 import pathlib
 import time
 
-from fuentes.base import Fuente
-from modelo import DESCONOCIDO, GENERO_CHICAS, GENERO_CHICOS, GENERO_MIXTO, Anuncio
+from buscapiso.fuentes.base import Fuente
+from buscapiso import paths
+from buscapiso.events import emit
+from buscapiso.modelo import DESCONOCIDO, GENERO_CHICAS, GENERO_CHICOS, GENERO_MIXTO, Anuncio
 
-PERFIL = pathlib.Path(__file__).resolve().parents[1] / ".perfil-badi"
+PERFIL = paths.browser_profile("badi")
 API = "https://api.badiapp.com"
 WEB = "https://badi.com/es"
 
@@ -125,22 +127,22 @@ class Badi(Fuente):
                         return {status: r.status, body: await r.text()};
                     }""", [url, token])
             except Exception as e:
-                print(f"  badi: fallo la llamada ({str(e)[:60]})")
+                emit("warning", f"  badi: fallo la llamada ({str(e)[:60]})")
                 break
             if resp["status"] != 200:
-                print(f"  badi: la API respondio {resp['status']}; "
+                emit("warning", f"  badi: la API respondio {resp['status']}; "
                       "probablemente la sesion no es valida")
                 break
             try:
                 datos = json.loads(resp["body"])
             except json.JSONDecodeError:
-                print("  badi: respuesta que no es JSON")
+                emit("warning", "  badi: respuesta que no es JSON")
                 break
             lote = datos.get("data") or datos.get("rooms") or datos.get("results") or []
             if not lote:
                 break
             resultados.extend(a for a in (_a_anuncio(x) for x in lote) if a)
-            print(f"  badi p{pagina}: {len(lote)} anuncios")
+            emit("info", f"  badi p{pagina}: {len(lote)} anuncios")
             time.sleep(3)
         return resultados
 

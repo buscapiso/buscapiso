@@ -2,11 +2,10 @@
 import pathlib
 import sys
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
 import pytest
 
-from fuentes.depisoenpiso import construir_url, parsear_listado
+from buscapiso.fuentes.depisoenpiso import construir_url, parsear_listado
 
 FIXTURE = pathlib.Path(__file__).parent / "fixtures" / "depisoenpiso_listado.html"
 
@@ -49,7 +48,7 @@ def test_las_coordenadas_son_exactas_no_estimadas(anuncios):
 def test_sin_senales_en_el_texto_el_genero_queda_desconocido(anuncios):
     """Las tarjetas dicen 'Private room' y poco mas: sin senales, no se
     adivina. El filtro estricto los descartara, y es lo correcto."""
-    from modelo import DESCONOCIDO
+    from buscapiso.modelo import DESCONOCIDO
     assert all(not a.genero_confirmado for a in anuncios)
     assert any(a.genero_piso == DESCONOCIDO for a in anuncios)
 
@@ -61,7 +60,7 @@ def test_url_de_ciudad():
 # --- ficha de detalle ---------------------------------------------------
 def test_la_ficha_da_la_descripcion_que_la_tarjeta_no_tiene():
     """Sin esto el portal no aporta nada: la tarjeta solo dice 'Private room'."""
-    from fuentes.depisoenpiso import parsear_ficha
+    from buscapiso.fuentes.depisoenpiso import parsear_ficha
     ficha = pathlib.Path(__file__).parent / "fixtures" / "depisoenpiso_ficha.html"
     d = parsear_ficha(ficha.read_text(encoding="utf-8"))
     assert d["ficha_leida"] is True
@@ -70,9 +69,9 @@ def test_la_ficha_da_la_descripcion_que_la_tarjeta_no_tiene():
 
 def test_la_descripcion_de_la_ficha_revela_el_genero():
     """'Busquem només 3 Noies estudiants' -> piso de chicas."""
-    from fuentes.base import inferir_genero
-    from fuentes.depisoenpiso import parsear_ficha
-    from modelo import GENERO_CHICAS
+    from buscapiso.fuentes.base import inferir_genero
+    from buscapiso.fuentes.depisoenpiso import parsear_ficha
+    from buscapiso.modelo import GENERO_CHICAS
     ficha = pathlib.Path(__file__).parent / "fixtures" / "depisoenpiso_ficha.html"
     d = parsear_ficha(ficha.read_text(encoding="utf-8"))
     assert inferir_genero(d["descripcion"])[0] == GENERO_CHICAS

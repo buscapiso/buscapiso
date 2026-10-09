@@ -10,6 +10,7 @@ GENERO_CHICAS = "chicas"
 GENERO_MIXTO = "mixto"
 GENERO_CHICOS = "chicos"
 DESCONOCIDO = "desconocido"
+GENERO_CUALQUIERA = "cualquiera"
 
 
 @dataclass
@@ -52,9 +53,8 @@ class Anuncio:
     descripcion_extra: str = ""   # avisos del portal (alquiler temporal, etc.)
 
     # Calculados despues
-    minutos_fira: float | None = None
-    minutos_collblanc: float | None = None
-    ruta_fira: str = ""
+    trayectos: dict[str, float] = field(default_factory=dict)  # minutos por destino
+    rutas: dict[str, str] = field(default_factory=dict)        # detalle por destino
     puntuacion: float = 0.0
     motivos: list[str] = field(default_factory=list)
     visto_por_primera_vez: str = ""

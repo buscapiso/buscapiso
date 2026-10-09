@@ -3,12 +3,11 @@ si es laxa, te llena el informe de pisos mixtos."""
 import pathlib
 import sys
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
 import pytest
 
-from fuentes.base import inferir_genero
-from modelo import DESCONOCIDO, GENERO_CHICAS, GENERO_CHICOS, GENERO_MIXTO
+from buscapiso.fuentes.base import inferir_genero
+from buscapiso.modelo import DESCONOCIDO, GENERO_CHICAS, GENERO_CHICOS, GENERO_MIXTO
 
 
 @pytest.mark.parametrize("texto", [

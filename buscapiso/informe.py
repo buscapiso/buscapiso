@@ -70,10 +70,8 @@ def _badges(a, gastos_def: int = 55) -> str:
         bs.append(('', f"+{a.gastos_extra} € gastos"))
     else:
         bs.append(('', f"gastos sin declarar (~{gastos_def} €)"))
-    if a.minutos_fira is not None:
-        bs.append(('ac', f"{a.minutos_fira:.0f} min a Fira"))
-    if a.minutos_collblanc is not None:
-        bs.append(('', f"{a.minutos_collblanc:.0f} min a Collblanc"))
+    for i, (nombre, minutos) in enumerate(a.trayectos.items()):
+        bs.append(('ac' if i == 0 else '', f"{minutos:.0f} min a {nombre}"))
     if a.companeros:
         bs.append(('', f"{a.companeros} compañeros"))
     if a.visitas_permitidas is True:
@@ -135,21 +133,25 @@ def generar(anuncios: list, nuevos_ids: set, fuera: list, cfg: dict,
     por_motivo: dict[str, int] = {}
     for _, m in fuera:
         clave = m.split(":")[0].split("(")[0].strip()
-        clave = clave if not clave[:1].isdigit() else "demasiado lejos del trabajo"
+        clave = clave if not clave[:1].isdigit() else "demasiado lejos de un destino"
         por_motivo[clave] = por_motivo.get(clave, 0) + 1
     lista_fuera = "".join(
         f"<li>{html.escape(k)}: <b>{v}</b></li>"
         for k, v in sorted(por_motivo.items(), key=lambda x: -x[1]))
+
+    genero = {"chicas": "solo chicas", "chicos": "solo chicos", "mixto": "pisos mixtos",
+              "cualquiera": "cualquier género"}[cfg["requisitos"].get("genero", "cualquiera")]
+    limites = "".join(
+        f", máximo {d['max_minutos']:.0f} min a {html.escape(d['nombre'])}"
+        for d in cfg.get("destinos", []) if d.get("max_minutos") is not None)
 
     cuerpo = f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Habitaciones en Barcelona</title><style>{CSS}</style></head><body>
 <div class="wrap">
 <h1>Habitaciones que encajan contigo</h1>
-<p class="meta">Generado el {ahora} &middot; filtro: solo chicas, sin propietario,
- máximo {cfg['presupuesto']['coste_total_maximo']} €/mes totales,
- máximo {cfg['transporte']['max_minutos_principal']} min a
- {html.escape(cfg['transporte']['destino_principal'])}</p>
+<p class="meta">Generado el {ahora} &middot; filtro: {genero}, sin propietario,
+ máximo {cfg['presupuesto']['coste_total_maximo']} €/mes totales{limites}</p>
 <div class="resumen">
  <div class="kpi"><b>{stats['rastreados']}</b><span>anuncios rastreados</span></div>
  <div class="kpi"><b>{len(anuncios)}</b><span>cumplen tus requisitos</span></div>
@@ -162,15 +164,16 @@ def generar(anuncios: list, nuevos_ids: set, fuera: list, cfg: dict,
 {bloque(nuevos, "Ninguno nuevo esta vez. Los de abajo siguen disponibles.")}
 <h2>El resto, por puntuación</h2>
 {bloque(resto, "Nada más que mostrar.")}
-<h2>Posibles: el portal no dice si es piso de chicas</h2>
+<h2>Posibles: el portal no dice el género del piso</h2>
 <p class="meta">Cumplen todo lo demás y puntúan bien. Fotocasa y De Piso en Piso
  no publican el género del piso, así que esto solo se resuelve preguntando.</p>
 {bloque(posibles or [], "Ninguno esta vez.")}
 <h2>Qué se ha quedado fuera y por qué</h2>
 <ul class="fuera">{lista_fuera or '<li>Nada descartado.</li>'}</ul>
 <p class="meta" style="margin-top:26px">Para marcar uno:
- <code>python buscar.py marcar &lt;id&gt; contactado</code> &middot;
- estados: interesa, contactado, visita, descartado</p>
+ <code>buscapiso mark &lt;id&gt; contacted</code> &middot;
+ estados: liked, hidden, contacted, visit_scheduled, visited, applied,
+ got_it, rejected, discarded</p>
 </div></body></html>"""
     destino.write_text(cuerpo, encoding="utf-8")
     return destino

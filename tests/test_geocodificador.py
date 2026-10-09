@@ -3,12 +3,11 @@ import pathlib
 import sqlite3
 import sys
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
 import pytest
 
-from geocodificador import Geocodificador
-from modelo import Anuncio
+from buscapiso.geocodificador import Geocodificador
+from buscapiso.modelo import Anuncio
 
 
 @pytest.fixture

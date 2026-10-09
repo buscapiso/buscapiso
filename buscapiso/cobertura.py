@@ -28,23 +28,32 @@ class Catalogo:
         d = json.loads(pathlib.Path(ruta).read_text(encoding="utf-8"))
         return cls(zonas=d["zonas"], fotocasa_ciudad=d["fotocasa_ciudad"])
 
-    def seleccionar(self, minutos_max: float, red, destino: str,
+    def seleccionar(self, destinos: list[dict], red,
                     margen_minutos: float = MARGEN_MINUTOS) -> list[dict]:
-        """Zonas alcanzables, de mas cerca a mas lejos.
+        """Zonas desde las que se llega a tiempo a todos los destinos con limite,
+        de mas holgada a menos.
 
-        Nunca devuelve vacio: con un limite absurdo, la busqueda se quedaria
-        sin hacer nada y sin decir por que, asi que se conserva la mas cercana.
+        Sin destinos con limite no hay nada que recortar: se rastrea todo.
+        Con limites, nunca devuelve vacio salvo que ninguna zona tenga ruta:
+        con un limite absurdo la busqueda se quedaria sin hacer nada y sin
+        decir por que, asi que se conserva la mas cercana.
         """
+        limitados = [d for d in destinos if d.get("max_minutos") is not None]
+        if not limitados:
+            return [{**z, "minutos": None} for z in self.zonas]
         con_tiempo = []
         for z in self.zonas:
-            ruta = red.ruta_desde(z["lat"], z["lon"], destino)
-            if ruta is None:
-                continue
-            con_tiempo.append({**z, "minutos": ruta.minutos})
-        con_tiempo.sort(key=lambda z: z["minutos"])
-
-        dentro = [z for z in con_tiempo
-                  if z["minutos"] <= minutos_max + margen_minutos]
+            tiempos = []
+            for d in limitados:
+                ruta = red.ruta_a_punto(z["lat"], z["lon"], d["lat"], d["lon"])
+                if ruta is None:
+                    break
+                tiempos.append((ruta.minutos, d["max_minutos"]))
+            else:
+                exceso = max(m - tope for m, tope in tiempos)
+                con_tiempo.append({**z, "minutos": tiempos[0][0], "exceso": exceso})
+        con_tiempo.sort(key=lambda z: z["exceso"])
+        dentro = [z for z in con_tiempo if z["exceso"] <= margen_minutos]
         return dentro or con_tiempo[:1]
 
     def slugs(self, zonas: list[dict], portal: str) -> list[str]:

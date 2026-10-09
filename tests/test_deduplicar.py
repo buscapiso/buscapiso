@@ -1,10 +1,9 @@
 import pathlib
 import sys
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
-from deduplicar import deduplicar
-from modelo import GENERO_CHICAS, Anuncio
+from buscapiso.deduplicar import deduplicar
+from buscapiso.modelo import GENERO_CHICAS, Anuncio
 
 
 def a(portal="idealista", id_portal="1", precio=500, lat=41.3758, lon=2.1184, **kw):

@@ -120,31 +120,17 @@ class Red:
         cerca.sort(key=lambda x: x[1])
         return cerca
 
-    def ruta_desde(self, lat: float, lon: float, destino: str,
-                   radio_m: float = RADIO_ANDANDO_M) -> Ruta | None:
-        """Ruta mas rapida desde unas coordenadas hasta una estacion.
+    def _dijkstra(self, lat: float, lon: float,
+                  radio_m: float) -> tuple[dict, dict]:
+        """Coste minimo desde unas coordenadas hasta cada nodo (estacion, linea).
 
-        Devuelve None si no hay ninguna estacion a distancia andable.
+        Multi-origen: el coste inicial de cada nodo es andar hasta esa
+        estacion + media frecuencia de espera.
         """
-        if destino not in self.estaciones:
-            raise KeyError(f"estacion desconocida: {destino}")
-
-        dest = self.estaciones[destino]
-        d_directa = haversine_m(lat, lon, dest["lat"], dest["lon"])
-        mejor = Ruta(minutos_andando(d_directa), None, minutos_andando(d_directa),
-                     [], 0, f"{minutos_andando(d_directa):.0f} min andando")
-        hay_origen = d_directa <= radio_m
-
-        origenes = self.estaciones_cercanas(lat, lon, radio_m)
-        if not origenes and not hay_origen:
-            return None
-
-        # Dijkstra multi-origen: el coste inicial de cada nodo es
-        # andar hasta esa estacion + media frecuencia de espera.
         dist: dict[tuple, float] = {}
         previo: dict[tuple, tuple | None] = {}
         cola: list[tuple[float, tuple]] = []
-        for nombre, d in origenes:
+        for nombre, d in self.estaciones_cercanas(lat, lon, radio_m):
             andar = minutos_andando(d)
             for linea in self.estaciones[nombre]["lineas"]:
                 nodo = (nombre, linea)
@@ -153,47 +139,91 @@ class Red:
                     dist[nodo] = coste
                     previo[nodo] = None
                     heapq.heappush(cola, (coste, nodo))
-
-        final = None
         while cola:
             coste, nodo = heapq.heappop(cola)
             if coste > dist.get(nodo, math.inf):
                 continue
-            if nodo[0] == destino:
-                final = nodo
-                break
             for vecino, peso in self._aristas.get(nodo, ()):
                 nuevo = coste + peso
                 if nuevo < dist.get(vecino, math.inf):
                     dist[vecino] = nuevo
                     previo[vecino] = nodo
                     heapq.heappush(cola, (nuevo, vecino))
+        return dist, previo
 
-        if final is not None and dist[final] < mejor.minutos:
-            camino = []
-            n = final
-            while n is not None:
-                camino.append(n)
-                n = previo.get(n)
-            camino.reverse()
-            lineas_usadas = []
-            for est, linea in camino:
-                if not lineas_usadas or lineas_usadas[-1] != linea:
-                    lineas_usadas.append(linea)
-            origen_nombre = camino[0][0]
-            andar = minutos_andando(
-                haversine_m(lat, lon, self.estaciones[origen_nombre]["lat"],
-                            self.estaciones[origen_nombre]["lon"]))
-            mejor = Ruta(
-                minutos=dist[final],
-                estacion_origen=origen_nombre,
-                minutos_andando=andar,
-                lineas=lineas_usadas,
-                transbordos=len(lineas_usadas) - 1,
-                detalle=(f"{andar:.0f} min a {origen_nombre} + "
-                         f"{' > '.join(lineas_usadas)} "
-                         f"({len(lineas_usadas) - 1} transbordo"
-                         f"{'s' if len(lineas_usadas) != 2 else ''}) = "
-                         f"{dist[final]:.0f} min"),
-            )
+    def _ruta(self, lat: float, lon: float, final: tuple, previo: dict,
+              minutos: float, andar_final: float = 0.0) -> Ruta:
+        camino = []
+        n = final
+        while n is not None:
+            camino.append(n)
+            n = previo.get(n)
+        camino.reverse()
+        lineas_usadas: list[str] = []
+        for _est, linea in camino:
+            if not lineas_usadas or lineas_usadas[-1] != linea:
+                lineas_usadas.append(linea)
+        origen = camino[0][0]
+        andar = minutos_andando(haversine_m(lat, lon, self.estaciones[origen]["lat"],
+                                            self.estaciones[origen]["lon"]))
+        transbordos = len(lineas_usadas) - 1
+        tramo_final = (f" + {andar_final:.0f} min andando desde {final[0]}"
+                       if andar_final >= 1 else "")
+        return Ruta(
+            minutos=minutos,
+            estacion_origen=origen,
+            minutos_andando=andar + andar_final,
+            lineas=lineas_usadas,
+            transbordos=transbordos,
+            detalle=(f"{andar:.0f} min a {origen} + {' > '.join(lineas_usadas)} "
+                     f"({transbordos} transbordo{'s' if transbordos != 1 else ''})"
+                     f"{tramo_final} = {minutos:.0f} min"),
+        )
+
+    @staticmethod
+    def _solo_andando(metros: float) -> Ruta:
+        m = minutos_andando(metros)
+        return Ruta(m, None, m, [], 0, f"{m:.0f} min andando")
+
+    def ruta_desde(self, lat: float, lon: float, destino: str,
+                   radio_m: float = RADIO_ANDANDO_M) -> Ruta | None:
+        """Ruta mas rapida desde unas coordenadas hasta una estacion.
+
+        Devuelve None si no hay ninguna estacion a distancia andable.
+        """
+        if destino not in self.estaciones:
+            raise KeyError(f"estacion desconocida: {destino}")
+        dest = self.estaciones[destino]
+        return self.ruta_a_punto(lat, lon, dest["lat"], dest["lon"], radio_m,
+                                 _solo_estacion=destino)
+
+    def ruta_a_punto(self, lat: float, lon: float, dlat: float, dlon: float,
+                     radio_m: float = RADIO_ANDANDO_M,
+                     _solo_estacion: str | None = None) -> Ruta | None:
+        """Ruta mas rapida desde unas coordenadas hasta otras cualesquiera.
+
+        Se llega en tren a alguna estacion cercana al destino y se anda el
+        resto. Devuelve None si no hay forma razonable de llegar: sin
+        estacion andable en un extremo y demasiado lejos para ir a pie.
+        """
+        directo = haversine_m(lat, lon, dlat, dlon)
+        mejor = self._solo_andando(directo)
+        origenes = self.estaciones_cercanas(lat, lon, radio_m)
+        if _solo_estacion is not None:
+            llegadas = [(_solo_estacion, 0.0)]
+        else:
+            llegadas = self.estaciones_cercanas(dlat, dlon, radio_m)
+        if not origenes or not llegadas:
+            return mejor if directo <= radio_m else None
+
+        dist, previo = self._dijkstra(lat, lon, radio_m)
+        for nombre, metros in llegadas:
+            andar_final = minutos_andando(metros)
+            for linea in self.estaciones[nombre]["lineas"]:
+                nodo = (nombre, linea)
+                if nodo not in dist:
+                    continue
+                total = dist[nodo] + andar_final
+                if total < mejor.minutos:
+                    mejor = self._ruta(lat, lon, nodo, previo, total, andar_final)
         return mejor

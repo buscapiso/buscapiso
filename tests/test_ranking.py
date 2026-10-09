@@ -1,13 +1,12 @@
 import pathlib
 import sys
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
 import pytest
 import yaml
 
-from modelo import GENERO_CHICAS, GENERO_MIXTO, Anuncio
-from ranking import filtrar, ordenar, puntuar
+from buscapiso.modelo import DESCONOCIDO, GENERO_CHICAS, GENERO_CHICOS, GENERO_MIXTO, Anuncio
+from buscapiso.ranking import filtrar, ordenar, puntuar
 
 
 @pytest.fixture
@@ -21,9 +20,12 @@ def zonas():
 
 
 def anuncio(**kw) -> Anuncio:
+    fira = kw.pop("minutos_fira", 12.0)
+    trayectos = {"Fira": fira} if fira is not None else {}
+    trayectos["Collblanc"] = 10.0
     base = dict(portal="idealista", id_portal="1", url="https://x/1",
                 precio=450, gastos_extra=50, genero_piso=GENERO_CHICAS,
-                minutos_fira=12.0, minutos_collblanc=10.0, barrio="Sants",
+                trayectos=trayectos, barrio="Sants",
                 municipio="Barcelona", coords_aproximadas=False, companeros=3)
     base.update(kw)
     return Anuncio(**base)
@@ -173,7 +175,7 @@ def test_no_confunde_una_fecha_de_entrada_con_temporalidad(cfg, zonas):
 def test_el_descarte_distingue_mixto_de_genero_desconocido(cfg, zonas):
     """No es lo mismo saber que es mixto que no saberlo: lo primero se
     descarta, lo segundo se puede resolver preguntando."""
-    from modelo import DESCONOCIDO
+    from buscapiso.modelo import DESCONOCIDO
     cfg["requisitos"]["preguntar_si_genero_desconocido"] = False
     _, _posibles, fuera = filtrar([anuncio(id_portal="a", genero_piso=GENERO_MIXTO),
                                    anuncio(id_portal="b", genero_piso=DESCONOCIDO)],
@@ -185,7 +187,7 @@ def test_el_descarte_distingue_mixto_de_genero_desconocido(cfg, zonas):
 
 # --- posibles: genero sin confirmar ------------------------------------
 def test_genero_desconocido_va_a_posibles_no_a_la_basura(cfg, zonas):
-    from modelo import DESCONOCIDO
+    from buscapiso.modelo import DESCONOCIDO
     cfg["requisitos"]["preguntar_si_genero_desconocido"] = True
     ok, posibles, fuera = filtrar([anuncio(genero_piso=DESCONOCIDO)], cfg, zonas)
     assert ok == [] and fuera == []
@@ -202,10 +204,56 @@ def test_un_piso_mixto_nunca_es_un_posible(cfg, zonas):
 def test_un_posible_sigue_pasando_los_demas_filtros(cfg, zonas):
     """Sin género confirmado pero demasiado lejos o demasiado caro sigue
     siendo un descarte: lo dudoso es el género, no el resto."""
-    from modelo import DESCONOCIDO
+    from buscapiso.modelo import DESCONOCIDO
     cfg["requisitos"]["preguntar_si_genero_desconocido"] = True
     lejos = anuncio(id_portal="a", genero_piso=DESCONOCIDO, minutos_fira=90.0)
     caro = anuncio(id_portal="b", genero_piso=DESCONOCIDO, precio=900, gastos_extra=0)
     ok, posibles, fuera = filtrar([lejos, caro], cfg, zonas)
     assert posibles == []
     assert len(fuera) == 2
+
+
+def test_every_limited_destination_is_a_hard_filter(cfg, zonas):
+    cfg["destinos"][1]["max_minutos"] = 15
+    a = anuncio()
+    a.trayectos["Collblanc"] = 25.0
+    ok, _posibles, fuera = filtrar([a], cfg, zonas)
+    assert ok == []
+    assert fuera[0][1] == "25 min a Collblanc"
+
+
+def test_without_destinations_nothing_is_dropped_for_distance(cfg, zonas):
+    cfg["destinos"] = []
+    ok, _posibles, _fuera = filtrar([anuncio(minutos_fira=None, trayectos={})],
+                                    cfg, zonas)
+    assert len(ok) == 1
+
+
+def test_each_destination_scores_with_its_own_weight(cfg, zonas):
+    cerca = anuncio()
+    puntuar(cerca, cfg, zonas)
+    assert any("min a Fira" in m for m in cerca.motivos)
+    assert any("min a Collblanc" in m for m in cerca.motivos)
+
+
+@pytest.mark.parametrize("genero, piso, pasa", [
+    ("cualquiera", GENERO_MIXTO, True),
+    ("cualquiera", DESCONOCIDO, True),
+    ("chicos", GENERO_CHICOS, True),
+    ("chicos", GENERO_CHICAS, False),
+    ("mixto", GENERO_MIXTO, True),
+    ("mixto", GENERO_CHICAS, False),
+])
+def test_household_gender_filter(cfg, zonas, genero, piso, pasa):
+    cfg["requisitos"]["genero"] = genero
+    cfg["requisitos"]["preguntar_si_genero_desconocido"] = False
+    ok, _posibles, _fuera = filtrar([anuncio(genero_piso=piso)], cfg, zonas)
+    assert (len(ok) == 1) is pasa
+
+
+def test_any_gender_never_sends_unknowns_to_the_ask_list(cfg, zonas):
+    cfg["requisitos"]["genero"] = "cualquiera"
+    cfg["requisitos"]["preguntar_si_genero_desconocido"] = True
+    ok, posibles, _fuera = filtrar([anuncio(genero_piso=DESCONOCIDO)], cfg, zonas)
+    assert len(ok) == 1
+    assert posibles == []

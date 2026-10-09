@@ -6,7 +6,7 @@ son distintos de verdad, y eso no se nota al mirar el informe.
 """
 from __future__ import annotations
 
-from transporte import haversine_m
+from buscapiso.transporte import haversine_m
 
 TOLERANCIA_PRECIO = 10      # euros
 TOLERANCIA_METROS = 150.0
