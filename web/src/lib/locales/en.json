@@ -256,7 +256,7 @@
   "settings.phone": "Phone & alerts",
   "settings.ai": "AI",
   "browser.missing": "buscapiso searches the portals with its own copy of Chromium, and it isn't installed yet.",
-  "browser.install": "Install the browser (about 150 MB)",
+  "browser.install": "Install the browser (about 400 MB)",
   "browser.installing": "Installing the browser…",
   "browser.failed": "The browser could not be installed: {message}",
   "welcome.title": "Welcome to buscapiso",
@@ -268,5 +268,9 @@
   "welcome.searchHelp": "A browser window opens and reads the portals for 10 to 15 minutes. Leave it visible.",
   "settings.quit": "Quit buscapiso",
   "settings.quitHelp": "Stops buscapiso on this computer. Open it again from its icon.",
-  "settings.closed": "buscapiso is closed. You can close this tab."
+  "settings.closed": "buscapiso is closed. You can close this tab.",
+  "phone.off": "Your phone can't reach buscapiso yet.",
+  "phone.allow": "Allow access from my phone",
+  "phone.restart": "Phone access is on. Quit buscapiso and open it again to apply it; then the QR code appears here.",
+  "phone.disallow": "Turn off phone access (from the next start)"
 }

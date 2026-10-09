@@ -1,5 +1,5 @@
 """El Chromium que usa el rastreo. La app empaquetada no lo trae (pesa unos
-150 MB): la primera vez se descarga con el propio instalador de Playwright."""
+400 MB): la primera vez se descarga con el propio instalador de Playwright."""
 from __future__ import annotations
 
 import os
@@ -20,7 +20,9 @@ class PlaywrightBrowser:
     def install(self, on_line: Callable[[str], None]) -> None:
         from playwright._impl._driver import compute_driver_executable, get_driver_env
         driver = compute_driver_executable()
-        orden = [*driver, "install", "chromium"] if isinstance(driver, tuple) else [driver, "install", "chromium"]
+        # --no-shell: el rastreo usa ventana visible; la version headless sobra (~260 MB).
+        args = ["install", "--no-shell", "chromium"]
+        orden = [*driver, *args] if isinstance(driver, tuple) else [driver, *args]
         proc = subprocess.Popen(orden, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
                                 env={**os.environ, **get_driver_env()})
         for linea in proc.stdout:

@@ -124,7 +124,7 @@ def test_a_phone_on_the_home_network_needs_the_qr_link(tmp_path):
             r = page.goto(f"http://{ip}:{puerto}/")
             assert r.status == 401
             page.goto(enlace)
-            page.get_by_text("No listings yet").wait_for()
+            page.get_by_text("Welcome to buscapiso").wait_for()
             browser.close()
     finally:
         server.should_exit = True

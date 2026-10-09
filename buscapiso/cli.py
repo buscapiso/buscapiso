@@ -163,6 +163,13 @@ def cmd_serve(args) -> int:
     import uvicorn
     from buscapiso.api.app import create_app
     import socket
+    if not args.lan:
+        # La app sin terminal: "Allow access from my phone" lo deja guardado.
+        con = almacen.abrir(paths.db_path())
+        try:
+            args.lan = almacen.leer_ajustes(con).get("lan_access") == "1"
+        finally:
+            con.close()
     host = "0.0.0.0" if args.lan else args.host
     # Antes de nada: si el puerto esta ocupado, abrir el navegador llevaria a
     # la app que lo ocupa, no a buscapiso.

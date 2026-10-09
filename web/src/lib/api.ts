@@ -153,7 +153,7 @@ export const draftMessage = (id: string) =>
 export const suggestProfile = (text: string) =>
   call<ProfileSuggestion>('POST', '/api/profiles/suggest', { text });
 
-export interface AccessInfo { url: string; qr_svg: string; lan: boolean }
+export interface AccessInfo { url: string; qr_svg: string; lan: boolean; remember_lan: boolean }
 export interface Schedule { hours: number; from: string; to: string; last_run: string | null }
 export interface NotifySettings { server: string; topic: string; min_score: number }
 
@@ -175,3 +175,4 @@ export interface BrowserState { installed: boolean; installing: boolean; log: st
 export const getBrowser = () => call<BrowserState>('GET', '/api/browser');
 export const installBrowser = () => call<{ started: boolean }>('POST', '/api/browser/install');
 export const quitApp = () => call<{ bye: boolean }>('POST', '/api/quit');
+export const setPhoneAccess = (lan: boolean) => call<AccessInfo>('PUT', '/api/access', { lan });

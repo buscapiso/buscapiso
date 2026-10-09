@@ -81,6 +81,10 @@ def _get_json(url: str, headers: dict) -> dict:
         return json.load(r)
 
 
+class AccessChange(BaseModel):
+    lan: bool
+
+
 class AIChange(BaseModel):
     provider: Literal["none", "anthropic", "openai_compat"] | None = None
     model: str | None = None
@@ -452,11 +456,23 @@ def create_app(db_path: pathlib.Path | None = None,
         except AIError as e:
             raise HTTPException(502, str(e))
 
+    def _access(con) -> dict:
+        url = access.access_url(con, app.state.port)
+        return {"url": url, "qr_svg": access.qr_svg(url), "lan": app.state.lan,
+                "remember_lan": almacen.leer_ajustes(con).get("lan_access") == "1"}
+
     @app.get("/api/access")
     def access_info() -> dict:
         with db() as con:
-            url = access.access_url(con, app.state.port)
-        return {"url": url, "qr_svg": access.qr_svg(url), "lan": app.state.lan}
+            return _access(con)
+
+    @app.put("/api/access")
+    def save_access(body: AccessChange, request: Request) -> dict:
+        if not (request.client and request.client.host in access.LOOPBACK):
+            raise HTTPException(403, "Change phone access from the computer itself")
+        with db() as con:
+            almacen.guardar_ajuste(con, "lan_access", "1" if body.lan else "0")
+            return _access(con)
 
     @app.post("/api/access/rotate")
     def rotate(request: Request) -> dict:

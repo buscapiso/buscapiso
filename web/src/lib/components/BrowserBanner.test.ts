@@ -14,7 +14,7 @@ test('offers to install the browser when it is missing, and shows progress', asy
     return new Response(JSON.stringify(estado));
   });
   render(BrowserBanner, { every: 10 });
-  await userEvent.click(await screen.findByRole('button', { name: 'Install the browser (about 150 MB)' }));
+  await userEvent.click(await screen.findByRole('button', { name: 'Install the browser (about 400 MB)' }));
   expect(await screen.findByText('Downloading Chromium 40%')).toBeInTheDocument();
   estado = { installed: true, installing: false, log: [], error: null };
   await vi.waitFor(() => expect(screen.queryByRole('button', { name: /Install the browser/ })).toBeNull());

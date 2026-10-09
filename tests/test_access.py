@@ -74,3 +74,29 @@ def test_without_lan_nothing_is_required(tmp_path, monkeypatch):
     c = TestClient(create_app(db_path=tmp_path / "p.db", static_dir=tmp_path / "x"), client=REMOTO)
     assert c.get("/api/listings").status_code == 200
     assert c.get("/api/access").json()["lan"] is False
+
+
+def test_phone_access_can_be_turned_on_from_the_app(tmp_path, monkeypatch):
+    monkeypatch.setenv("BUSCAPISO_HOME", str(tmp_path))
+    app = create_app(db_path=tmp_path / "p.db", static_dir=tmp_path / "x")
+    c = TestClient(app)
+    assert c.get("/api/access").json()["remember_lan"] is False
+    assert c.put("/api/access", json={"lan": True}).json()["remember_lan"] is True
+    con = almacen.abrir(tmp_path / "p.db")
+    assert almacen.leer_ajustes(con)["lan_access"] == "1"
+    remoto = TestClient(app, client=REMOTO)
+    assert remoto.put("/api/access", json={"lan": False}).status_code == 403
+
+
+def test_serve_opens_to_the_network_when_remembered(monkeypatch, tmp_path):
+    import uvicorn
+    from buscapiso import cli
+    monkeypatch.setenv("BUSCAPISO_HOME", str(tmp_path))
+    con = almacen.abrir(tmp_path / "pisos.db")
+    almacen.guardar_ajuste(con, "lan_access", "1")
+    con.close()
+    llamadas = []
+    monkeypatch.setattr(uvicorn, "run", lambda app, **kw: llamadas.append((app, kw)))
+    assert cli.main(["serve", "--no-open", "--port", "8798"]) == 0
+    app, kw = llamadas[0]
+    assert kw["host"] == "0.0.0.0" and app.state.lan is True

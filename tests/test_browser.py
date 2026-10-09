@@ -47,6 +47,30 @@ def test_a_failed_install_shows_the_error(tmp_path):
     assert s["installed"] is False and "no disk space" in s["error"]
 
 
+import pathlib
+import pytest
+
+
+@pytest.mark.skipif(not (pathlib.Path.home() / ".cache" / "ms-playwright").exists(),
+                    reason="no Chromium installed here (CI)")
 def test_the_real_check_finds_the_installed_chromium():
     # En este ordenador Chromium esta instalado (lo usa el rastreo).
     assert browser.PlaywrightBrowser().installed() is True
+
+
+def test_the_install_skips_the_headless_shell(monkeypatch):
+    """La app rastrea con ventana visible: la version headless sobra (261 MB)."""
+    import subprocess
+    ordenes = []
+
+    class Proc:
+        stdout = iter(["Downloading Chromium\n"])
+        returncode = 0
+        def wait(self):
+            return 0
+
+    monkeypatch.setattr(subprocess, "Popen", lambda orden, **kw: ordenes.append(orden) or Proc())
+    lineas = []
+    browser.PlaywrightBrowser().install(lineas.append)
+    assert ordenes[0][-3:] == ["install", "--no-shell", "chromium"]
+    assert lineas == ["Downloading Chromium"]
