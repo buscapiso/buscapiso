@@ -309,6 +309,12 @@ export async function rescore(listings: StoredListing[], p: SearchProfile,
     } else if (r.calls && !r.facts.size && r.failures.length) {
       emit('warning', `    The AI did not answer (${r.failures.at(-1)!.message}); going on without it`);
     }
+    // Lotes sueltos que fallaron sin parar la IA: que se vea por que.
+    const others = r.failures.filter((e) => e !== r.stopped);
+    if (others.length && r.facts.size) {
+      const why = [...new Set(others.map((e) => e.message))].slice(0, 2).join('; ');
+      emit('warning', `    AI: ${others.length} call${others.length === 1 ? '' : 's'} failed (${why})`);
+    }
     if (r.calls || r.facts.size) emit('info', `    AI: ${r.facts.size} of ${candidates.length} listings described, ${r.calls} calls`,
       { calls: ai.usage.calls, aiRead: r.facts.size, aiCandidates: candidates.length });
     classify(ws, p, discarded, today);

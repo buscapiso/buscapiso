@@ -24,7 +24,8 @@ function httpError(who: string, status: number, data: Json): AIError {
   const body = Array.isArray(data) ? data[0] : data;
   const err = body?.error ?? {};
   const text = typeof err === 'string' ? err : err.message;
-  const e = new AIError(text ? `${who} answered HTTP ${status}: ${String(text).slice(0, 240)}` : `${who} answered HTTP ${status}`, status);
+  const words = text ? String(text).slice(0, 240).trim().replace(/[.\s]+$/, '') : '';
+  const e = new AIError(words ? `${who} answered HTTP ${status}: ${words}` : `${who} answered HTTP ${status}`, status);
   const delay = (Array.isArray(err.details) ? err.details : []).find((d: Json) => d?.retryDelay)?.retryDelay;
   if (delay) e.retryAfterMs = Math.round(parseFloat(delay) * 1000);
   e.daily = status === 429 && /per.?day|daily/i.test(JSON.stringify(err));

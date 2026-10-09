@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Geocoder, type GeoCache } from './geocode';
+import { Geocoder, streetName, type GeoCache } from './geocode';
 import { emptyListing } from './model';
 
 function setup(answers: Record<string, unknown[]>, offline = false) {
@@ -39,6 +39,14 @@ describe('Geocoder', () => {
     expect(await geo.pinpoint(l)).toBe(true);
     expect([l.lat, l.approximateLocation]).toEqual([41.43, false]);
     expect(asked).toEqual(['Carrer de Pons i Gallarza, 3, Barcelona, España']);
+  });
+  it('writes street types in Catalan, as OpenStreetMap names them in Barcelona', () => {
+    expect(streetName('Calle de Casp, 110')).toBe('Carrer de Casp, 110');
+    expect(streetName('Avenida Diagonal, 640')).toBe('Avinguda Diagonal, 640');
+    expect(streetName('Plaza de Sants')).toBe('Plaça de Sants');
+    expect(streetName('Paseo de Gràcia, 12')).toBe('Passeig de Gràcia, 12');
+    expect(streetName('Travesía de Gràcia, 5')).toBe('Travessera de Gràcia, 5');
+    expect(streetName('Gran Via de Carles III')).toBe('Gran Via de Carles III');
   });
   it('takes the street without the number as a better guess, still approximate', async () => {
     const { geo, asked } = setup({ 'Corts Catalanes, Barcelona, España': [{ lat: '41.38', lon: '2.15' }] });

@@ -358,6 +358,14 @@ describe('rescore', () => {
     expect(ds[0].aiNote).toBe('The AI could not read it: HTTP 429: quota per day');
     expect(events.filter((e) => e.kind === 'warning' && /AI stopped for this search/.test(e.message))).toHaveLength(1);
   });
+  it('says in the log when some AI calls failed, and why', async () => {
+    const ai = fakeAI(async (n) => { if (n === 0) throw new AIError('The model did not return valid JSON'); return FACTS; });
+    const { events, emit } = collect();
+    const ls = Array.from({ length: 25 }, (_, i) => room(String(i), { title: `R${i}`, price: 420 }));
+    await rescore(ls, tight(), { travel: null, ai, aiCache: noCache, now: () => new Date() }, new Set(), emit);
+    expect(events.filter((e) => e.kind === 'warning').map((e) => e.message.trim()))
+      .toContain('AI: 1 call failed (The model did not return valid JSON)');
+  });
   it('only uses cached AI facts when asked not to call the AI', async () => {
     const prompts: string[] = [];
     const ai = fakeAI(async () => FACTS, prompts);

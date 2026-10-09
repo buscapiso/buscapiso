@@ -81,7 +81,8 @@ export function factsKey(p: Pick<AIProvider, 'name' | 'model'>, l: Pick<RawListi
 
 export const BATCH_SIZE = 10;
 const PARALLEL = 4;
-const RETRIES_429 = 2;
+// Un limite por minuto se respeta esperando; solo se abandona si no cede.
+const RETRIES_429 = 4;
 const BACKOFF_MS = 15_000;
 const MAX_WAIT_MS = 60_000;
 const MAX_DESCRIPTION = 2000;
@@ -126,13 +127,26 @@ export async function extractMany<T extends RawListing>(p: AIProvider, listings:
   if (opts.cacheOnly || breaker.stopped) return { facts, failures, calls, stopped: breaker.stopped };
   const total = todo.length;
   let done = 0;
-  async function ask(batch: T[]): Promise<T[]> {
+  // Tras el primer limite por minuto, una llamada cada vez: la espera se hace
+  // con el turno cogido, asi que nadie mas dispara mientras tanto.
+  let throttled = false;
+  let turn: Promise<void> = Promise.resolve();
+  async function inTurn<R>(fn: () => Promise<R>): Promise<R> {
+    if (!throttled) return fn();
+    const prev = turn;
+    let release!: () => void;
+    turn = new Promise<void>((r) => { release = r; });
+    await prev;
+    try { return await fn(); } finally { release(); }
+  }
+  /** Devuelve los que faltaron en la respuesta y cuantos se leyeron. */
+  async function ask(batch: T[]): Promise<{ missing: T[]; read: number }> {
     const user = batch.map(asTag).join('\n\n');
     for (let attempt = 0; ; attempt++) {
-      if (breaker.stopped) return [];
+      if (breaker.stopped) return { missing: [], read: 0 };
       try {
         calls++;
-        const answer = await p.json(SYSTEM_EXTRACT, user, batchAnswer, BATCH_JSON_SCHEMA, BATCH_MAX_TOKENS);
+        const answer = await inTurn(() => p.json(SYSTEM_EXTRACT, user, batchAnswer, BATCH_JSON_SCHEMA, BATCH_MAX_TOKENS));
         const missing: T[] = [];
         const byId = new Map(answer.listings.map((x) => [String(x.id), x]));
         for (const [i, l] of batch.entries()) {
@@ -142,18 +156,20 @@ export async function extractMany<T extends RawListing>(p: AIProvider, listings:
             await cache.put(factsKey(p, l), parsed.data);
           } else missing.push(l);
         }
-        return missing;
+        return { missing, read: batch.length - missing.length };
       } catch (e) {
         if (!(e instanceof AIError)) throw e;
         if (e.status === 429) {
           if (!e.daily && attempt < RETRIES_429) {
-            await sleep(Math.min(e.retryAfterMs ?? BACKOFF_MS * 2 ** attempt, MAX_WAIT_MS));
+            throttled = true;
+            const wait = Math.min(e.retryAfterMs ?? BACKOFF_MS * 2 ** Math.min(attempt, 2), MAX_WAIT_MS);
+            await inTurn(() => sleep(wait));
             continue;
           }
           breaker.stopped ??= e;
         }
         failures.push(e);
-        return [];
+        return { missing: [], read: 0 };
       }
     }
   }
@@ -162,9 +178,9 @@ export async function extractMany<T extends RawListing>(p: AIProvider, listings:
     for (let i = 0; i < todo.length; i += BATCH_SIZE) batches.push(todo.slice(i, i + BATCH_SIZE));
     const again: T[] = [];
     const one = async (b: T[]) => {
-      const before = facts.size;
-      again.push(...await ask(b));
-      done += facts.size - before;
+      const { missing, read } = await ask(b);
+      again.push(...missing);
+      done += read;
       opts.onProgress?.(done, total);
     };
     // El primer lote va solo: si el proveedor esta al limite, se sabe con una

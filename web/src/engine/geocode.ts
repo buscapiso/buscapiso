@@ -92,8 +92,14 @@ export class Geocoder {
 /** Idealista quita el tipo de via: "de Pons i Gallarza, 3" es "Carrer de
  * Pons i Gallarza, 3". Sin el, Nominatim casi nunca la encuentra. */
 export function streetName(address: string): string {
-  return /^(de|del|dels|d'|de la|de les)\s/i.test(address) || /^d'/i.test(address) ? `Carrer ${address}` : address;
+  if (/^(de|del|dels|de la|de les)\s/i.test(address) || /^d'/i.test(address)) return `Carrer ${address}`;
+  // OpenStreetMap nombra las calles de Barcelona en catalan; Idealista, en castellano.
+  return address.replace(/^(\p{L}+)(?=\s)/u, (w) => CATALAN_STREET[w.toLowerCase()] ?? w);
 }
+const CATALAN_STREET: Record<string, string> = {
+  calle: 'Carrer', avenida: 'Avinguda', plaza: 'Plaça', paseo: 'Passeig', pasaje: 'Passatge', travesía: 'Travessera',
+  travesia: 'Travessera', camino: 'Camí', bajada: 'Baixada', subida: 'Pujada', vía: 'Via', callejón: 'Carreró',
+};
 
 async function defaultGet(url: string): Promise<unknown> {
   const r = await fetch(url, { headers: { Accept: 'application/json' } });

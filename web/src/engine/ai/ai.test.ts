@@ -73,6 +73,11 @@ describe('OpenAI-compatible', () => {
     expect(err.retryAfterMs).toBe(31_000);
     expect(err.daily).toBe(true);
   });
+  it('does not end the message with two full stops', async () => {
+    const { post } = recorder([{ status: 429, data: { error: { message: 'Quota exceeded. ' } } }]);
+    const err = await new OpenAICompatProvider('k', 'https://x/v1', 'g', post).text('s', 'u').catch((e) => e);
+    expect(err.message).toBe('The AI provider answered HTTP 429: Quota exceeded');
+  });
   it('explains an empty answer cut by length, and sends no key for Ollama', async () => {
     const { calls, post } = recorder([{ status: 200, data: { choices: [{ message: { content: '' }, finish_reason: 'length' }] } }]);
     await expect(new OpenAICompatProvider('', 'http://localhost:11434/v1', 'llama', post).text('s', 'u'))
@@ -213,8 +218,39 @@ describe('batched extraction', () => {
     const never = fake(() => { throw limited(); });
     const r2 = await extractMany(never, Array.from({ length: 40 }, (_, i) => listing(i)), memory().cache, { sleep: async () => {} });
     expect(r2.stopped).not.toBeNull();
-    // Unos pocos intentos, no cuatro por cada uno de los cuatro lotes.
-    expect(never.prompts.length).toBeLessThanOrEqual(6);
+    // Solo el primer lote, con sus reintentos; los demas ni se envian.
+    expect(never.prompts.length).toBe(5);
+  });
+  it('slows to one call at a time on a per-minute limit, and keeps going', async () => {
+    let inFlight = 0, n = 0, limitedAt = 0, mostAfter = 0;
+    const waits: number[] = [];
+    const p = fake((ids) => {
+      // Llamadas 2 a 10: el limite por minuto. Tres veces seguidas el mismo lote, como poco.
+      if (++n >= 2 && n <= 10) { limitedAt ||= n; throw limited({ retryAfterMs: 20_000 }); }
+      return ids.map((id) => facts(id));
+    });
+    const json = p.json.bind(p);
+    p.json = (async (...a: Parameters<AIProvider['json']>) => {
+      inFlight++;
+      // Tras el primer aviso, y cuando ya han vuelto los que estaban en vuelo: de uno en uno.
+      if (limitedAt && n >= limitedAt + 4) mostAfter = Math.max(mostAfter, inFlight);
+      try { return await json(...a); } finally { inFlight--; }
+    }) as AIProvider['json'];
+    const breaker = { stopped: null as AIError | null };
+    const r = await extractMany(p, Array.from({ length: 60 }, (_, i) => listing(i)), memory().cache,
+      { breaker, sleep: async (ms) => { waits.push(ms); await Promise.resolve(); } });
+    expect(breaker.stopped).toBeNull();
+    expect(r.facts.size).toBe(60);
+    expect(waits).toContain(20_000);
+    expect(mostAfter).toBe(1);
+  });
+  it('never counts more than it was asked to read', async () => {
+    const seen: number[] = [];
+    const p = fake((ids) => ids.map((id) => facts(id)));
+    await extractMany(p, Array.from({ length: 45 }, (_, i) => listing(i)), memory().cache, { onProgress: (done, total) => seen.push(done, total) });
+    const done = seen.filter((_, i) => i % 2 === 0);
+    expect(Math.max(...done)).toBe(45);
+    expect(seen[1]).toBe(45);
   });
   it('counts only the listings it actually read', async () => {
     const seen: number[] = [];
