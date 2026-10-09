@@ -1,0 +1,135 @@
+{
+ "itineraries": [
+  {
+   "duration": 2220,
+   "transfers": 0,
+   "legs": [
+    {
+     "mode": "WALK",
+     "duration": 600
+    },
+    {
+     "mode": "BUS",
+     "routeShortName": "L94",
+     "agencyName": "Avanza",
+     "duration": 720
+    },
+    {
+     "mode": "WALK",
+     "duration": 900
+    }
+   ]
+  },
+  {
+   "duration": 1140,
+   "transfers": 1,
+   "legs": [
+    {
+     "mode": "WALK",
+     "duration": 300
+    },
+    {
+     "mode": "SUBWAY",
+     "routeShortName": "L5",
+     "agencyName": "TMB",
+     "duration": 240
+    },
+    {
+     "mode": "WALK",
+     "duration": 120
+    },
+    {
+     "mode": "SUBWAY",
+     "routeShortName": "L9S",
+     "agencyName": "TMB",
+     "duration": 420
+    },
+    {
+     "mode": "WALK",
+     "duration": 60
+    }
+   ]
+  },
+  {
+   "duration": 1260,
+   "transfers": 1,
+   "legs": [
+    {
+     "mode": "WALK",
+     "duration": 300
+    },
+    {
+     "mode": "SUBWAY",
+     "routeShortName": "L5",
+     "agencyName": "TMB",
+     "duration": 240
+    },
+    {
+     "mode": "WALK",
+     "duration": 120
+    },
+    {
+     "mode": "SUBWAY",
+     "routeShortName": "L9S",
+     "agencyName": "TMB",
+     "duration": 420
+    },
+    {
+     "mode": "WALK",
+     "duration": 60
+    }
+   ]
+  },
+  {
+   "duration": 1320,
+   "transfers": 1,
+   "legs": [
+    {
+     "mode": "WALK",
+     "duration": 300
+    },
+    {
+     "mode": "SUBWAY",
+     "routeShortName": "L5",
+     "agencyName": "TMB",
+     "duration": 240
+    },
+    {
+     "mode": "WALK",
+     "duration": 120
+    },
+    {
+     "mode": "SUBWAY",
+     "routeShortName": "L9S",
+     "agencyName": "TMB",
+     "duration": 480
+    },
+    {
+     "mode": "WALK",
+     "duration": 60
+    }
+   ]
+  },
+  {
+   "duration": 2220,
+   "transfers": 0,
+   "legs": [
+    {
+     "mode": "WALK",
+     "duration": 600
+    },
+    {
+     "mode": "BUS",
+     "routeShortName": "L94",
+     "agencyName": "Avanza",
+     "duration": 720
+    },
+    {
+     "mode": "WALK",
+     "duration": 900
+    }
+   ]
+  }
+ ],
+ "direct": []
+}

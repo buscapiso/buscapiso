@@ -69,3 +69,26 @@ def test_anuncio_sin_direccion_usa_lo_que_tenga(geo):
     geo.situar(a)
     assert a.lat == pytest.approx(41.3758)
     assert a.coords_aproximadas is True
+
+
+def test_buscar_returns_several_places_bounded_to_barcelona(monkeypatch, tmp_path):
+    import io
+    import json
+    import sqlite3
+    import urllib.request
+    pedidas = []
+
+    class Resp(io.BytesIO):
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+
+    def falso(req, timeout=20):
+        pedidas.append(req.full_url)
+        return Resp(json.dumps([{"display_name": "Fira Gran Via, L'Hospitalet",
+                                 "lat": "41.354", "lon": "2.127"}]).encode())
+
+    monkeypatch.setattr(urllib.request, "urlopen", falso)
+    g = Geocodificador(sqlite3.connect(tmp_path / "g.db"))
+    assert g.buscar("Fira Gran Via") == [
+        {"name": "Fira Gran Via, L'Hospitalet", "lat": 41.354, "lon": 2.127}]
+    assert "bounded=1" in pedidas[0] and "limit=5" in pedidas[0]

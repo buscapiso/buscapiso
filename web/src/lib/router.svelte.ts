@@ -3,10 +3,11 @@ export type Route =
   | { name: ListName }
   | { name: 'listing'; id: string }
   | { name: 'board' }
+  | { name: 'map' }
   | { name: 'profile' }
   | { name: 'search' };
 
-const simple = ['liked', 'progress', 'ask', 'hidden', 'board', 'profile', 'search'] as const;
+const simple = ['liked', 'progress', 'ask', 'hidden', 'board', 'map', 'profile', 'search'] as const;
 
 export function parse(hash: string): Route {
   const path = hash.replace(/^#\/?/, '');

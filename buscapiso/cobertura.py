@@ -11,6 +11,8 @@ import json
 import pathlib
 from dataclasses import dataclass
 
+from buscapiso.travel import graph_trip
+
 RUTA = pathlib.Path(__file__).parent / "datos" / "zonas.json"
 
 # Un distrito mide kilometros: se compara su centroide, pero su parte mas
@@ -45,10 +47,10 @@ class Catalogo:
         for z in self.zonas:
             tiempos = []
             for d in limitados:
-                ruta = red.ruta_a_punto(z["lat"], z["lon"], d["lat"], d["lon"])
+                ruta = graph_trip(red, z["lat"], z["lon"], d)
                 if ruta is None:
                     break
-                tiempos.append((ruta.minutos, d["max_minutos"]))
+                tiempos.append((ruta.minutes, d["max_minutos"]))
             else:
                 exceso = max(m - tope for m, tope in tiempos)
                 con_tiempo.append({**z, "minutos": tiempos[0][0], "exceso": exceso})

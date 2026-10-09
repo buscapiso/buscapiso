@@ -102,3 +102,18 @@ def test_only_web_links_reach_the_page(url, sale):
     fila = {"datos": {"id": "x", "portal": "p", "url": url}, "estado": "new", "nota": "",
             "grupo": "accepted", "primera_vez": "", "ultima_vez": ""}
     assert listing_from_row(fila).url == sale
+
+
+def test_listings_saved_before_phase_0_still_show_their_travel_times(tmp_path):
+    """Hasta la fase 0 los minutos se guardaban como minutos_fira y
+    minutos_collblanc; la pisos.db real tiene 211 anuncios asi."""
+    import json
+    from buscapiso.api.schemas import listing_from_row
+    datos = {"id": "old1", "portal": "idealista", "url": "u", "precio": 420,
+             "coste_total": 420, "minutos_fira": 19.2, "minutos_collblanc": 7.6,
+             "ruta_fira": "4 min a Sants + L5 > L9S", "puntuacion": 110}
+    fila = {"datos": json.loads(json.dumps(datos)), "estado": "new", "nota": "",
+            "grupo": "accepted", "primera_vez": "2026-09-21", "ultima_vez": "2026-09-21"}
+    l = listing_from_row(fila)
+    assert l.travel == {"Fira": 19.2, "Collblanc": 7.6}
+    assert l.routes == {"Fira": "4 min a Sants + L5 > L9S"}

@@ -72,3 +72,21 @@ def test_destination_names_must_be_unique():
 def test_at_least_one_source():
     with pytest.raises(ValidationError):
         SearchProfile(name="x", sources=[])
+
+
+def test_destinations_default_to_transit_at_8_30():
+    d = Destination(name="Work", lat=41.35, lon=2.13)
+    assert (d.mode, d.depart_at) == ("transit", "08:30")
+
+
+def test_a_departure_time_must_be_hh_mm():
+    with pytest.raises(ValidationError):
+        Destination(name="Work", lat=41.35, lon=2.13, depart_at="8.30h")
+
+
+def test_mode_and_time_reach_the_engine():
+    p = SearchProfile(name="x", destinations=[
+        Destination(name="Gym", lat=41.38, lon=2.17, mode="bike", depart_at="19:00")])
+    cfg, _ = to_engine_cfg(p)
+    assert (cfg["destinos"][0]["modo"], cfg["destinos"][0]["salida"]) == ("bici", "19:00")
+    assert cfg["busqueda"]["trayectos_reales"] == 40

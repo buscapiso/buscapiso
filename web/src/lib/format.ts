@@ -36,3 +36,16 @@ export function lineChips(route: string | undefined): string[] {
 export function lineColor(line: string): string | null {
   return LINE_COLOURS[line] ?? null;
 }
+
+export function scoreColor(score: number, best: number): string {
+  return score >= best - Math.abs(best) / 3 ? 'var(--accent)' : 'var(--muted)';
+}
+
+const GMAPS_MODE = { transit: 'transit', walk: 'walking', bike: 'bicycling' } as const;
+
+export function directionsUrl(from: { lat: number; lon: number }, to: { lat: number; lon: number },
+                              mode: 'transit' | 'walk' | 'bike'): string {
+  const q = new URLSearchParams({ api: '1', origin: `${from.lat},${from.lon}`,
+    destination: `${to.lat},${to.lon}`, travelmode: GMAPS_MODE[mode] });
+  return `https://www.google.com/maps/dir/?${q}`;
+}

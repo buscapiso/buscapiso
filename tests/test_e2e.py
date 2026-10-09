@@ -32,7 +32,8 @@ def servidor(tmp_path, monkeypatch):
     con = almacen.abrir(tmp_path / "pisos.db")
     a = Anuncio(portal="idealista", id_portal="1", url="https://example.org/1",
                 titulo="Bright room in Sants", precio=450, gastos_extra=50,
-                barrio="Sants", municipio="Barcelona", trayectos={"Fira": 12.0})
+                barrio="Sants", municipio="Barcelona", trayectos={"Fira": 12.0},
+                lat=41.3755, lon=2.1320)
     a.puntuacion = 90
     almacen.registrar(con, [a])
     con.close()
@@ -70,3 +71,29 @@ def test_like_a_listing_from_the_inbox(servidor):
     con = almacen.abrir(db)
     fila = almacen.leer_anuncio(con, id_)
     assert (fila["estado"], fila["nota"]) == ("liked", "Visit Thursday 18h")
+
+
+def test_the_map_shows_listings_and_moves_a_destination_on_click(servidor):
+    from playwright.sync_api import sync_playwright
+    url, db, _ = servidor
+    with sync_playwright() as pw:
+        browser = pw.chromium.launch(headless=True)
+        page = browser.new_page(viewport={"width": 1280, "height": 900})
+        # Sin red en los tests: las teselas no se piden a OpenStreetMap.
+        page.route("https://tile.openstreetmap.org/**", lambda r: r.abort())
+        page.goto(f"{url}/#/map")
+        page.locator(".leaflet-interactive").first.wait_for()
+        assert page.locator(".leaflet-interactive").count() >= 1
+        assert page.get_by_text("OpenStreetMap").is_visible()
+
+        page.goto(f"{url}/#/profile")
+        page.get_by_role("button", name="Add a place").click()
+        page.get_by_label("Name").last.fill("Gym")
+        mapa = page.get_by_role("region", name="Your places on the map")
+        mapa.click(position={"x": 200, "y": 150})
+        page.get_by_role("button", name="Save", exact=True).click()
+        page.get_by_text("Saved").first.wait_for()
+        browser.close()
+    con = almacen.abrir(db)
+    gym = [d for d in almacen.cargar_perfil(con).destinations if d.name == "Gym"][0]
+    assert (gym.lat, gym.lon) != (41.3874, 2.1686)     # se movio del punto por defecto

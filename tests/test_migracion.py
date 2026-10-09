@@ -125,3 +125,13 @@ def test_concurrent_first_opens_migrate_once(tmp_path):
         assert con.execute("PRAGMA user_version").fetchone() == (almacen.SCHEMA_VERSION,)
         copia = sqlite3.connect(tmp_path / f"p{ronda}.v0.bak")
         assert copia.execute("PRAGMA user_version").fetchone() == (0,)
+
+
+def test_v3_adds_settings_and_travel_cache(tmp_path):
+    ruta = tmp_path / "pisos.db"
+    base_antigua(ruta)
+    con = almacen.abrir(ruta)
+    tablas = {r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+    assert {"ajustes", "trayectos"} <= tablas
+    almacen.guardar_ajuste(con, "travel_provider", "transitous")
+    assert almacen.leer_ajustes(con) == {"travel_provider": "transitous"}

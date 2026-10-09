@@ -12,6 +12,7 @@ from typing import Callable
 from buscapiso import almacen, events, navegador
 from buscapiso.pipeline import SearchOptions, SearchResult, run_search
 from buscapiso.profiles import SearchProfile, to_engine_cfg
+from buscapiso.travel import provider_from_settings
 
 Run = Callable[[SearchProfile, SearchOptions, pathlib.Path], SearchResult]
 
@@ -23,7 +24,10 @@ def run_profile(profile: SearchProfile, options: SearchOptions,
     # conexiones entre hilos.
     con = almacen.abrir(db_path)
     try:
-        return run_search(cfg, zonas, options, con)
+        provider, aviso = provider_from_settings(con)
+        if aviso:
+            events.emit("warning", aviso)
+        return run_search(cfg, zonas, options, con, provider=provider)
     finally:
         con.close()
 

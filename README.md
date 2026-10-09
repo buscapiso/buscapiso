@@ -75,7 +75,8 @@ npm --prefix web ci && npm --prefix web run build   # una vez, y tras cada cambi
 Se abre en `http://127.0.0.1:8770`. Desde ahí ves los anuncios, los marcas
 (me gusta, ocultar, contactado, visita...), escribes notas, editas lo que
 buscas y lanzas la búsqueda viendo el progreso. La ventana de Chromium sigue
-abriéndose al buscar, igual que desde el terminal.
+abriéndose al buscar, igual que desde el terminal. La pestaña Map enseña los
+anuncios y tus destinos sobre un mapa de OpenStreetMap.
 
 Para trabajar en el frontend: `buscapiso serve --no-open` en un terminal y
 `npm --prefix web run dev` en otro, que recarga al guardar y reenvía `/api`
@@ -83,6 +84,23 @@ al servidor.
 
 Los motivos de la puntuación y los mensajes de progreso de la búsqueda siguen
 en español, porque los genera el motor; traducirlos queda pendiente.
+
+### Tiempos de trayecto
+
+Por defecto los minutos salen del grafo propio de metro, FGC y Rodalies:
+gratis, sin red y con un error de unos ±4 minutos. En Settings → Travel times
+se puede elegir:
+
+- Transitous: horarios reales, autobuses incluidos, gratis y sin clave. Es un
+  servicio comunitario para proyectos de código abierto y no comerciales;
+  cada petición lleva el contacto que pongas.
+- Google Maps: horarios reales con tu propia clave de la Routes API. Google
+  cobra por trayecto, con un cupo gratuito mensual. La clave se guarda en el
+  llavero del sistema, o en la variable `BUSCAPISO_GOOGLE_KEY`.
+
+Solo se recalculan con horarios reales los mejores anuncios de cada búsqueda
+(40 por defecto); el resto conserva la estimación. Si el proveedor falla, la
+búsqueda sigue con la estimación y lo avisa.
 
 ## Las zonas se calculan solas
 

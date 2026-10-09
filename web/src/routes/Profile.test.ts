@@ -33,6 +33,8 @@ beforeEach(() => {
       }
       return new Response(JSON.stringify(saved));
     }
+    if (u.includes('/api/geocode')) return new Response(JSON.stringify([
+      { name: 'Fira Gran Via, Barcelona', lat: 41.354, lon: 2.127 }]));
     if (u.endsWith('/api/profiles')) return new Response(JSON.stringify([{ name: 'default', active: true }]));
     if (u.endsWith('/api/meta')) return new Response(JSON.stringify({
       statuses: [], sources: ['idealista', 'fotocasa'], genders: ['female_only', 'male_only', 'mixed', 'any'] }));
@@ -78,4 +80,22 @@ test('errors on nested fields are shown, not swallowed', async () => {
   await userEvent.click(screen.getByRole('button', { name: 'Save' }));
   expect(await screen.findByText(/Input should be greater than 0/)).toBeInTheDocument();
   expect(screen.getByRole('alert')).toHaveTextContent('Some fields need fixing');
+});
+
+test('a destination can be found by address', async () => {
+  render(Profile);
+  await screen.findByDisplayValue('Fira');
+  await userEvent.type(screen.getByLabelText('Find an address'), 'Fira Gran Via');
+  await userEvent.click(screen.getByRole('button', { name: 'Search' }));
+  await userEvent.click(await screen.findByRole('button', { name: 'Fira Gran Via, Barcelona' }));
+  expect(screen.getByDisplayValue('41.354')).toBeInTheDocument();
+});
+
+test('each destination has a travel mode and a departure time', async () => {
+  render(Profile);
+  await screen.findByDisplayValue('Fira');
+  await userEvent.selectOptions(screen.getByLabelText('How you get there'), 'bike');
+  await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+  await screen.findByText('Saved');
+  expect((saved as { destinations: { mode: string }[] }).destinations[0].mode).toBe('bike');
 });

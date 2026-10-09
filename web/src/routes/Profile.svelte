@@ -1,10 +1,46 @@
 <script lang="ts">
   import {
     ApiError, activateProfile, deleteProfile, getActiveProfile, getMeta, listProfiles,
-    saveProfile, type Meta, type ProfileSummary, type SearchProfile,
+    geocode, saveProfile, type Meta, type Place, type ProfileSummary, type SearchProfile,
   } from '../lib/api';
+  import MapView from '../lib/components/MapView.svelte';
+  import TravelSettings from '../lib/components/TravelSettings.svelte';
   import { fieldErrors } from '../lib/profileErrors';
   import { t } from '../lib/i18n';
+
+  let queries = $state<string[]>([]);
+  let results = $state<Place[][]>([]);
+  let picking = $state(0);
+
+  async function find(i: number) {
+    try {
+      results[i] = await geocode(queries[i] ?? '');
+    } catch (e) {
+      errors = { ...errors, [`destinations.${i}.lat`]: String(e) };
+    }
+  }
+
+  function choose(i: number, r: Place) {
+    const d = p!.destinations[i];
+    d.lat = r.lat;
+    d.lon = r.lon;
+    if (!d.name) d.name = r.name.split(',')[0];
+    results[i] = [];
+  }
+
+  function pick(lat: number, lon: number) {
+    const d = p?.destinations[picking];
+    if (d) {
+      d.lat = Number(lat.toFixed(6));
+      d.lon = Number(lon.toFixed(6));
+    }
+  }
+
+  function addPlace() {
+    p!.destinations.push({ name: '', lat: 41.3874, lon: 2.1686, max_minutes: null,
+                           minute_weight: 1, mode: 'transit', depart_at: '08:30' });
+    picking = p!.destinations.length - 1;
+  }
 
   let p = $state<SearchProfile | null>(null);
   let profiles = $state<ProfileSummary[]>([]);
@@ -135,12 +171,29 @@
         <label>{t('profile.destMax')}<input type="number" value={d.max_minutes ?? ''}
           oninput={(e) => { const v = (e.currentTarget as HTMLInputElement).value; d.max_minutes = v === '' ? null : Number(v); }} /></label>
         <label>{t('profile.destWeight')}<input type="number" step="0.1" bind:value={d.minute_weight} /></label>
+        <label>{t('profile.destMode')}
+          <select bind:value={d.mode}>
+            {#each ['transit', 'walk', 'bike'] as m}<option value={m}>{t(`mode.${m}`)}</option>{/each}
+          </select>
+        </label>
+        <label>{t('profile.destDepart')}<input type="time" bind:value={d.depart_at} /></label>
+        <div class="find">
+          <label>{t('profile.findAddress')}<input bind:value={queries[i]} /></label>
+          <button onclick={() => find(i)}>{t('profile.search')}</button>
+          <button onclick={() => (picking = i)} aria-pressed={picking === i}>{t('profile.placeOnMap')}</button>
+        </div>
+        {#if results[i]?.length}
+          <ul class="results">
+            {#each results[i] as r}<li><button onclick={() => choose(i, r)}>{r.name}</button></li>{/each}
+          </ul>
+        {/if}
         <button onclick={() => p!.destinations.splice(i, 1)}>{t('profile.remove')}</button>
         {#each under(`destinations.${i}`) as m}<p class="error">{m}</p>{/each}
       </div>
     {/each}
-    <button onclick={() => p!.destinations.push({ name: '', lat: 41.3874, lon: 2.1686, max_minutes: null, minute_weight: 1 })}>
-      {t('profile.addDestination')}</button>
+    <button onclick={addPlace}>{t('profile.addDestination')}</button>
+    <p class="help">{t('profile.pickHelp')}</p>
+    <MapView label={t('profile.destinationsMap')} places={p.destinations} onpick={pick} height="300px" />
     {#if err('destinations')}<p class="error">{err('destinations')}</p>{/if}
   </fieldset>
 
@@ -157,6 +210,7 @@
     <legend>{t('profile.crawl')}</legend>
     {#each under('crawl') as m}<p class="error">{m}</p>{/each}
     <label>{t('profile.maxPages')}<input type="number" min="1" max="20" bind:value={p.crawl.max_pages} /></label>
+    <label>{t('profile.realTravelTimes')}<input type="number" min="0" max="200" bind:value={p.crawl.real_travel_times} /></label>
     <label>{t('profile.detailsToRead')}<input type="number" min="0" bind:value={p.crawl.details_to_read} /></label>
   </fieldset>
 
@@ -174,9 +228,16 @@
     <button class="primary" onclick={save}>{t('profile.save')}</button>
     {#if saved}<span class="ok">{t('profile.saved')}</span>{/if}
   </div>
+
+  <TravelSettings />
 {/if}
 
 <style>
+  .find { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; grid-column: 1 / -1; }
+  .find label { flex: 1 1 180px; }
+  .results { grid-column: 1 / -1; list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; }
+  .results button { width: 100%; text-align: left; }
+  button[aria-pressed='true'] { border-color: var(--accent); color: var(--accent); }
   .profiles { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; margin-bottom: 16px; }
   fieldset { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface);
     margin: 0 0 16px; padding: 12px 16px; display: grid; gap: 10px; }
