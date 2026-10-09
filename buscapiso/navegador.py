@@ -14,17 +14,29 @@ from __future__ import annotations
 
 import atexit
 import pathlib
+import threading
 
 _PW = None
+_DUENO: threading.Thread | None = None   # hilo en el que arranco _PW
 _CONTEXTOS: list = []
 
 
 def playwright():
-    """Arranca Playwright la primera vez y reutiliza la instancia despues."""
-    global _PW
+    """Arranca Playwright la primera vez y reutiliza la instancia despues.
+
+    La instancia solo vale en el hilo que la arranco: la web lanza cada
+    busqueda en un hilo nuevo, y reutilizar la de un hilo ya terminado
+    revienta con "cannot switch to a different thread". En ese caso se
+    abandona (no se puede parar desde otro hilo) y se arranca otra.
+    """
+    global _PW, _DUENO
+    if _PW is not None and _DUENO is not threading.current_thread():
+        _PW = None
+        _CONTEXTOS.clear()
     if _PW is None:
         from playwright.sync_api import sync_playwright
         _PW = sync_playwright().start()
+        _DUENO = threading.current_thread()
     return _PW
 
 
@@ -68,16 +80,18 @@ def cerrar_contexto(ctx) -> None:
 
 
 def cerrar_todo() -> None:
-    """Cierra contextos y para Playwright. Se llama al terminar la busqueda."""
-    global _PW
-    for ctx in list(_CONTEXTOS):
-        cerrar_contexto(ctx)
-    if _PW is not None:
+    """Cierra contextos y para Playwright. Se llama al terminar la busqueda.
+    Desde otro hilo solo se sueltan las referencias: pararlo ahi revienta."""
+    global _PW, _DUENO
+    if _PW is not None and _DUENO is threading.current_thread():
+        for ctx in list(_CONTEXTOS):
+            cerrar_contexto(ctx)
         try:
             _PW.stop()
         except Exception:
             pass
-        _PW = None
+    _CONTEXTOS.clear()
+    _PW, _DUENO = None, None
 
 
 atexit.register(cerrar_todo)

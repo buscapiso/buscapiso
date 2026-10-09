@@ -17,32 +17,14 @@ import pathlib
 import sys
 import webbrowser
 
-import yaml
 from pydantic import ValidationError
 
 from buscapiso import almacen, informe, paths
 from buscapiso.pipeline import SearchOptions, run_search
-from buscapiso.profiles import SearchProfile, from_engine_cfg, to_engine_cfg
+from buscapiso.profiles import SearchProfile, to_engine_cfg
+from buscapiso.seed import active_profile
 
 FUENTES = ["idealista", "roomgo", "depisoenpiso", "fotocasa"]
-
-
-def active_profile(con) -> SearchProfile:
-    perfil = almacen.cargar_perfil(con)
-    if perfil is not None:
-        return perfil
-    config = paths.data_dir() / "config.yaml"
-    if config.exists():
-        cfg = yaml.safe_load(config.read_text(encoding="utf-8"))
-        zonas_yaml = paths.data_dir() / "zonas.yaml"
-        zonas = (yaml.safe_load(zonas_yaml.read_text(encoding="utf-8")) or {}
-                 if zonas_yaml.exists() else {})
-        perfil = from_engine_cfg(cfg, zonas, name="default")
-        print("Perfil 'default' creado a partir de config.yaml y zonas.yaml")
-    else:
-        perfil = SearchProfile(name="default")
-    almacen.guardar_perfil(con, perfil, activar=True)
-    return perfil
 
 
 def apply_overrides(profile: SearchProfile, args: argparse.Namespace) -> SearchProfile:
@@ -96,7 +78,7 @@ def cmd_search(args) -> int:
 
 def cmd_mark(args) -> int:
     con = almacen.abrir(paths.db_path())
-    if almacen.marcar(con, args.id, args.estado, args.nota or ""):
+    if almacen.marcar(con, args.id, args.estado, args.nota or None):
         print(f"{args.id} -> {almacen.ESTADOS_ANTIGUOS.get(args.estado, args.estado)}")
         return 0
     print(f"no encuentro el anuncio {args.id}")
@@ -157,6 +139,30 @@ def cmd_profile(args) -> int:
     return 0
 
 
+def cmd_serve(args) -> int:
+    import threading
+    import uvicorn
+    from buscapiso.api.app import create_app
+    import socket
+    # Antes de nada: si el puerto esta ocupado, abrir el navegador llevaria a
+    # la app que lo ocupa, no a buscapiso.
+    with socket.socket() as prueba:
+        try:
+            prueba.bind((args.host, args.port))
+        except OSError:
+            print(f"El puerto {args.port} ya lo usa otro programa. "
+                  f"Prueba con otro: buscapiso serve --port {args.port + 1}")
+            return 2
+    url = f"http://{args.host}:{args.port}/"
+    print(f"buscapiso en {url} (Ctrl+C para parar)")
+    if not args.no_open:
+        temporizador = threading.Timer(1.0, webbrowser.open, args=(url,))
+        temporizador.daemon = True
+        temporizador.start()
+    uvicorn.run(create_app(), host=args.host, port=args.port, log_level="warning")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     # El rastreo tarda minutos: sin esto el progreso no se ve hasta el final.
     sys.stdout.reconfigure(line_buffering=True)
@@ -186,7 +192,7 @@ def main(argv: list[str] | None = None) -> int:
     m.add_argument("id")
     m.add_argument("estado",
                    choices=list(almacen.ESTADOS) + list(almacen.ESTADOS_ANTIGUOS))
-    m.add_argument("nota", nargs="?", default="")
+    m.add_argument("nota", nargs="?", default=None)
     m.set_defaults(func=cmd_mark)
 
     e = sub.add_parser("statuses", aliases=["estados"], help="lista lo que has marcado")
@@ -204,6 +210,12 @@ def main(argv: list[str] | None = None) -> int:
     im.add_argument("fichero")
     im.add_argument("--use", action="store_true", help="dejarlo como perfil activo")
     pr.set_defaults(func=cmd_profile)
+
+    sv = sub.add_parser("serve", help="abre la web app")
+    sv.add_argument("--host", default="127.0.0.1")
+    sv.add_argument("--port", type=int, default=8770)
+    sv.add_argument("--no-open", action="store_true", help="no abrir el navegador")
+    sv.set_defaults(func=cmd_serve)
 
     args = p.parse_args(argv)
     if getattr(args, "func", None):

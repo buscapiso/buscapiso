@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Callable, Literal
 
-Kind = Literal["stage", "progress", "info", "warning", "captcha"]
+Kind = Literal["stage", "progress", "info", "warning", "captcha", "done", "error"]
 
 
 @dataclass(frozen=True)
