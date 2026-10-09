@@ -80,3 +80,11 @@ test('while crawling, each portal shows its progress and new listings appear as 
   expect(card).toHaveAttribute('href', 'https://www.idealista.com/inmueble/1/');
   expect(card).toHaveTextContent('450 €');
 });
+
+test('after a search, one line says what the AI did', async () => {
+  render(SearchPanel, { onresults: vi.fn() });
+  await userEvent.click(await screen.findByRole('button', { name: 'Search now' }));
+  FakeSource.last.send('info', { aiRead: 125, aiCandidates: 364 }, 'AI: 125 of 364');
+  FakeSource.last.send('done', { new: 2, accepted: 25, possible: 6, crawled: 730 });
+  expect(await screen.findByText('The AI read 125 of the 364 listings that could still fit.')).toBeInTheDocument();
+});

@@ -8,7 +8,7 @@ import { Geocoder } from '../engine/geocode';
 import { emptyDerived, STATUSES, totalCost, type Derived, type FetchPage, type Status, type StoredListing,
   type UserState } from '../engine/model';
 import { DEFAULT_SERVER, randomTopic, send as ntfySend, notifyNew } from '../engine/notify';
-import { rescore, runSearch, type Deps, type SearchEvent } from '../engine/pipeline';
+import { readFullListing, rescore, runSearch, type Deps, type SearchEvent } from '../engine/pipeline';
 import { defaultProfile, FLAT_SOURCES, parseProfile, ROOM_SOURCES, searchProfile, type SearchProfile } from '../engine/profiles';
 import { CachedProvider, estimateTrip, GoogleProvider, TRANSITOUS_URL, TransitousProvider, TravelError, type Route,
   type TravelProvider } from '../engine/travel';
@@ -126,6 +126,7 @@ export function createBackend(deps: BackendDeps) {
       photo: /^https?:\/\//i.test(l.photo) ? l.photo : '', description: l.description,
       travel: dd.travel, routes: dd.routes, travel_source: dd.travelSource,
       summary: dd.summary, pros: dd.pros, cons: dd.cons, red_flags: dd.redFlags,
+      ai_facts: dd.aiFacts ?? [], ai_note: dd.aiNote ?? '', detail_read: l.detailRead,
       score: dd.score, reasons: dd.group === 'rejected' ? [`no longer fits: ${dd.rejectReason}`] : dd.reasons,
       gender: l.gender, gender_confirmed: l.genderConfirmed, roommates: l.roommates, bedrooms: l.bedrooms,
       surface_m2: l.surfaceM2, bathrooms: l.bathrooms, floor: l.floor, elevator: l.elevator, furnished: l.furnished,
@@ -264,6 +265,22 @@ export function createBackend(deps: BackendDeps) {
     ['GET', /^\/api\/meta$/, async () => ({ statuses: STATUSES, sources: ROOM_SOURCES, flat_sources: FLAT_SOURCES, genders: GENDERS })],
     ['GET', /^\/api\/listings$/, async (_m, _b, q) => listListings((q.get('status') ?? '').split(',').filter(Boolean), q.get('group'))],
     ['GET', /^\/api\/listings\/([^/]+)$/, async ([id]) => detail(id)],
+    // La ficha completa al abrir el anuncio, y la IA lo vuelve a leer.
+    ['POST', /^\/api\/listings\/([^/]+)\/full$/, async ([id]) => {
+      const l = await db.get<StoredListing>('listings', id);
+      if (!l) throw new HttpError(404, `no listing ${id}`);
+      if (!l.detailRead) {
+        const page = deps.fetchPage();
+        if (!page) throw new HttpError(409, 'Reading the full listing needs the buscapiso extension');
+        const why = await readFullListing(l, page);
+        if (why) throw new HttpError(502, `Could not read the full listing (${why})`);
+        await db.put('listings', l);
+        const [d] = await rescore([l], await activeProfile(), { travel: await travel(), ai: await ai().catch(() => null),
+          aiCache, now }, await discarded());
+        await db.put('derived', d);
+      }
+      return detail(id);
+    }],
     // El camino a cada destino, para dibujarlo; solo al abrir el anuncio.
     ['GET', /^\/api\/listings\/([^/]+)\/routes$/, async ([id]) => {
       const l = await db.get<StoredListing>('listings', id);

@@ -30,3 +30,11 @@ test('without onstatus there are no action buttons', () => {
   render(ListingCard, { listing });
   expect(screen.queryByRole('button')).toBeNull();
 });
+
+test('marks the listings the AI has read', () => {
+  const { unmount } = render(ListingCard, { listing: { ...listing, ai_facts: [{ label: 'Bills', value: 'included', used: true }] } });
+  expect(screen.getByTitle('Read by AI')).toBeInTheDocument();
+  unmount();
+  render(ListingCard, { listing: { ...listing, ai_facts: [] } });
+  expect(screen.queryByTitle('Read by AI')).toBeNull();
+});

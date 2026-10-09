@@ -90,6 +90,19 @@ function mergeDetail(l: RawListing, d: Partial<RawListing>): void {
   if (!l.genderConfirmed) l.gender = inferGender(`${l.title} ${l.description}`);
 }
 
+/** La ficha completa de un anuncio, al abrirlo: Idealista solo da 320
+ * caracteres en el listado. Devuelve null si la leyo, o el motivo si no. */
+export async function readFullListing(l: RawListing, fetchPage: FetchPage): Promise<string | null> {
+  const src = SOURCES[l.source];
+  if (!src?.detailRequest || !src.parseDetail) return 'this portal has no separate full listing';
+  const req = src.detailRequest(l);
+  const deps = { fetchPage, fetchDirect: async () => { throw new Error('not available here'); } } as unknown as Deps;
+  const r = await fetchOne(src, req.url, deps, () => {}, req.form);
+  if (!r.ok) return r.reason;
+  mergeDetail(l, src.parseDetail(r.body));
+  return null;
+}
+
 // --- un portal ------------------------------------------------------------
 /** Zonas con URL propia; varias zonas pueden compartir una (Fotocasa: toda la ciudad). */
 function startUrls(src: Source, areas: Area[], p: SearchProfile): Map<string, Area | null> {

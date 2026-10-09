@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getActiveProfile, getListing, getRoutes, setNote, setStatus, ApiError,
+  import { getActiveProfile, getListing, getRoutes, loadFull, setNote, setStatus, ApiError,
            type Destination, type ListingDetail, type Route, type Status } from '../lib/api';
   import MapView, { type MapRoute } from '../lib/components/MapView.svelte';
   import MessageDraft from '../lib/components/MessageDraft.svelte';
@@ -15,6 +15,7 @@
   let note = $state('');
   let saved = $state(false);
   let error = $state('');
+  let loadingFull = $state(false);
   let routes = $state<Record<string, Route | null>>({});
   // Andando, a trazos y en gris; en transporte, del color de la linea.
   const mapRoutes = $derived<MapRoute[]>(Object.values(routes).flatMap((r) => (r?.legs ?? []).filter((g) => g.points.length > 1)
@@ -29,6 +30,12 @@
       l = await getListing(id);
       places = (await getActiveProfile()).destinations;
       note = l.note;
+      // Idealista solo da 320 caracteres en el listado: la ficha entera se lee
+      // al abrirla, y la IA vuelve a leer este anuncio.
+      if (l.portal === 'idealista' && l.detail_read === false) {
+        loadingFull = true;
+        loadFull(id).then((full) => { l = full; }).catch(() => {}).finally(() => { loadingFull = false; });
+      }
       // El camino se pide aparte: el anuncio se ve ya y el mapa se completa luego.
       getRoutes(id).then((rs) => { routes = Object.fromEntries(rs.map((r) => [r.name, r.route])); }).catch(() => {});
     } catch (e) {
@@ -117,10 +124,16 @@
       {#if saved}<span class="ok">{t('listing.noteSaved')}</span>{/if}
     </section>
 
-    {#if l.summary}
+    {#if l.summary || l.ai_facts?.length || l.ai_note}
       <section>
-        <h2>{t('listing.aiSummary')}</h2>
-        <p>{l.summary}</p>
+        <h2>{t('listing.aiRead')}</h2>
+        {#if l.summary}<p>{l.summary}</p>{/if}
+        {#if l.ai_facts?.length}
+          <ul class="aifacts">{#each l.ai_facts as f}
+            <li><span class="k">{f.label}</span> <span>{f.value}</span>{#if f.used} <em class="used">{t('listing.aiUsed')}</em>{/if}</li>
+          {/each}</ul>
+        {/if}
+        {#if l.ai_note}<p class="meta">{l.ai_note}</p>{/if}
         {#if l.red_flags.length}
           <div class="flags"><strong>{t('listing.redFlags')}</strong>
             <ul>{#each l.red_flags as f}<li>{f}</li>{/each}</ul></div>
@@ -140,7 +153,8 @@
     </section>
 
     {#if l.description}
-      <section><h2>{t('listing.description')}</h2><p class="desc">{l.description}</p></section>
+      <section><h2>{t('listing.description')}</h2><p class="desc">{l.description}</p>
+        {#if loadingFull}<p class="meta">{t('listing.loadingFull')}</p>{/if}</section>
     {/if}
 
     {#if l.history.length}
@@ -153,6 +167,9 @@
 {/if}
 
 <style>
+  .aifacts { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 4px; font-size: 14px; }
+  .aifacts .k { color: var(--muted); display: inline-block; min-width: 9em; }
+  .aifacts .used { font-style: normal; font-size: 12px; color: var(--accent); margin-left: 6px; }
   .legs { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; width: 100%; font-size: 13px; color: var(--muted); }
   .leg:not(:last-child)::after { content: ' ·'; }
   .facts { list-style: none; padding: 0; margin: 0 0 12px; display: flex; flex-wrap: wrap; gap: 6px; }

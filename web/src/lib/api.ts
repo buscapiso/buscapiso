@@ -12,6 +12,12 @@ export interface Listing {
   photo: string; description: string;
   travel: Record<string, number>; routes: Record<string, string>; travel_source: string;
   summary: string; pros: string[]; cons: string[]; red_flags: string[];
+  /** Lo que la IA leyo, en palabras; `used` si cambio la puntuacion. */
+  ai_facts?: { label: string; value: string; used: boolean }[];
+  /** Por que la IA no lo leyo; '' si lo leyo. */
+  ai_note?: string;
+  /** Ya se leyo la ficha completa (no solo el listado). */
+  detail_read?: boolean;
   score: number; reasons: string[];
   gender: 'female_only' | 'male_only' | 'mixed' | 'unknown'; gender_confirmed: boolean;
   roommates: number | null;
@@ -124,6 +130,9 @@ export const getListing = (id: string) =>
 export const setStatus = (id: string, status: Status, note?: string) =>
   call<ListingDetail>('POST', `/api/listings/${encodeURIComponent(id)}/status`,
     note === undefined ? { status } : { status, note });
+/** Lee la ficha completa por la extension y la vuelve a puntuar. */
+export const loadFull = (id: string) =>
+  call<ListingDetail>('POST', `/api/listings/${encodeURIComponent(id)}/full`);
 export const setNote = (id: string, note: string) =>
   call<ListingDetail>('PUT', `/api/listings/${encodeURIComponent(id)}/note`, { note });
 export type { Leg, Route } from '../engine/travel';

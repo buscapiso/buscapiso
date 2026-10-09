@@ -1,6 +1,6 @@
 import { IDBFactory } from 'fake-indexeddb';
 import { describe, expect, it } from 'vitest';
-import type { FetchPage, StoredListing } from '../engine/model';
+import { emptyListing, listingId, type FetchPage, type StoredListing } from '../engine/model';
 import { fixture } from '../engine/testing';
 import type { SearchEvent } from '../engine/pipeline';
 import { createBackend, HttpError, type BackendDeps } from './backend';
@@ -66,6 +66,30 @@ describe('profiles', () => {
 });
 
 describe('listings', () => {
+  const idealistaRoom = (): StoredListing => ({ ...emptyListing('idealista', '123', 'https://www.idealista.com/inmueble/123/'),
+    id: listingId('idealista', '123'), city: 'barcelona', firstSeen: '', lastSeen: '', title: 'Habitación en Sants',
+    description: 'Cut after 320 characters', price: 400, lat: 41.39, lon: 2.17, gender: 'mixed', genderConfirmed: true });
+  it('reads a listing in full through the extension, saves it and scores it again', async () => {
+    const urls: string[] = [];
+    const page: FetchPage = async (req) => { urls.push(req.url); return { ok: true, html: fixture('idealista_ficha.html'), finalUrl: req.url, via: 'fetch' }; };
+    const s = await setup({ fetchPage: () => page });
+    const l = idealistaRoom();
+    await s.db.put('listings', l);
+    const r = await s.b.handle('POST', `/api/listings/${l.id}/full`) as { detail_read: boolean; description: string; reasons: string[] };
+    expect(urls).toEqual(['https://www.idealista.com/inmueble/123/']);
+    expect(r.detail_read).toBe(true);
+    expect(r.description).not.toBe('Cut after 320 characters');
+    expect(r.reasons.length).toBeGreaterThan(0);
+    // Ya leida: no se vuelve a pedir.
+    await s.b.handle('POST', `/api/listings/${l.id}/full`);
+    expect(urls).toHaveLength(1);
+  });
+  it('says the extension is needed to read a listing in full', async () => {
+    const s = await setup({ fetchPage: () => null });
+    const l = idealistaRoom();
+    await s.db.put('listings', l);
+    await expect(s.b.handle('POST', `/api/listings/${l.id}/full`)).rejects.toMatchObject({ status: 409 });
+  });
   it('draws the route from a listing to each destination, asking only once', async () => {
     let asked = 0;
     const route = { minutes: 19, legs: [{ mode: 'transit' as const, line: 'L1', color: '#CE1126', from: 'Sants', to: 'Espanya', minutes: 5, points: [] }] };

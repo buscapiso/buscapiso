@@ -13,6 +13,8 @@ export interface PortalProgress {
 export interface FoundSample { source: string; title: string; price: number | null; photo: string; url: string; place: string }
 
 const RECENT = 8;
+/** Lo que hizo la IA en la busqueda; `stopped` es el aviso si se paro. */
+export interface AISummary { read: number; candidates: number; stopped: string }
 
 /** Lo que el panel enseña de una busqueda a partir de sus eventos. */
 export function summarize(events: SearchEvent[]) {
@@ -25,7 +27,11 @@ export function summarize(events: SearchEvent[]) {
   const warnings: string[] = [];
   const portals = new Map<string, PortalProgress & { warned: boolean; finished: boolean }>();
   const recent: FoundSample[] = [];
+  let ai = null as AISummary | null;
   for (const e of events) {
+    const prev: AISummary = ai ?? { read: 0, candidates: 0, stopped: '' };
+    if (typeof e.data.aiRead === 'number') ai = { ...prev, read: e.data.aiRead, candidates: Number(e.data.aiCandidates ?? 0) };
+    if (e.data.ai === 'stopped') ai = { ...prev, stopped: e.message.trim() };
     if (e.kind === 'stage') {
       step = Number(e.data.step ?? step); total = Number(e.data.total ?? total); captcha = null; stageProgress = 0;
     } else if (e.kind === 'captcha') captcha = String(e.data.portal ?? 'A portal');
@@ -57,7 +63,7 @@ export function summarize(events: SearchEvent[]) {
   const planned = list.reduce((n, p) => n + p.planned, 0);
   const crawled = list.reduce((n, p) => n + Math.min(p.pages, p.planned), 0);
   const fraction = step <= 1 ? (planned ? crawled / planned : 0) : stageProgress;
-  return { step, total, captcha, done, error, warnings, portals: list, fraction, recent: recent.reverse().slice(0, RECENT) };
+  return { step, total, captcha, done, error, warnings, portals: list, fraction, recent: recent.reverse().slice(0, RECENT), ai };
 }
 
 /** "m:ss" desde el inicio de la busqueda, o '' si el evento no lo trae. */

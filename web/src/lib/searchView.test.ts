@@ -74,3 +74,12 @@ test('keeps the latest listings found, newest first', () => {
   ]);
   expect(s.recent.map((r) => r.title)).toEqual(['c', 'b', 'a']);
 });
+
+test('sums up what the AI did, or why it stopped', () => {
+  const read = summarize([ev('info', { aiRead: 120, aiCandidates: 364, calls: 13 }), ev('info', { aiRead: 125, aiCandidates: 364, calls: 14 })]);
+  expect(read.ai).toEqual({ read: 125, candidates: 364, stopped: '' });
+  const stopped = summarize([ev('warning', { ai: 'stopped' }, '    AI stopped for this search: HTTP 429: quota. The other listings keep their score without it.'),
+    ev('info', { aiRead: 0, aiCandidates: 364 })]);
+  expect(stopped.ai?.stopped).toBe('AI stopped for this search: HTTP 429: quota. The other listings keep their score without it.');
+  expect(summarize([]).ai).toBeNull();
+});

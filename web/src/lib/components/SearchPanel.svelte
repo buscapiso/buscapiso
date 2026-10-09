@@ -68,6 +68,10 @@
   {#if view.done && !running}
     <p class="ok">{t('search.done', { new: Number(view.done.data.new), accepted: Number(view.done.data.accepted), possible: Number(view.done.data.possible) })}</p>
   {/if}
+  {#if view.ai && !running}
+    <p class={view.ai.stopped ? 'warn' : 'muted'}>{view.ai.stopped
+      || t('search.aiRead', { read: view.ai.read, candidates: view.ai.candidates })}</p>
+  {/if}
   {#if view.error && !running}<p class="error" role="alert">{t('search.error', { message: view.error.message })}</p>{/if}
   {#if events.length}
     <details><summary>{t('search.showLog')}</summary>

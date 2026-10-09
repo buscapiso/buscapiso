@@ -27,7 +27,8 @@
     <p class="cost"><strong>{listing.total_cost ?? '?'} €</strong>
       <span>{t('listing.perMonth')}</span> <small>{costLine(listing)}</small></p>
     <h3><a href={link}>{title}</a></h3>
-    <p class="where">{place} <span class="portal">{listing.portal}</span></p>
+    <p class="where">{place} <span class="portal">{listing.portal}</span>
+      {#if listing.ai_facts?.length}<span class="ai" title={t('listing.aiRead')}>AI</span>{/if}</p>
     {#if facts}<p class="facts">{facts}</p>{/if}
     {#if listing.summary}<p class="summary">{listing.summary}</p>{/if}
     <ul class="travel">
@@ -73,6 +74,8 @@
   .where { color: var(--muted); font-size: 14px; margin: 0 0 6px; }
   .facts { font-size: 14px; margin: -4px 0 6px; }
   .summary { font-size: 14px; margin: 0 0 6px; }
+  .ai { margin-left: 4px; font-size: 11px; font-weight: 700; color: var(--accent); border: 1px solid currentColor;
+    border-radius: 4px; padding: 0 4px; }
   .portal { margin-left: 8px; font-size: 12px; border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; }
   .travel { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; font-size: 14px; }
   .travel li { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
