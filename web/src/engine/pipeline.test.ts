@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { listingFacts, type AICache, type ListingFacts } from './ai/extract';
 import { AIError, ClaudeProvider, type AIProvider } from './ai/providers';
-import { Geocoder } from './geocode';
+import { Geocoder, streetName } from './geocode';
 import { emptyListing, type Derived, type FetchPage, type StoredListing } from './model';
 import { rescore, runSearch, type Deps, type PipelineStore, type SearchEvent } from './pipeline';
 import { parseProfile } from './profiles';
@@ -146,7 +146,7 @@ describe('runSearch', () => {
     const ls = [...mem.listings.values()];
     expect(ls.length).toBeGreaterThan(2);
     expect(ls.every((l) => l.lat !== null)).toBe(true);
-    const addressQueries = queries.filter((q) => ls.some((l) => l.address && l.address !== l.neighbourhood && q.startsWith(`${l.address},`)));
+    const addressQueries = queries.filter((q) => ls.some((l) => l.address && l.address !== l.neighbourhood && q.startsWith(`${streetName(l.address)},`)));
     expect(addressQueries).toHaveLength(2);
     expect(ls.filter((l) => !l.approximateLocation)).toHaveLength(2);
   }, 30_000);
@@ -206,6 +206,18 @@ describe('runSearch', () => {
     });
     expect(previews.length).toBeGreaterThanOrEqual(2);
     expect(previews.every((x) => x.summaries > 0 && x.calls === 0)).toBe(true);
+  }, 30_000);
+
+  it('calls the AI once in the whole search when its daily quota is gone', async () => {
+    let calls = 0;
+    const ai: AIProvider = { name: 'fake', model: 'm', usage: { calls: 0, inputTokens: 0, outputTokens: 0 }, text: async () => '',
+      json: (async () => { calls++; throw Object.assign(new AIError('HTTP 429: per day', 429), { daily: true }); }) as AIProvider['json'] };
+    const { d } = deps({ ai });
+    const { events, emit } = collect();
+    // Con fichas que leer: hay una segunda puntuacion despues de leerlas.
+    await runSearch(profile({ sources: ['idealista'], crawl: { max_pages: 1, details_to_read: 3 } }), d, emit);
+    expect(events.some((e) => e.message.includes('full listings read'))).toBe(true);
+    expect(calls).toBe(1);
   }, 30_000);
 
   it('puts first results in the list before the search ends', async () => {
@@ -322,6 +334,29 @@ describe('rescore', () => {
     // El alquiler solo ya pasa del maximo: la IA no lo puede arreglar y no se le pregunta.
     expect(prompts.join('')).toContain('Hidden bills');
     expect(prompts.join('')).not.toContain('Too dear');
+  });
+  it('says per listing what the AI found, or why it did not read it', async () => {
+    const ai = fakeAI(async () => ({ ...FACTS, bills_included: true }));
+    const ls = [room('a', { title: 'Hidden bills', price: 470 }), room('b', { title: 'Too dear', price: 900 })];
+    const ds = await rescore(ls, tight(), { travel: null, ai, aiCache: noCache, now: () => new Date() }, new Set());
+    const [a, b] = ['fotocasa:a', 'fotocasa:b'].map((id) => ds.find((d) => d.id === id)!);
+    expect(a.aiFacts).toContainEqual({ label: 'Bills', value: 'included', used: true });
+    expect(a.aiNote).toBe('');
+    expect(b.aiFacts).toEqual([]);
+    expect(b.aiNote).toMatch(/^Not sent to the AI: 900 € a month in total, above your maximum/);
+  });
+  it('after a limit that will not lift, stops the AI for the whole search and says so once', async () => {
+    const prompts: string[] = [];
+    const ai = fakeAI(async () => { throw Object.assign(new AIError('HTTP 429: quota per day', 429), { daily: true }); }, prompts);
+    const breaker = { stopped: null as AIError | null };
+    const { events, emit } = collect();
+    const deps = { travel: null, ai, aiCache: noCache, now: () => new Date(), sleep: async () => {} };
+    const ls = [room('a', { title: 'A', price: 470 })];
+    const ds = await rescore(ls, tight(), deps, new Set(), emit, { breaker });
+    await rescore(ls, tight(), deps, new Set(), emit, { breaker });
+    expect(prompts).toHaveLength(1);
+    expect(ds[0].aiNote).toBe('The AI could not read it: HTTP 429: quota per day');
+    expect(events.filter((e) => e.kind === 'warning' && /AI stopped for this search/.test(e.message))).toHaveLength(1);
   });
   it('only uses cached AI facts when asked not to call the AI', async () => {
     const prompts: string[] = [];

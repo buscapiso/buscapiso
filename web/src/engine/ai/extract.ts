@@ -81,8 +81,9 @@ export function factsKey(p: Pick<AIProvider, 'name' | 'model'>, l: Pick<RawListi
 
 export const BATCH_SIZE = 10;
 const PARALLEL = 4;
-const RETRIES_429 = 3;
-const BACKOFF_MS = 10_000;
+const RETRIES_429 = 2;
+const BACKOFF_MS = 15_000;
+const MAX_WAIT_MS = 60_000;
 const MAX_DESCRIPTION = 2000;
 // Muchos anuncios por respuesta, y los modelos que "piensan" gastan tokens antes.
 const BATCH_MAX_TOKENS = 16_384;
@@ -101,8 +102,11 @@ export interface ExtractOptions {
   onProgress?: (done: number, total: number) => void;
   /** Solo la cache: no se llama al modelo. */
   cacheOnly?: boolean;
+  /** Compartido en toda una busqueda: tras un limite que no cede, no se
+   * vuelve a llamar (antes se reintentaba cada lote, dos pasadas enteras). */
+  breaker?: { stopped: AIError | null };
 }
-export interface Extracted<T> { facts: Map<T, ListingFacts>; failures: AIError[]; calls: number }
+export interface Extracted<T> { facts: Map<T, ListingFacts>; failures: AIError[]; calls: number; stopped: AIError | null }
 
 /** Hechos de muchos anuncios: primero la cache, luego lotes de diez, cuatro a
  * la vez. Lo que falta en una respuesta se pide una vez mas; lo que vuelve a
@@ -112,18 +116,20 @@ export async function extractMany<T extends RawListing>(p: AIProvider, listings:
   const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
   const facts = new Map<T, ListingFacts>();
   const failures: AIError[] = [];
+  const breaker = opts.breaker ?? { stopped: null };
   let calls = 0;
   let todo: T[] = [];
   for (const l of listings) {
     const hit = await cache.get(factsKey(p, l));
     if (hit) facts.set(l, hit); else todo.push(l);
   }
-  if (opts.cacheOnly) return { facts, failures, calls };
+  if (opts.cacheOnly || breaker.stopped) return { facts, failures, calls, stopped: breaker.stopped };
   const total = todo.length;
   let done = 0;
   async function ask(batch: T[]): Promise<T[]> {
     const user = batch.map(asTag).join('\n\n');
     for (let attempt = 0; ; attempt++) {
+      if (breaker.stopped) return [];
       try {
         calls++;
         const answer = await p.json(SYSTEM_EXTRACT, user, batchAnswer, BATCH_JSON_SCHEMA, BATCH_MAX_TOKENS);
@@ -139,7 +145,13 @@ export async function extractMany<T extends RawListing>(p: AIProvider, listings:
         return missing;
       } catch (e) {
         if (!(e instanceof AIError)) throw e;
-        if (e.status === 429 && attempt < RETRIES_429) { await sleep(BACKOFF_MS * 2 ** attempt); continue; }
+        if (e.status === 429) {
+          if (!e.daily && attempt < RETRIES_429) {
+            await sleep(Math.min(e.retryAfterMs ?? BACKOFF_MS * 2 ** attempt, MAX_WAIT_MS));
+            continue;
+          }
+          breaker.stopped ??= e;
+        }
         failures.push(e);
         return [];
       }
@@ -149,15 +161,19 @@ export async function extractMany<T extends RawListing>(p: AIProvider, listings:
     const batches: T[][] = [];
     for (let i = 0; i < todo.length; i += BATCH_SIZE) batches.push(todo.slice(i, i + BATCH_SIZE));
     const again: T[] = [];
-    await eachLimited(batches, PARALLEL, async (b) => {
-      const missing = await ask(b);
-      again.push(...missing);
-      done += b.length - (round === 0 ? missing.length : 0);
+    const one = async (b: T[]) => {
+      const before = facts.size;
+      again.push(...await ask(b));
+      done += facts.size - before;
       opts.onProgress?.(done, total);
-    });
+    };
+    // El primer lote va solo: si el proveedor esta al limite, se sabe con una
+    // llamada y no con cuatro a la vez.
+    if (round === 0 && batches.length) await one(batches.shift()!);
+    await eachLimited(batches, PARALLEL, one);
     todo = again;
   }
-  return { facts, failures, calls };
+  return { facts, failures, calls, stopped: breaker.stopped };
 }
 
 /** Un solo anuncio: lo mismo que un lote de uno. */
@@ -166,6 +182,36 @@ export async function extractFacts(p: AIProvider, l: RawListing, cache: AICache)
   const f = r.facts.get(l);
   if (!f) throw r.failures[0] ?? new AIError('The model did not describe this listing');
   return f;
+}
+
+export interface FactRow { label: string; value: string; used: boolean }
+
+const GENDER_WORDS: Record<string, string> = { female_only: 'women only', male_only: 'men only', mixed: 'mixed' };
+const yesNo = (x: boolean, yes: string, no: string) => (x ? yes : no);
+
+/** Lo que la IA saco del texto, en palabras, para enseñarlo en el anuncio.
+ * `used` marca lo que cambio la puntuacion (`filled` de applyFacts). */
+export function describeFacts(f: ListingFacts, filled: string[]): FactRow[] {
+  const rows: FactRow[] = [];
+  const add = (label: string, value: string | null, ...keys: string[]) => {
+    if (value) rows.push({ label, value, used: keys.some((k) => filled.includes(k)) });
+  };
+  add('Who lives there', GENDER_WORDS[f.household_gender] ?? null, 'gender');
+  const lo = f.bills_eur_min ?? f.bills_eur_max, hi = f.bills_eur_max ?? f.bills_eur_min;
+  add('Bills', f.bills_included ? 'included'
+    : lo !== null && hi !== null ? (lo === hi ? `${lo} € a month` : `${lo}–${hi} € a month, counted as ${Math.round((lo + hi) / 2)} €`)
+    : f.bills_included === false ? 'paid apart, amount not given' : null, 'expenses');
+  add('Owner lives in', f.owner_lives_in === null ? null : yesNo(f.owner_lives_in, 'yes', 'no'), 'ownerLivesIn');
+  add('Roommates', [f.roommates === null ? '' : String(f.roommates), f.roommates_age_range ? `aged ${f.roommates_age_range}` : '',
+    f.roommates_occupation ?? ''].filter(Boolean).join(', ') || null, 'roommates', 'roommateAges');
+  add('Couples', f.couples_allowed === null ? null : yesNo(f.couples_allowed, 'allowed', 'not allowed'), 'couplesAllowed');
+  add('Guests', f.visitors_allowed === null ? null : yesNo(f.visitors_allowed, 'allowed', 'not allowed'), 'visitsAllowed');
+  add('Smoking', f.smoking_allowed === null ? null : yesNo(f.smoking_allowed, 'allowed', 'not allowed'), 'smokingAllowed');
+  add('Room', f.exterior === null ? null : yesNo(f.exterior, 'exterior', 'interior'), 'exterior');
+  add('Minimum stay', f.min_stay_months === null ? null : `${f.min_stay_months} months`, 'minStayMonths');
+  add('Available from', f.available_from, 'availableFrom');
+  if (f.seasonal_or_short_let) rows.push({ label: 'Seasonal let', value: 'yes', used: true });
+  return rows;
 }
 
 export interface AIDerived { summary: string; pros: string[]; cons: string[]; redFlags: string[]; aiTemporary: boolean | null }

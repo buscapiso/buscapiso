@@ -3,7 +3,7 @@
 //
 // rescore() es la mitad que no rastrea: trayectos, IA, filtro y puntuacion.
 // La usan tambien "Re-score now" y la importacion de un fichero.
-import { applyFacts, extractMany, type AICache, type AIDerived } from './ai/extract';
+import { applyFacts, describeFacts, extractMany, type AICache, type AIDerived } from './ai/extract';
 import { AIError, type AIProvider } from './ai/providers';
 import { CITIES, selectAreas, type Trips } from './coverage';
 import { dedupe } from './dedupe';
@@ -223,19 +223,22 @@ function setTravel(w: Working, d: Destination, t: Trip) {
 const ESTIMATE_SLACK_MIN = 15;
 
 /** Falla incluso en el mejor caso: gastos no dichos a 0, genero no dicho como
- * el buscado, trayectos 15 min mas cortos. La IA no lo puede arreglar. */
-function hopeless(w: Working, p: SearchProfile, discarded: Set<string>): boolean {
+ * el buscado, trayectos 15 min mas cortos. La IA no lo puede arreglar.
+ * Devuelve el motivo, o null si aun puede valer. */
+function hopeless(w: Working, p: SearchProfile, discarded: Set<string>): string | null {
   const e = w.effective;
   const best: Scorable = { ...e,
     expenses: e.expenses ?? 0,
     gender: e.gender === 'unknown' && p.household.gender !== 'any' ? p.household.gender : e.gender,
     travel: Object.fromEntries(Object.entries(e.travel).map(([k, v]) => [k, Math.max(0, v - ESTIMATE_SLACK_MIN)])) };
-  return filter([best], p, discarded).rejected.length > 0;
+  return filter([best], p, discarded).rejected[0]?.[1] ?? null;
 }
 
 export interface RescoreOptions {
   /** Solo hechos ya guardados, sin llamar a la IA: para las vistas previas. */
   aiCacheOnly?: boolean;
+  /** Uno por busqueda: si la IA se para, no se vuelve a llamar en esa busqueda. */
+  breaker?: { stopped: AIError | null };
 }
 
 /** Trayectos, IA, filtro y puntuacion de los anuncios dados. No rastrea.
@@ -266,21 +269,35 @@ export async function rescore(listings: StoredListing[], p: SearchProfile,
   // salta; si fallan todos, aviso.
   if (deps.ai && p.crawl.ai_listings) {
     const ai = deps.ai;
-    const candidates = ws.filter((w) => w.stored.type === p.listing_type && !hopeless(w, p, discarded));
+    const candidates: Working[] = [];
+    for (const w of ws.filter((x) => x.stored.type === p.listing_type)) {
+      const why = hopeless(w, p, discarded);
+      if (why) w.derived.aiNote = `Not sent to the AI: ${why}`;
+      else candidates.push(w);
+    }
     const byListing = new Map(candidates.map((w) => [w.stored, w]));
     const r = await extractMany(ai, candidates.map((w) => w.stored), deps.aiCache, { sleep: deps.sleep,
-      cacheOnly: opts.aiCacheOnly,
+      cacheOnly: opts.aiCacheOnly, breaker: opts.breaker,
       onProgress: (done, total) => emit('progress', `    AI ${done}/${total}`, { done, total }) });
     for (const [l, facts] of r.facts) {
       const w = byListing.get(l)!;
       const { listing, ai: derived, filled } = applyFacts(w.effective, facts);
       w.effective = { ...listing, aiTemporary: derived.aiTemporary, redFlags: derived.redFlags,
         billsFromText: w.effective.billsFromText || filled.includes('expenses') };
-      Object.assign(w.derived, derived satisfies AIDerived);
+      Object.assign(w.derived, derived satisfies AIDerived, { aiFacts: describeFacts(facts, filled) });
     }
-    if (r.calls && !r.facts.size && r.failures.length) {
+    const failed = r.stopped ?? r.failures.at(-1);
+    if (failed && !opts.aiCacheOnly) {
+      for (const w of candidates) if (!r.facts.has(w.stored)) w.derived.aiNote = `The AI could not read it: ${failed.message}`;
+    }
+    if (r.stopped && r.calls) {
+      emit('warning', `    AI stopped for this search: ${r.stopped.message}. The other listings keep their score without it.`,
+        { ai: 'stopped' });
+    } else if (r.calls && !r.facts.size && r.failures.length) {
       emit('warning', `    The AI did not answer (${r.failures.at(-1)!.message}); going on without it`);
-    } else if (r.calls) emit('info', `    AI: read ${r.facts.size} listings in ${r.calls} calls`, { calls: ai.usage.calls });
+    }
+    if (r.calls || r.facts.size) emit('info', `    AI: ${r.facts.size} of ${candidates.length} listings described, ${r.calls} calls`,
+      { calls: ai.usage.calls, aiRead: r.facts.size, aiCandidates: candidates.length });
     classify(ws, p, discarded, today);
   }
 
@@ -329,6 +346,8 @@ export async function runSearch(p: SearchProfile, deps: Deps, rawEmit: Emit, opt
     lap = t;
   };
   const next = (step: number, message: string) => { took(); stage(emit, step, message); };
+  // Si la IA se para (cuota agotada), no se la vuelve a llamar en esta busqueda.
+  const breaker = { stopped: null as AIError | null };
   // Resultados a medias en la lista mientras sigue: no se espera al final.
   const preview = async (ds: Derived[], message: string) => {
     await deps.store.saveDerived(ds);
@@ -426,7 +445,7 @@ export async function runSearch(p: SearchProfile, deps: Deps, rawEmit: Emit, opt
       await deps.store.saveListings(vague);
       all = await deps.store.listings(p.city);
     }
-    let derived = await rescore(all, p, deps, discarded, emit);
+    let derived = await rescore(all, p, deps, discarded, emit, { breaker });
     await preview(derived, 'Results updated with travel times');
 
     // 4. Fichas de los mejores de Idealista (dueño, visitas, parejas).
@@ -451,7 +470,7 @@ export async function runSearch(p: SearchProfile, deps: Deps, rawEmit: Emit, opt
         await pause(idealista, deps);
       }
       await deps.store.saveListings(toRead);
-      derived = await rescore(await deps.store.listings(p.city), p, deps, discarded, emit);
+      derived = await rescore(await deps.store.listings(p.city), p, deps, discarded, emit, { breaker });
       emit('info', `    ${read} full listings read`);
     } else next(4, 'Full listings skipped');
 

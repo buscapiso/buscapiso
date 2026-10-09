@@ -78,6 +78,10 @@ export interface Derived {
   cons: string[];
   redFlags: string[];
   aiTemporary: boolean | null;
+  /** Lo que la IA leyo en el texto, en palabras. */
+  aiFacts?: { label: string; value: string; used: boolean }[];
+  /** Por que la IA no lo leyo, o '' si lo leyo (o no habia IA). */
+  aiNote?: string;
   alsoOn: string[];
 }
 
@@ -117,7 +121,7 @@ export function emptyListing(source: string, sourceId: string, url: string): Raw
 export function emptyDerived(id: string): Derived {
   return { id, group: 'rejected', rejectReason: '', score: 0, reasons: [], travel: {},
     routes: {}, travelSource: '', summary: '', pros: [], cons: [], redFlags: [],
-    aiTemporary: null, alsoOn: [] };
+    aiTemporary: null, aiFacts: [], aiNote: '', alsoOn: [] };
 }
 
 /** Identificador estable entre ejecuciones, dispositivos y la version Python. */

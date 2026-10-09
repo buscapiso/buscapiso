@@ -33,6 +33,20 @@ describe('Geocoder', () => {
     await geo.place(l);
     expect([l.lat, l.lon, l.approximateLocation]).toEqual([41.39, 2.17, false]);
   });
+  it('puts back the street type Idealista drops', async () => {
+    const { geo, asked } = setup({ 'Carrer de Pons i Gallarza, 3, Barcelona, España': [{ lat: '41.43', lon: '2.19' }] });
+    const l = listing({ address: 'de Pons i Gallarza, 3', municipality: 'Barcelona' });
+    expect(await geo.pinpoint(l)).toBe(true);
+    expect([l.lat, l.approximateLocation]).toEqual([41.43, false]);
+    expect(asked).toEqual(['Carrer de Pons i Gallarza, 3, Barcelona, España']);
+  });
+  it('takes the street without the number as a better guess, still approximate', async () => {
+    const { geo, asked } = setup({ 'Corts Catalanes, Barcelona, España': [{ lat: '41.38', lon: '2.15' }] });
+    const l = listing({ address: 'Corts Catalanes, 761', municipality: 'Barcelona', lat: 41.4, lon: 2.18 });
+    expect(await geo.pinpoint(l)).toBe(false);
+    expect([l.lat, l.approximateLocation]).toEqual([41.38, true]);
+    expect(asked).toEqual(['Corts Catalanes, 761, Barcelona, España', 'Corts Catalanes, Barcelona, España']);
+  });
   it('falls back to the neighbourhood, then the town, as approximate', async () => {
     const { geo, asked } = setup({ 'Fort Pienc, Barcelona, España': [{ lat: '41.4', lon: '2.18' }] });
     const l = listing({ address: 'Calle Inventada 1', neighbourhood: 'Fort Pienc', municipality: 'Barcelona' });

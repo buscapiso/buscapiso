@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { emptyListing } from '../model';
-import { applyFacts, extractFacts, extractMany, listingFacts, suggestProfile, type ListingFacts } from './extract';
+import { applyFacts, describeFacts, extractFacts, extractMany, listingFacts, suggestProfile, type ListingFacts } from './extract';
 import type { AIProvider } from './providers';
 import { AIError, ClaudeProvider, estimateCost, listModels, OpenAICompatProvider } from './providers';
 import { notifyNew, randomTopic } from '../notify';
@@ -62,6 +62,17 @@ describe('OpenAI-compatible', () => {
     expect(err).toBeInstanceOf(AIError);
     expect(err.status).toBe(429);
   });
+  it("passes on the provider's own words and how long it asks to wait", async () => {
+    // Gemini, por su API compatible, envuelve el error en una lista.
+    const body = [{ error: { code: 429, status: 'RESOURCE_EXHAUSTED',
+      message: 'You exceeded your current quota. Quota exceeded for metric: generate_requests_per_model_per_day',
+      details: [{ '@type': 'type.googleapis.com/google.rpc.RetryInfo', retryDelay: '31s' }] } }];
+    const { post } = recorder([{ status: 429, data: body }]);
+    const err = await new OpenAICompatProvider('k', 'https://x/v1', 'gemini-x', post).text('s', 'u').catch((e) => e);
+    expect(err.message).toContain('You exceeded your current quota');
+    expect(err.retryAfterMs).toBe(31_000);
+    expect(err.daily).toBe(true);
+  });
   it('explains an empty answer cut by length, and sends no key for Ollama', async () => {
     const { calls, post } = recorder([{ status: 200, data: { choices: [{ message: { content: '' }, finish_reason: 'length' }] } }]);
     await expect(new OpenAICompatProvider('', 'http://localhost:11434/v1', 'llama', post).text('s', 'u'))
@@ -97,6 +108,19 @@ describe('facts', () => {
     expect(r.listing.smokingAllowed).toBe(false);
     expect(r.filled).toContain('expenses');
     expect(applyFacts({ ...base(), expenses: 30 }, FACTS).filled).not.toContain('expenses');
+  });
+  it('describe what the AI found in plain words, marking what changed the score', () => {
+    const f = { ...FACTS, household_gender: 'female_only' as const, bills_included: false, bills_eur_min: 50, bills_eur_max: 100,
+      roommates: 2, roommates_age_range: '37-41', roommates_occupation: 'workers', smoking_allowed: false, exterior: false,
+      owner_lives_in: null, visitors_allowed: null, min_stay_months: null, available_from: null, seasonal_or_short_let: false };
+    expect(describeFacts(f, ['expenses', 'roommateAges'])).toEqual([
+      { label: 'Who lives there', value: 'women only', used: false },
+      { label: 'Bills', value: '50–100 € a month, counted as 75 €', used: true },
+      { label: 'Roommates', value: '2, aged 37-41, workers', used: true },
+      { label: 'Smoking', value: 'not allowed', used: false },
+      { label: 'Room', value: 'interior', used: false },
+    ]);
+    expect(describeFacts({ ...f, bills_included: true }, [])[1]).toEqual({ label: 'Bills', value: 'included', used: false });
   });
   it('are cached by listing text, so a second search does not pay again', async () => {
     const store = new Map<string, ListingFacts>();
@@ -166,6 +190,37 @@ describe('batched extraction', () => {
     const r = await extractMany(p, ls, memory().cache);
     expect(r.facts.has(ls[0])).toBe(false);
     expect(r.facts.get(ls[1])?.summary).toBe('s1');
+  });
+  const limited = (o: { daily?: boolean; retryAfterMs?: number } = {}) =>
+    Object.assign(new AIError('quota', 429), o);
+  it('stops asking for the rest of the search when the daily quota is gone', async () => {
+    const p = fake(() => { throw limited({ daily: true }); });
+    const breaker = { stopped: null as AIError | null };
+    const r = await extractMany(p, Array.from({ length: 40 }, (_, i) => listing(i)), memory().cache, { breaker, sleep: async () => {} });
+    expect(p.prompts).toHaveLength(1);
+    expect(r.stopped?.message).toBe('quota');
+    // Otra pasada en la misma busqueda no vuelve a intentarlo.
+    await extractMany(p, [listing(99)], memory().cache, { breaker });
+    expect(p.prompts).toHaveLength(1);
+  });
+  it('waits as long as the provider asks, and stops if it keeps refusing', async () => {
+    const waits: number[] = [];
+    let n = 0;
+    const ok = fake((ids) => { if (n++ === 0) throw limited({ retryAfterMs: 31_000 }); return ids.map((id) => facts(id)); });
+    const r = await extractMany(ok, [listing(0)], memory().cache, { sleep: async (ms) => { waits.push(ms); } });
+    expect(waits).toEqual([31_000]);
+    expect(r.facts.size).toBe(1);
+    const never = fake(() => { throw limited(); });
+    const r2 = await extractMany(never, Array.from({ length: 40 }, (_, i) => listing(i)), memory().cache, { sleep: async () => {} });
+    expect(r2.stopped).not.toBeNull();
+    // Unos pocos intentos, no cuatro por cada uno de los cuatro lotes.
+    expect(never.prompts.length).toBeLessThanOrEqual(6);
+  });
+  it('counts only the listings it actually read', async () => {
+    const seen: number[] = [];
+    const p = fake((ids, _c, rooms) => ids.filter((_, i) => rooms[i] !== '1').map((id) => facts(id)));
+    await extractMany(p, [0, 1, 2].map(listing), memory().cache, { onProgress: (done) => seen.push(done) });
+    expect(seen.at(-1)).toBe(2);
   });
   it('keeps going when a whole call fails, and reports it', async () => {
     const p = fake(() => { throw new AIError('HTTP 500', 500); });

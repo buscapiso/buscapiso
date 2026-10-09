@@ -8,8 +8,27 @@ import type { ZodType, ZodTypeDef } from 'zod';
 type Schema<T> = ZodType<T, ZodTypeDef, unknown>;
 
 export class AIError extends Error {
+  /** Cuanto pide el proveedor que se espere antes de volver a intentarlo. */
+  retryAfterMs?: number;
+  /** Se acabo la cuota del dia: reintentar hoy no sirve. */
+  daily?: boolean;
   /** El codigo HTTP, si lo hubo: 429 es "espera y reintenta". */
   constructor(message: string, public status?: number) { super(message); }
+}
+
+type Json = any;  // eslint-disable-line @typescript-eslint/no-explicit-any
+
+/** El error tal como lo cuenta el proveedor. Gemini lo envuelve en una lista
+ * y dice cuanto esperar en RetryInfo; Claude y OpenAI, en error.message. */
+function httpError(who: string, status: number, data: Json): AIError {
+  const body = Array.isArray(data) ? data[0] : data;
+  const err = body?.error ?? {};
+  const text = typeof err === 'string' ? err : err.message;
+  const e = new AIError(text ? `${who} answered HTTP ${status}: ${String(text).slice(0, 240)}` : `${who} answered HTTP ${status}`, status);
+  const delay = (Array.isArray(err.details) ? err.details : []).find((d: Json) => d?.retryDelay)?.retryDelay;
+  if (delay) e.retryAfterMs = Math.round(parseFloat(delay) * 1000);
+  e.daily = status === 429 && /per.?day|daily/i.test(JSON.stringify(err));
+  return e;
 }
 export interface Usage { calls: number; inputTokens: number; outputTokens: number }
 
@@ -68,7 +87,7 @@ export class ClaudeProvider implements AIProvider {
       'x-api-key': this.key, 'anthropic-version': '2023-06-01',
       'anthropic-dangerous-direct-browser-access': 'true',
     }, { model: this.model, max_tokens: maxTokens, system, messages: [{ role: 'user', content: user }] });
-    if (status !== 200) throw new AIError(`Claude answered HTTP ${status}`, status);
+    if (status !== 200) throw httpError('Claude', status, data);
     this.usage.calls++;
     this.usage.inputTokens += data.usage?.input_tokens ?? 0;
     this.usage.outputTokens += data.usage?.output_tokens ?? 0;
@@ -97,7 +116,7 @@ export class OpenAICompatProvider implements AIProvider {
       messages: [{ role: 'system', content: system }, { role: 'user', content: user }] };
     if (jsonMode) body.response_format = { type: 'json_object' };
     const { status, data } = await this.post(this.url, this.key ? { Authorization: `Bearer ${this.key}` } : {}, body);
-    if (status !== 200) throw new AIError(`The AI provider answered HTTP ${status}`, status);
+    if (status !== 200) throw httpError('The AI provider', status, data);
     this.usage.calls++;
     this.usage.inputTokens += data.usage?.prompt_tokens ?? 0;
     this.usage.outputTokens += data.usage?.completion_tokens ?? 0;

@@ -60,9 +60,14 @@ export class Geocoder {
    * solo para los que merecen un trayecto fiable. */
   async pinpoint(l: RawListing): Promise<boolean> {
     if (!l.address || !l.municipality) return false;
-    const r = await this.geocode(`${l.address}, ${l.municipality}, España`);
-    if (r) { [l.lat, l.lon] = r; l.approximateLocation = false; }
-    return !!r;
+    const street = streetName(l.address);
+    const exact = await this.geocode(`${street}, ${l.municipality}, España`);
+    if (exact) { [l.lat, l.lon] = exact; l.approximateLocation = false; return true; }
+    // Sin el numero, la calle: mejor que el barrio, pero sigue siendo aproximado.
+    const bare = street.replace(/,\s*\d+\w?\s*$/, '');
+    const near = bare !== street ? await this.geocode(`${bare}, ${l.municipality}, España`) : null;
+    if (near) { [l.lat, l.lon] = near; l.approximateLocation = true; }
+    return false;
   }
 
   /** El barrio, o el municipio. Hay pocos distintos y la cache los recuerda:
@@ -82,6 +87,12 @@ export class Geocoder {
     const data = await this.ask({ q: query, limit: String(limit), viewbox: box.join(','), bounded: '1' });
     return data.map((d) => ({ name: d.display_name, lat: parseFloat(d.lat), lon: parseFloat(d.lon) }));
   }
+}
+
+/** Idealista quita el tipo de via: "de Pons i Gallarza, 3" es "Carrer de
+ * Pons i Gallarza, 3". Sin el, Nominatim casi nunca la encuentra. */
+export function streetName(address: string): string {
+  return /^(de|del|dels|d'|de la|de les)\s/i.test(address) || /^d'/i.test(address) ? `Carrer ${address}` : address;
 }
 
 async function defaultGet(url: string): Promise<unknown> {
