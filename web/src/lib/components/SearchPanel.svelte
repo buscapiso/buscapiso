@@ -2,6 +2,7 @@
   import { ApiError, searchState, startSearch, stopSearch, streamSearch, type SearchEvent } from '../api';
   import { ext } from '../extensionState.svelte';
   import { clock, summarize } from '../searchView';
+  import LiveCrawl from './LiveCrawl.svelte';
   import { t } from '../i18n';
 
   /** Al terminar, y cada vez que la busqueda deja resultados a medias. */
@@ -58,8 +59,9 @@
   </div>
   {#if busy}<p class="warn">{busy}</p>{/if}
   {#if running}
-    <progress max={view.total} value={view.step} aria-label={t('search.running')}></progress>
+    <progress max={view.total} value={Math.max(0, view.step - 1 + view.fraction)} aria-label={t('search.running')}></progress>
     <p class="muted">{last}</p>
+    {#if view.step <= 1}<LiveCrawl portals={view.portals} recent={view.recent} />{/if}
     {#if !events.length}<p class="muted">{t('search.browserNote')}</p>{/if}
   {/if}
   {#if view.captcha && running}<p class="captcha" role="alert">{t('search.captcha', { portal: view.captcha })}</p>{/if}

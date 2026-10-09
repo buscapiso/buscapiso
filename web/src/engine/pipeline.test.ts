@@ -166,6 +166,25 @@ describe('runSearch', () => {
     expect(ls.some((l) => l.approximateLocation && l.address)).toBe(true);
   }, 30_000);
 
+  it('reports the crawl as it goes: the plan, each page with a few listings, and each portal finishing', async () => {
+    const { d } = deps();
+    const { events, emit } = collect();
+    await runSearch(profile({ crawl: { max_pages: 2, details_to_read: 0 } }), d, emit);
+    const plan = events.find((e) => e.data.plan)!.data.plan as Record<string, number>;
+    expect(Object.keys(plan).sort()).toEqual(['depisoenpiso', 'fotocasa', 'idealista', 'roomgo']);
+    expect(plan.roomgo).toBe(2);    // una sola URL, dos paginas como mucho
+    const pages = events.filter((e) => e.data.page);
+    expect(pages.length).toBeGreaterThan(3);
+    const first = pages.find((e) => e.data.source === 'idealista')!;
+    expect(first.data.found).toBe(first.data.count);
+    const sample = first.data.sample as { title: string; price: number; url: string; source: string }[];
+    expect(sample.length).toBeGreaterThan(0);
+    expect(sample.length).toBeLessThanOrEqual(3);
+    expect(sample[0]).toMatchObject({ source: 'idealista', url: expect.stringContaining('idealista.com') });
+    const finished = events.filter((e) => e.data.finished).map((e) => e.data.source).sort();
+    expect(finished).toEqual(['depisoenpiso', 'fotocasa', 'idealista', 'roomgo']);
+  }, 30_000);
+
   it('puts first results in the list before the search ends', async () => {
     const { d, mem } = deps();
     const seen: number[] = [];

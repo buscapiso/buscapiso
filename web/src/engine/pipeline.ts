@@ -89,12 +89,8 @@ function mergeDetail(l: RawListing, d: Partial<RawListing>): void {
 }
 
 // --- un portal ------------------------------------------------------------
-/** Devuelve SIEMPRE lo recogido: un fallo en la zona N no invalida las anteriores. */
-async function crawlSource(src: Source, areas: Area[], p: SearchProfile, pages: number, deps: Deps,
-  emit: Emit): Promise<RawListing[]> {
-  const out: RawListing[] = [];
-  const seen = new Set<string>();
-  // Zonas con URL propia; varias zonas pueden compartir una (Fotocasa: toda la ciudad).
+/** Zonas con URL propia; varias zonas pueden compartir una (Fotocasa: toda la ciudad). */
+function startUrls(src: Source, areas: Area[], p: SearchProfile): Map<string, Area | null> {
   const starts = new Map<string, Area | null>();
   for (const a of src.perArea ? areas : []) {
     const u = src.listUrl(a, p, 1);
@@ -104,6 +100,22 @@ async function crawlSource(src: Source, areas: Area[], p: SearchProfile, pages: 
     const u = src.listUrl(null, p, 1);
     if (u) starts.set(u, null);
   }
+  return starts;
+}
+
+/** Unos pocos anuncios de cada pagina, para enseñarlos mientras se rastrea. */
+function sampleOf(batch: RawListing[]) {
+  return [...batch].sort((a, b) => Number(!!b.photo) - Number(!!a.photo)).slice(0, 3)
+    .map((l) => ({ source: l.source, title: l.title, price: l.price, photo: l.photo, url: l.url,
+      place: l.neighbourhood || l.municipality }));
+}
+
+/** Devuelve SIEMPRE lo recogido: un fallo en la zona N no invalida las anteriores. */
+async function crawlSource(src: Source, areas: Area[], p: SearchProfile, pages: number, deps: Deps,
+  emit: Emit): Promise<RawListing[]> {
+  const out: RawListing[] = [];
+  const seen = new Set<string>();
+  const starts = startUrls(src, areas, p);
   let first = true;
   for (const area of starts.values()) {
     for (let page = 1; page <= pages; page++) {
@@ -134,7 +146,7 @@ async function crawlSource(src: Source, areas: Area[], p: SearchProfile, pages: 
       batch.forEach((l) => seen.add(l.sourceId));
       out.push(...batch);
       emit('info', `  ${src.name} ${area ? area.name.split(',')[0] + ' ' : ''}page ${page}: ${batch.length} listings`,
-        { source: src.name, count: batch.length });
+        { source: src.name, count: batch.length, page: true, found: out.length, sample: sampleOf(batch) });
       if (batch.length < src.pageSize) break;
       if (src.totalPages && page >= src.totalPages(r.body)) break;
       if (src.shouldStop?.(batch, p)) break;
@@ -143,7 +155,9 @@ async function crawlSource(src: Source, areas: Area[], p: SearchProfile, pages: 
   // Sin la ficha, algunos portales no dicen quien vive en el piso.
   if (src.detailsForAll && src.detailRequest && src.parseDetail) {
     emit('info', `  ${src.name}: ${out.length} listings, reading them in full...`);
+    let i = 0;
     for (const l of out) {
+      if (++i % 5 === 0) emit('progress', `    ${src.name} ${i}/${out.length}`, { source: src.name, done: i, total: out.length });
       const req = src.detailRequest(l);
       const r = await fetchOne(src, req.url, deps, emit, req.form);
       if (!r.ok) {
@@ -323,12 +337,19 @@ export async function runSearch(p: SearchProfile, deps: Deps, rawEmit: Emit, opt
     const areas = await selectAreas(city.areas, p.destinations, tripsWithFallback(deps.travel, emit));
     emit('info', `Areas to search: ${areas.length}`, { zones: areas.map((a) => a.name) });
     const names = activeSources(p).filter((n) => SOURCES[n]?.types.includes(p.listing_type));
+    // Paginas como mucho por portal: la barra de progreso del rastreo.
+    emit('info', `Reading ${names.join(', ')}...`,
+      { plan: Object.fromEntries(names.map((n) => [n, startUrls(SOURCES[n], areas, p).size * pages])) });
     const results = await Promise.all(names.map((n) => crawlSource(SOURCES[n], areas, p, pages, deps, emit)
       .catch((e) => {
         if (e instanceof Cancelled) throw e;
         // Que un portal falle no debe tumbar la busqueda entera.
         emit('warning', `  ${n} failed (${String((e as Error).message).slice(0, 70)}); going on with the rest`, { source: n });
         return [] as RawListing[];
+      })
+      .then((ls) => {
+        emit('info', `  ${n} finished: ${ls.length} listings`, { source: n, finished: true, found: ls.length });
+        return ls;
       })));
     const raw = results.flat();
     if (!raw.length) {

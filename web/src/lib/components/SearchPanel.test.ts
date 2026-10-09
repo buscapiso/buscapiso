@@ -64,3 +64,19 @@ test('without the extension, Search now is off and says why', async () => {
   expect(screen.getByRole('button', { name: 'Re-score without browsing' })).toBeEnabled();
   ext.status = null;
 });
+
+test('while crawling, each portal shows its progress and new listings appear as they are found', async () => {
+  render(SearchPanel, { onresults: vi.fn() });
+  await userEvent.click(await screen.findByRole('button', { name: 'Search now' }));
+  FakeSource.last.send('stage', { step: 1, total: 5 }, '1/5 Reading the portals...');
+  FakeSource.last.send('info', { plan: { idealista: 6, roomgo: 3 } });
+  FakeSource.last.send('info', { source: 'idealista', page: true, count: 30, found: 30,
+    sample: [{ source: 'idealista', title: 'Habitación en Gràcia', price: 450, photo: '', url: 'https://www.idealista.com/inmueble/1/', place: 'Gràcia' }] });
+  const board = await screen.findByRole('list', { name: 'Portals' });
+  expect(board).toHaveTextContent('idealista');
+  expect(board).toHaveTextContent('30 found');
+  expect(screen.getByText('30 listings found so far')).toBeInTheDocument();
+  const card = screen.getByRole('link', { name: /Habitación en Gràcia/ });
+  expect(card).toHaveAttribute('href', 'https://www.idealista.com/inmueble/1/');
+  expect(card).toHaveTextContent('450 €');
+});
