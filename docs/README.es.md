@@ -122,7 +122,8 @@ usuarios.
 node extension/build.mjs
 WEB_EXT_API_KEY=... WEB_EXT_API_SECRET=... npx web-ext sign \
   --source-dir extension/dist/firefox --channel unlisted --artifacts-dir /tmp/xpi
-gh release upload ext-vX.Y.Z /tmp/xpi/*.xpi#buscapiso-firefox.xpi
+cp /tmp/xpi/*.xpi /tmp/buscapiso-firefox.xpi
+gh release upload ext-vX.Y.Z /tmp/buscapiso-firefox.xpi --clobber
 ```
 
 ### Comprobación en vivo antes de publicar
