@@ -12,3 +12,5 @@ __pycache__/
 .superpowers/
 buscapiso/web_dist/
 web/node_modules/
+dist/
+build/

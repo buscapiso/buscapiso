@@ -65,3 +65,39 @@ def test_serve_lan_listens_everywhere_and_protects_the_api(monkeypatch, tmp_path
     app, kw = llamadas[0]
     assert kw["host"] == "0.0.0.0" and app.state.lan is True and app.state.port == 8797
     assert "/?t=" in capsys.readouterr().out
+
+
+def test_quit_only_from_the_computer(tmp_path):
+    from buscapiso.api.app import create_app
+    paradas = []
+    app = create_app(db_path=tmp_path / "p.db", static_dir=tmp_path / "x", require_token=True,
+                     on_quit=lambda: paradas.append(1))
+    assert TestClient(app, client=("192.168.1.50", 5000)).post(
+        "/api/quit", headers={"X-Buscapiso-Token": "x"}).status_code in (401, 403)
+    assert TestClient(app).post("/api/quit").json() == {"bye": True}
+    assert paradas == [1]
+
+
+def test_a_second_launch_opens_the_running_app(monkeypatch, capsys):
+    import socket
+    import webbrowser
+    from buscapiso import cli
+    abiertos = []
+    monkeypatch.setattr(webbrowser, "open", abiertos.append)
+    monkeypatch.setattr(cli, "_es_buscapiso", lambda port: True)
+    with socket.socket() as ocupado:
+        ocupado.bind(("127.0.0.1", 0)); ocupado.listen()
+        puerto = ocupado.getsockname()[1]
+        assert cli.main(["serve", "--port", str(puerto)]) == 0
+    assert abiertos == [f"http://127.0.0.1:{puerto}/"]
+    assert "already open" in capsys.readouterr().out
+
+
+def test_the_packaged_app_serves_when_run_without_arguments(monkeypatch):
+    import sys
+    from buscapiso import cli
+    llamadas = []
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.setattr(cli, "cmd_serve", lambda args: llamadas.append(args) or 0)
+    assert cli.main([]) == 0
+    assert llamadas and llamadas[0].lan is False and llamadas[0].no_open is False

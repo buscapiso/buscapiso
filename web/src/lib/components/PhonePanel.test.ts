@@ -22,7 +22,7 @@ test('shows the QR and the link when the server is open to the home network', as
 test('explains how to open it to the phone when it is not', async () => {
   mock(false);
   render(Phone);
-  expect(await screen.findByText(/buscapiso serve --lan/)).toBeInTheDocument();
+  expect(await screen.findByRole('button', { name: 'Allow access from my phone' })).toBeInTheDocument();
   expect(screen.queryByRole('img')).toBeNull();
 });
 
@@ -31,4 +31,15 @@ test('revoking access shows the new link', async () => {
   render(Phone);
   await userEvent.click(await screen.findByRole('button', { name: 'Revoke phone access' }));
   expect(await screen.findByText('http://192.168.1.76:8770/?t=NEW')).toBeInTheDocument();
+});
+
+test('phone access can be turned on without a terminal', async () => {
+  const f = vi.spyOn(globalThis, 'fetch').mockImplementation(async (url, init) => {
+    if (init?.method === 'PUT') return new Response(JSON.stringify({ url: 'u', qr_svg: '', lan: false, remember_lan: true }));
+    return new Response(JSON.stringify({ url: 'u', qr_svg: '', lan: false, remember_lan: false }));
+  });
+  render(Phone);
+  await userEvent.click(await screen.findByRole('button', { name: 'Allow access from my phone' }));
+  expect(f.mock.calls.some(([, i]) => i?.method === 'PUT' && JSON.parse(String(i.body)).lan === true)).toBe(true);
+  expect(await screen.findByText(/Quit buscapiso and open it again/)).toBeInTheDocument();
 });

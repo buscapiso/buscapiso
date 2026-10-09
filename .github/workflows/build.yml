@@ -1,0 +1,59 @@
+name: Build installers
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            name: linux
+          - os: windows-latest
+            name: windows
+          - os: macos-latest
+            name: macos
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Build the web app
+        run: |
+          npm --prefix web ci
+          npm --prefix web run build
+      - name: Install Python dependencies
+        run: python -m pip install -e ".[build,dev]" pillow
+      - name: Run the tests
+        run: python -m pytest tests -q -m "not e2e"
+      - name: Package
+        run: python -m PyInstaller --noconfirm --clean packaging/buscapiso.spec
+      - name: Archive (Linux)
+        if: matrix.name == 'linux'
+        run: tar -czf buscapiso-linux.tar.gz -C dist buscapiso
+      - name: Archive (Windows)
+        if: matrix.name == 'windows'
+        run: Compress-Archive -Path dist/buscapiso -DestinationPath buscapiso-windows.zip
+      - name: Archive (macOS)
+        if: matrix.name == 'macos'
+        run: ditto -c -k --keepParent dist/buscapiso.app buscapiso-macos.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: buscapiso-${{ matrix.name }}
+          path: buscapiso-*.*
+      - name: Attach to the release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: buscapiso-*.*

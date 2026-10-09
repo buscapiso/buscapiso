@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ApiError, getAccess, rotateAccess, type AccessInfo } from '../api';
+  import { ApiError, getAccess, rotateAccess, setPhoneAccess, type AccessInfo } from '../api';
   import { t } from '../i18n';
 
   let info = $state<AccessInfo | null>(null);
@@ -10,6 +10,12 @@
 
   async function load() {
     try { info = await getAccess(); } catch (e) { error = String(e); }
+  }
+
+  async function allow(on: boolean) {
+    try { info = await setPhoneAccess(on); } catch (e) {
+      error = e instanceof ApiError ? String(e.detail) : String(e);
+    }
   }
 
   async function revoke() {
@@ -37,8 +43,14 @@
     <p class="help">{t('phone.private')}</p>
     <button onclick={revoke}>{t('phone.revoke')}</button>
     {#if revoked}<p class="ok">{t('phone.revoked')}</p>{/if}
+  {:else if info.remember_lan}
+    <p class="notice">{t('phone.restart')}</p>
   {:else}
-    <p class="notice">{t('phone.notLan')}</p>
+    <p>{t('phone.off')}</p>
+    <button class="primary" onclick={() => allow(true)}>{t('phone.allow')}</button>
+  {/if}
+  {#if info.lan}
+    <button onclick={() => allow(false)}>{t('phone.disallow')}</button>
   {/if}
   <p class="help">{t('phone.away')}</p>
 {/if}

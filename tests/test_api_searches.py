@@ -93,6 +93,7 @@ def test_state_before_any_search(home):
     assert s == {"running": False, "id": None, "events": [], "summary": None}
 
 
+@pytest.mark.playwright_driver
 def test_a_failed_run_does_not_poison_the_next_one(home):
     """Caso real de la revision: Playwright arrancado en el hilo de una busqueda
     que falla queda ligado a ese hilo muerto, y la siguiente busqueda revienta
@@ -118,6 +119,7 @@ def test_a_failed_run_does_not_poison_the_next_one(home):
     assert c.get("/api/searches/current").json()["events"][-1]["kind"] == "done"
 
 
+@pytest.mark.playwright_driver
 def test_playwright_started_in_a_dead_thread_is_replaced():
     import threading
     from buscapiso import navegador

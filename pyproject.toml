@@ -17,10 +17,12 @@ dependencies = [
     "keyring>=25",
     "anthropic>=1.12",
     "segno>=1.6",
+    "platformdirs>=4",
 ]
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "httpx2>=2.13"]
+build = ["pyinstaller>=6.20"]
 
 [project.scripts]
 buscapiso = "buscapiso.cli:main"
@@ -33,4 +35,5 @@ buscapiso = ["datos/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-markers = ["e2e: abre Chromium headless contra el servidor local; necesita la web compilada"]
+markers = ["e2e: abre Chromium headless contra el servidor local; necesita la web compilada",
+           "playwright_driver: arranca el driver de Playwright (sin navegador)"]
