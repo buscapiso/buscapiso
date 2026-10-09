@@ -91,6 +91,22 @@ describe('runSearch', () => {
     expect(events.at(-1)!.kind).toBe('done');
   }, 30_000);
 
+  it('stops Idealista at once when it bans the connection, and says why', async () => {
+    const BAN = '<html><body><h1>Se ha detectado un uso indebido</h1><p>El acceso se ha bloqueado</p>' + ' '.repeat(9000) + '</body></html>';
+    const calls: string[] = [];
+    const base = extension();
+    const fetchPage: FetchPage = async (req, n) => {
+      if (req.portal === 'idealista') { calls.push(req.url); return { ok: true, html: BAN, finalUrl: req.url, via: 'tab' }; }
+      return base(req, n);
+    };
+    const { d, mem } = deps({ fetchPage });
+    const { events, emit } = collect();
+    await runSearch(profile(), d, emit);
+    expect(calls).toHaveLength(1);
+    expect(events.some((e) => e.kind === 'warning' && /idealista has blocked this connection/i.test(e.message))).toBe(true);
+    expect([...mem.listings.values()].some((l) => l.source === 'fotocasa')).toBe(true);
+  }, 30_000);
+
   it('without the extension, only portals that allow it are read', async () => {
     const { d, mem } = deps({ fetchPage: null });
     const { events, emit } = collect();

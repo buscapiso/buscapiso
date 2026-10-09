@@ -57,6 +57,8 @@ export interface Source {
   types: ListingType[];
   pause: [number, number];          // segundos entre peticiones al portal
   blockedMarkers: string[];
+  /** Pagina de veto (no de captcha): se deja de pedir a ese portal. */
+  fatalMarkers?: string[];
   readyMarkers?: string[];
   minLength: number;                 // un HTML mas corto es un bloqueo
   /** URL de la pagina `page` (1..) para esa zona, o null si el portal no la cubre. */

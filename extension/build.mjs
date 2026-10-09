@@ -17,7 +17,7 @@ function manifest(target) {
   const m = {
     manifest_version: 3,
     name: 'buscapiso',
-    version: '1.0.0',
+    version: '1.0.1',
     description: 'Lets the buscapiso website read rental listings from Idealista, Fotocasa, Habitaclia, Roomgo and De Piso en Piso in your own browser.',
     icons: { 192: 'icon-192.png', 512: 'icon-512.png' },
     permissions: ['tabs', 'scripting'],

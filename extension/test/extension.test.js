@@ -86,6 +86,16 @@ describe('fetcher', () => {
     vi.restoreAllMocks();
     expect(r).toEqual({ ok: false, reason: 'timeout' });
   });
+  it('does not wait for the person when the portal has banned the connection', async () => {
+    const BANNED = '<html><iframe src="https://geo.captcha-delivery.com/captcha/?initialCid=x&t=bv&s=1"></iframe></html>';
+    const { api } = browserApi({ fetchHtml: BANNED, tabPages: [BANNED] });
+    const needs = vi.fn();
+    const r = await createFetcher(api).fetchPage(req({ fatalMarkers: ['t=bv'] }), needs);
+    expect(r).toEqual({ ok: false, reason: 'banned' });
+    expect(needs).not.toHaveBeenCalled();
+    expect(api.tabs.update).not.toHaveBeenCalledWith(1, { active: true });
+  });
+
   it('cancel closes the work tabs', async () => {
     const { api, tabs } = browserApi();
     const f = createFetcher(api);

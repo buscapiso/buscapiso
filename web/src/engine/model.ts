@@ -90,13 +90,15 @@ export interface FetchRequest {
   url: string;
   portal: string;
   blockedMarkers: string[];
+  /** El portal ha vetado la conexion: no hay captcha que resolver. */
+  fatalMarkers?: string[];
   readyMarkers?: string[];
   allowTab: boolean;
   timeoutMs?: number;
 }
 export type FetchResult =
   | { ok: true; html: string; finalUrl: string; via: 'fetch' | 'tab' }
-  | { ok: false; reason: 'blocked' | 'timeout' | 'network' | 'not-allowed' | 'cancelled' };
+  | { ok: false; reason: 'blocked' | 'banned' | 'timeout' | 'network' | 'not-allowed' | 'cancelled' };
 export type FetchPage = (req: FetchRequest, onNeedsUser?: () => void) => Promise<FetchResult>;
 
 export function emptyListing(source: string, sourceId: string, url: string): RawListing {

@@ -206,6 +206,10 @@ export const idealista: Source = {
   types: ['room', 'flat'],
   pause: [3, 8],
   blockedMarkers: ['geo.captcha-delivery.com', 'captcha-delivery'],
+  // Visto el 2026-10-09 tras resolver un captcha desde un navegador
+  // automatizado: "Se ha detectado un uso indebido. El acceso se ha
+  // bloqueado". En el iframe de DataDome, t=bv es veto y t=fe, captcha.
+  fatalMarkers: ['Se ha detectado un uso indebido', 'El acceso se ha bloqueado', '&t=bv&'],
   minLength: 5000,
   perArea: true,
   pageSize: 25,

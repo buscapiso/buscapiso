@@ -66,10 +66,12 @@ async function fetchOne(src: Source, url: string, deps: Deps, emit: Emit, form?:
   }
   if (!deps.fetchPage) return { ok: false, reason: 'no-extension' };
   const r = await deps.fetchPage({ url, portal: src.name, blockedMarkers: src.blockedMarkers,
-    readyMarkers: src.readyMarkers, allowTab: true, timeoutMs: CAPTCHA_TIMEOUT_MS },
+    fatalMarkers: src.fatalMarkers, readyMarkers: src.readyMarkers, allowTab: true, timeoutMs: CAPTCHA_TIMEOUT_MS },
   () => emit('captcha', `${src.name} wants you to confirm you're human: solve it in the tab that just opened.`,
     { portal: src.name, wait_seconds: CAPTCHA_TIMEOUT_MS / 1000 }));
   if (!r.ok) return r;
+  // Una extension anterior no conoce fatalMarkers: se mira tambien aqui.
+  if ((src.fatalMarkers ?? []).some((m) => r.html.includes(m))) return { ok: false, reason: 'banned' };
   if (r.html.length < src.minLength || src.blockedMarkers.some((m) => r.html.includes(m))) return { ok: false, reason: 'blocked' };
   return { ok: true, body: r.html };
 }
@@ -110,6 +112,11 @@ async function crawlSource(src: Source, areas: Area[], p: SearchProfile, pages: 
         if (r.reason === 'cancelled') throw new Cancelled();
         if (r.reason === 'no-extension') {
           emit('warning', `  ${src.name} needs the buscapiso extension; skipping it`, { source: src.name });
+          return out;
+        }
+        if (r.reason === 'banned') {
+          emit('warning', `  ${src.name} has blocked this connection for a while (it says it detected misuse). `
+            + `It usually lifts within hours; the other portals go on. Keeping ${out.length} listings from it.`, { source: src.name, banned: true });
           return out;
         }
         if (r.reason === 'blocked' || r.reason === 'timeout') {
@@ -327,7 +334,7 @@ export async function runSearch(p: SearchProfile, deps: Deps, emit: Emit, opts: 
         const r = await fetchOne(idealista, idealista.detailRequest!(l).url, deps, emit);
         if (!r.ok) {
           if (r.reason === 'cancelled') throw new Cancelled();
-          if (r.reason === 'blocked' || r.reason === 'timeout') { emit('warning', '  blocked while reading full listings; keeping what we have'); break; }
+          if (r.reason === 'blocked' || r.reason === 'timeout' || r.reason === 'banned') { emit('warning', '  blocked while reading full listings; keeping what we have'); break; }
           continue;
         }
         mergeDetail(l, idealista.parseDetail!(r.body));

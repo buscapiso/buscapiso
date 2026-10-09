@@ -13,10 +13,14 @@ export function createFetcher(api, extraHosts = []) {
   const retryFetch = new Set();   // tras resolver un captcha, se reintenta fetch una vez
   let cancelled = false;
 
-  async function viaFetch(url, markers) {
+  const BANNED = { ok: false, reason: 'banned' };
+
+  /** La pagina, BANNED si el portal ha vetado la conexion, o null para probar en pestaña. */
+  async function viaFetch(url, markers, fatal) {
     try {
       const r = await api.fetch(url, { credentials: 'include' });
       const html = await r.text();
+      if (isBlocked(html, fatal)) return BANNED;
       if (r.ok && !isBlocked(html, markers)) return { ok: true, html, finalUrl: r.url || url, via: 'fetch' };
       return null;
     } catch {
@@ -51,7 +55,10 @@ export function createFetcher(api, extraHosts = []) {
     }
     if (!(await waitLoaded(tabId, deadline))) return { ok: false, reason: cancelled ? 'cancelled' : 'timeout' };
     await api.sleep(1000);
+    const fatal = req.fatalMarkers || [];
     let html = await readTab(tabId);
+    // Un veto no lo resuelve nadie: no se trae la pestaña ni se espera.
+    if (isBlocked(html, fatal)) return BANNED;
     if (isBlocked(html, req.blockedMarkers)) {
       await api.tabs.update(tabId, { active: true });
       onNeedsUser();
@@ -60,6 +67,7 @@ export function createFetcher(api, extraHosts = []) {
         if (Date.now() >= deadline) return { ok: false, reason: 'timeout' };
         await api.sleep(2000);
         try { html = await readTab(tabId); } catch { /* la pagina esta cambiando */ }
+        if (isBlocked(html, fatal)) return BANNED;
       }
       retryFetch.add(req.portal);
     }
@@ -73,7 +81,7 @@ export function createFetcher(api, extraHosts = []) {
       if (!allowedUrl(req.url, extraHosts)) return { ok: false, reason: 'not-allowed' };
       const markers = req.blockedMarkers || [];
       if (!tabMode.has(req.portal) || retryFetch.has(req.portal)) {
-        const r = await viaFetch(req.url, markers);
+        const r = await viaFetch(req.url, markers, req.fatalMarkers || []);
         if (retryFetch.delete(req.portal) && r) tabMode.delete(req.portal);
         if (r) return r;
       }
