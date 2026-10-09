@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { getActiveProfile, getListing, setNote, setStatus, ApiError,
-           type Destination, type ListingDetail, type Status } from '../lib/api';
-  import MapView from '../lib/components/MapView.svelte';
+  import { getActiveProfile, getListing, getRoutes, setNote, setStatus, ApiError,
+           type Destination, type ListingDetail, type Route, type Status } from '../lib/api';
+  import MapView, { type MapRoute } from '../lib/components/MapView.svelte';
   import MessageDraft from '../lib/components/MessageDraft.svelte';
   import StatusPicker from '../lib/components/StatusPicker.svelte';
-  import { costLine, directionsUrl, lineChips, lineColor } from '../lib/format';
+  import { costLine, directionsUrl, legParts, lineChips, lineColor } from '../lib/format';
   import { t } from '../lib/i18n';
 
   let { id }: { id: string } = $props();
@@ -15,12 +15,22 @@
   let note = $state('');
   let saved = $state(false);
   let error = $state('');
+  let routes = $state<Record<string, Route | null>>({});
+  // Andando, a trazos y en gris; en transporte, del color de la linea.
+  const mapRoutes = $derived<MapRoute[]>(Object.values(routes).flatMap((r) => (r?.legs ?? []).filter((g) => g.points.length > 1)
+    .map((g) => g.mode === 'transit'
+      ? { points: g.points, color: g.color ?? lineColor(g.line) ?? 'var(--accent)',
+          stops: [{ name: g.from, lat: g.points[0][0], lon: g.points[0][1] },
+                  { name: g.to, lat: g.points.at(-1)![0], lon: g.points.at(-1)![1] }] }
+      : { points: g.points, color: 'var(--ink)', dashed: true })));
 
   async function load() {
     try {
       l = await getListing(id);
       places = (await getActiveProfile()).destinations;
       note = l.note;
+      // El camino se pide aparte: el anuncio se ve ya y el mapa se completa luego.
+      getRoutes(id).then((rs) => { routes = Object.fromEntries(rs.map((r) => [r.name, r.route])); }).catch(() => {});
     } catch (e) {
       if (e instanceof ApiError && e.status === 404) missing = true;
       else error = t('error.generic', { message: String(e) });
@@ -79,6 +89,12 @@
           {/each}
           <strong>{t('listing.minutesTo', { minutes: Math.round(minutes), place })}</strong>
           <small>{l.routes[place] ?? ''}</small>
+          {#if routes[place]}
+            <span class="legs">{#each legParts(routes[place]!) as part}
+              {#if part.kind === 'ride'}<span class="chip" style:--chip={part.color ?? 'var(--muted)'}>{part.line}</span>{/if}
+              <span class="leg">{part.text}</span>
+            {/each}</span>
+          {/if}
           {#if l.lat !== null && l.lon !== null && placeByName.get(place)}
             {@const d = placeByName.get(place)!}
             <a href={directionsUrl({ lat: l.lat, lon: l.lon }, d, d.mode)} target="_blank"
@@ -90,7 +106,7 @@
       : t('listing.travelSource.real', { provider: l.travel_source })}</p>
     {#if l.approximate_location}<p class="meta">{t('listing.approximate')}</p>{/if}
     {#if l.lat !== null && l.lon !== null}
-      <MapView label={t('map.listing')} height="260px" {places}
+      <MapView label={t('map.listing')} height="300px" {places} routes={mapRoutes}
         points={[{ id: l.id, lat: l.lat, lon: l.lon, label: l.title || l.neighbourhood, color: 'var(--accent)' }]} />
     {/if}
 
@@ -137,6 +153,8 @@
 {/if}
 
 <style>
+  .legs { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; width: 100%; font-size: 13px; color: var(--muted); }
+  .leg:not(:last-child)::after { content: ' ·'; }
   .facts { list-style: none; padding: 0; margin: 0 0 12px; display: flex; flex-wrap: wrap; gap: 6px; }
   .facts li { border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; font-size: 14px;
     background: var(--surface); }

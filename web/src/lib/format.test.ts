@@ -1,4 +1,4 @@
-import { costLine, directionsUrl, lineChips, lineColor, scoreColor } from './format';
+import { costLine, directionsUrl, lineChips, lineColor, scoreColor, legParts } from './format';
 import type { Listing } from './api';
 
 const base = { price: 450, expenses: 50 } as Listing;
@@ -36,4 +36,21 @@ test('directions open Google Maps with the right travel mode', () => {
   expect(u.searchParams.get('origin')).toBe('41.3792,2.1404');
   expect(u.searchParams.get('destination')).toBe('41.3519,2.1307');
   expect(u.searchParams.get('travelmode')).toBe('bicycling');
+});
+
+test('turns a route into short parts to show under the map', () => {
+  const route = { minutes: 19, legs: [
+    { mode: 'walk' as const, line: '', color: null, from: '', to: 'Sants Estació', minutes: 4, points: [] },
+    { mode: 'transit' as const, line: 'L1', color: '#CE1126', from: 'Sants Estació', to: 'Espanya', minutes: 5, points: [] },
+    { mode: 'transit' as const, line: 'L3', color: null, from: 'Espanya', to: 'Drassanes', minutes: 6, points: [] },
+    { mode: 'transit' as const, line: '79', color: null, from: 'Drassanes', to: 'Fira', minutes: 7, points: [] },
+    { mode: 'walk' as const, line: '', color: null, from: 'Fira', to: '', minutes: 0, points: [] },
+  ] };
+  expect(legParts(route)).toEqual([
+    { kind: 'walk', text: 'walk 4 min', color: null },
+    { kind: 'ride', line: 'L1', text: 'Sants Estació → Espanya, 5 min', color: '#CE1126' },
+    // Sin color del servidor: el de la linea de metro conocida.
+    { kind: 'ride', line: 'L3', text: 'Espanya → Drassanes, 6 min', color: lineColor('L3') },
+    { kind: 'ride', line: '79', text: 'Drassanes → Fira, 7 min', color: null },
+  ]);
 });

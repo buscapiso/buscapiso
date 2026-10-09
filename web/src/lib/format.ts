@@ -1,3 +1,4 @@
+import type { Route } from '../engine/travel';
 import type { Listing, Status } from './api';
 import { t } from './i18n';
 
@@ -40,4 +41,14 @@ export function directionsUrl(from: { lat: number; lon: number }, to: { lat: num
   const q = new URLSearchParams({ api: '1', origin: `${from.lat},${from.lon}`,
     destination: `${to.lat},${to.lon}`, travelmode: GMAPS_MODE[mode] });
   return `https://www.google.com/maps/dir/?${q}`;
+}
+
+export type LegPart = { kind: 'walk' | 'bike'; text: string; color: null }
+  | { kind: 'ride'; line: string; text: string; color: string | null };
+
+/** Los tramos de un camino en pocas palabras; los paseos de 0 min sobran. */
+export function legParts(route: Route): LegPart[] {
+  return route.legs.filter((l) => l.mode === 'transit' || l.minutes > 0).map((l) => (l.mode === 'transit'
+    ? { kind: 'ride', line: l.line, text: `${l.from} → ${l.to}, ${l.minutes} min`, color: l.color ?? lineColor(l.line) }
+    : { kind: l.mode, text: `${l.mode} ${l.minutes} min`, color: null }));
 }

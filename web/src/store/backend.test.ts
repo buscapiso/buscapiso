@@ -66,6 +66,22 @@ describe('profiles', () => {
 });
 
 describe('listings', () => {
+  it('draws the route from a listing to each destination, asking only once', async () => {
+    let asked = 0;
+    const route = { minutes: 19, legs: [{ mode: 'transit' as const, line: 'L1', color: '#CE1126', from: 'Sants', to: 'Espanya', minutes: 5, points: [] }] };
+    const travel = { name: 'transitous', trips: async (o: [number, number][]) => o.map(() => null),
+      route: async () => { asked++; return route; } };
+    const s = await setup({ travelFactory: () => travel });
+    await s.b.handle('PUT', '/api/profiles/Default', { ...searchRooms,
+      destinations: [{ name: 'Work', lat: 41.39, lon: 2.17 }] });
+    await s.b.handle('POST', '/api/searches', {});
+    await until(s.b);
+    const [l] = await s.b.handle('GET', '/api/listings') as { id: string }[];
+    const url = `/api/listings/${encodeURIComponent(l.id)}/routes`;
+    expect(await s.b.handle('GET', url)).toEqual([{ name: 'Work', route }]);
+    await s.b.handle('GET', url);
+    expect(asked).toBe(1);
+  });
   it('a search stores listings and the list shows the ones that fit', async () => {
     const { b, db } = await withListings();
     const ls = await b.handle('GET', '/api/listings') as { id: string; portal: string; group: string; status: string }[];

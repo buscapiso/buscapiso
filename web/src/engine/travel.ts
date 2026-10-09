@@ -27,9 +27,45 @@ export const browserHttp: Http = {
   },
 };
 
+/** Un tramo del camino, para dibujarlo: andar, bici o una linea concreta. */
+export interface Leg {
+  mode: 'walk' | 'bike' | 'transit';
+  line: string;
+  color: string | null;
+  from: string;
+  to: string;
+  minutes: number;
+  points: Origin[];
+}
+export interface Route { minutes: number; legs: Leg[] }
+
 export interface TravelProvider {
   name: string;
   trips(origins: Origin[], dest: Destination): Promise<(Trip | null)[]>;
+  /** El camino entero, tramo a tramo; solo los proveedores que lo saben dar. */
+  route?(from: Origin, dest: Destination): Promise<Route | null>;
+}
+
+/** Polilinea codificada (algoritmo de Google) con la precision que diga el servidor. */
+export function decodePolyline(s: string, precision = 5): Origin[] {
+  const f = 10 ** precision;
+  const out: Origin[] = [];
+  let i = 0, lat = 0, lon = 0;
+  const next = () => {
+    let shift = 0, result = 0, b: number;
+    do {
+      b = s.charCodeAt(i++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    return result & 1 ? ~(result >> 1) : result >> 1;
+  };
+  while (i < s.length) {
+    lat += next();
+    lon += next();
+    out.push([lat / f, lon / f]);
+  }
+  return out;
 }
 
 const WALK_M_MIN = 75;        // 4,5 km/h
@@ -133,6 +169,32 @@ export class TransitousProvider implements TravelProvider {
     });
   }
 
+  async route([lat, lon]: Origin, d: Destination): Promise<Route | null> {
+    const q = new URLSearchParams({ fromPlace: `${lat},${lon}`, toPlace: `${d.lat},${d.lon}`,
+      time: iso(nextDeparture(d.depart_at, this.now())) });
+    if (d.mode === 'transit') q.set('arriveBy', 'true');
+    else { q.set('directModes', d.mode === 'walk' ? 'WALK' : 'BIKE'); q.set('maxDirectTime', '7200'); }
+    let data: Json;
+    try {
+      data = (await this.http.getJson(`${this.base}/api/v4/plan?${q}`)) as Json;
+    } catch (e) {
+      throw new TravelError(`Transitous did not answer: ${(e as Error).message}`);
+    }
+    const it: Json | undefined = (d.mode === 'transit' ? data.itineraries : data.direct)?.[0];
+    if (!it) return null;
+    // MOTIS llama START y END a los extremos que no son paradas.
+    const stop = (x: Json | undefined) => (x?.name && x.name !== 'START' && x.name !== 'END' ? String(x.name) : '');
+    const legs: Leg[] = (it.legs ?? []).map((l: Json) => ({
+      mode: l.mode === 'WALK' ? 'walk' : l.mode === 'BIKE' ? 'bike' : 'transit',
+      line: l.mode === 'WALK' || l.mode === 'BIKE' ? '' : String(l.routeShortName ?? ''),
+      color: l.routeColor ? `#${String(l.routeColor).replace(/^#/, '')}` : null,
+      from: stop(l.from), to: stop(l.to),
+      minutes: Math.round(Number(l.duration ?? 0) / 60),
+      points: l.legGeometry?.points ? decodePolyline(l.legGeometry.points, l.legGeometry.precision ?? 7) : [],
+    }));
+    return { minutes: Math.round(Number(it.duration ?? 0) / 60), legs };
+  }
+
   private async direct(origins: Origin[], d: Destination) {
     const out: (Trip | null)[] = [];
     let failures = 0;
@@ -198,9 +260,10 @@ export class GoogleProvider implements TravelProvider {
 }
 
 export interface CachedTrip { minutes: number; detail: string; at: string }
+export interface CachedRoute { route: Route | null; at: string }
 export interface TravelCache {
-  get(key: string): Promise<CachedTrip | undefined>;
-  put(key: string, value: CachedTrip): Promise<void>;
+  get(key: string): Promise<CachedTrip | CachedRoute | undefined>;
+  put(key: string, value: CachedTrip | CachedRoute): Promise<void>;
 }
 
 /** Redondeo a 1/2000 de grado: unos 55 m de latitud y 40 de longitud. */
@@ -223,7 +286,7 @@ export class CachedProvider implements TravelProvider {
     const out: (Trip | null)[] = [];
     const missing: number[] = [];
     for (const [i, [lat, lon]] of origins.entries()) {
-      const hit = await this.cache.get(this.key(lat, lon, d));
+      const hit = await this.cache.get(this.key(lat, lon, d)) as CachedTrip | undefined;
       if (hit && Date.parse(hit.at) >= limit) out.push({ minutes: hit.minutes, detail: hit.detail, source: this.name });
       else { out.push(null); missing.push(i); }
     }
@@ -236,5 +299,15 @@ export class CachedProvider implements TravelProvider {
       }
     }
     return out;
+  }
+
+  async route(from: Origin, d: Destination): Promise<Route | null> {
+    if (!this.inner.route) return null;
+    const key = `route|${this.key(from[0], from[1], d)}`;
+    const hit = await this.cache.get(key) as CachedRoute | undefined;
+    if (hit && Date.parse(hit.at) >= this.now().getTime() - this.ttlDays * 86_400_000) return hit.route;
+    const route = await this.inner.route(from, d);
+    await this.cache.put(key, { route, at: this.now().toISOString() });
+    return route;
   }
 }

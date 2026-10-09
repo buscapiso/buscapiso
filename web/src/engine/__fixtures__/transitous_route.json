@@ -1,0 +1,90 @@
+{
+ "itineraries": [
+  {
+   "duration": 1140,
+   "legs": [
+    {
+     "mode": "WALK",
+     "from": {
+      "name": "START",
+      "lat": 41.3792,
+      "lon": 2.1404
+     },
+     "to": {
+      "name": "Sants Estació",
+      "lat": 41.379,
+      "lon": 2.14
+     },
+     "duration": 240,
+     "legGeometry": {
+      "points": "_ozftW_ukyg@~{B~xF",
+      "precision": 7,
+      "length": 2
+     }
+    },
+    {
+     "mode": "SUBWAY",
+     "routeShortName": "L1",
+     "routeColor": "CE1126",
+     "headsign": "Hospital de Bellvitge",
+     "from": {
+      "name": "Sants Estació",
+      "lat": 41.379,
+      "lon": 2.14
+     },
+     "to": {
+      "name": "Espanya",
+      "lat": 41.3751,
+      "lon": 2.149
+     },
+     "duration": 300,
+     "legGeometry": {
+      "points": "_rvftW_{cyg@~`f@_t`Bnbd@_cmA",
+      "precision": 7,
+      "length": 3
+     }
+    },
+    {
+     "mode": "BUS",
+     "routeShortName": "79",
+     "from": {
+      "name": "Espanya",
+      "lat": 41.3751,
+      "lon": 2.149
+     },
+     "to": {
+      "name": "Fira",
+      "lat": 41.354,
+      "lon": 2.131
+     },
+     "duration": 420,
+     "legGeometry": {
+      "points": "oljdtW_ts~g@nb{K~p~I",
+      "precision": 7,
+      "length": 2
+     }
+    },
+    {
+     "mode": "WALK",
+     "from": {
+      "name": "Fira",
+      "lat": 41.354,
+      "lon": 2.131
+     },
+     "to": {
+      "name": "END",
+      "lat": 41.3519,
+      "lon": 2.1307
+     },
+     "duration": 180,
+     "legGeometry": {
+      "points": "_inwsW_btsg@n_h@nzD",
+      "precision": 7,
+      "length": 2
+     }
+    }
+   ]
+  }
+ ],
+ "direct": []
+}

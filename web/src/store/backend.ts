@@ -10,7 +10,7 @@ import { emptyDerived, STATUSES, totalCost, type Derived, type FetchPage, type S
 import { DEFAULT_SERVER, randomTopic, send as ntfySend, notifyNew } from '../engine/notify';
 import { rescore, runSearch, type Deps, type SearchEvent } from '../engine/pipeline';
 import { defaultProfile, FLAT_SOURCES, parseProfile, ROOM_SOURCES, searchProfile, type SearchProfile } from '../engine/profiles';
-import { CachedProvider, estimateTrip, GoogleProvider, TRANSITOUS_URL, TransitousProvider, TravelError,
+import { CachedProvider, estimateTrip, GoogleProvider, TRANSITOUS_URL, TransitousProvider, TravelError, type Route,
   type TravelProvider } from '../engine/travel';
 import { setting, type Db } from './db';
 import { applyImport, exportData, ImportError, previewImport, type ImportPreview } from './transfer';
@@ -264,6 +264,21 @@ export function createBackend(deps: BackendDeps) {
     ['GET', /^\/api\/meta$/, async () => ({ statuses: STATUSES, sources: ROOM_SOURCES, flat_sources: FLAT_SOURCES, genders: GENDERS })],
     ['GET', /^\/api\/listings$/, async (_m, _b, q) => listListings((q.get('status') ?? '').split(',').filter(Boolean), q.get('group'))],
     ['GET', /^\/api\/listings\/([^/]+)$/, async ([id]) => detail(id)],
+    // El camino a cada destino, para dibujarlo; solo al abrir el anuncio.
+    ['GET', /^\/api\/listings\/([^/]+)\/routes$/, async ([id]) => {
+      const l = await db.get<StoredListing>('listings', id);
+      if (!l) throw new HttpError(404, `no listing ${id}`);
+      const p = await travel();
+      const out: { name: string; route: Route | null }[] = [];
+      for (const d of (await activeProfile()).destinations) {
+        let route: Route | null = null;
+        if (p?.route && l.lat !== null && l.lon !== null) {
+          try { route = await p.route([l.lat, l.lon], d); } catch (e) { if (!(e instanceof TravelError)) throw e; }
+        }
+        out.push({ name: d.name, route });
+      }
+      return out;
+    }],
     ['POST', /^\/api\/listings\/([^/]+)\/status$/, async ([id], b) => {
       if (!STATUSES.includes(b.status)) throw new HttpError(422, `invalid status ${b.status}`);
       if (!(await db.get('listings', id))) throw new HttpError(404, `no listing ${id}`);

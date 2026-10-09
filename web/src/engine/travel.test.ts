@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { fixture } from './testing';
-import { CachedProvider, estimateTrip, GoogleProvider, nextDeparture, TransitousProvider, TravelError,
-  type CachedTrip, type Http } from './travel';
+import { CachedProvider, decodePolyline, estimateTrip, GoogleProvider, nextDeparture, TransitousProvider, TravelError,
+  type CachedTrip, type Http, type Route } from './travel';
 import type { Destination } from './profiles';
 
 const SANTS: [number, number] = [41.3792, 2.1404];
@@ -68,6 +68,41 @@ describe('Transitous', () => {
     const calls: string[] = [];
     await new TransitousProvider('http://localhost:8080/', fakeHttp(['one_to_all'], calls), now).trips([SANTS], FIRA);
     expect(calls[0]).toMatch(/^http:\/\/localhost:8080\/api\/v1\/one-to-all\?/);
+  });
+});
+
+describe('routes to draw on the map', () => {
+  it('decodes polylines at any precision', () => {
+    expect(decodePolyline('_p~iF~ps|U_ulLnnqC_mqNvxq`@', 5)).toEqual([[38.5, -120.2], [40.7, -120.95], [43.252, -126.453]]);
+  });
+  it('asks Transitous for an itinerary arriving on time and keeps each leg with its line and shape', async () => {
+    const calls: string[] = [];
+    const r = (await new TransitousProvider(undefined, fakeHttp(['route'], calls), now).route(SANTS, FIRA))!;
+    expect(calls[0]).toContain('/api/v4/plan?');
+    expect(calls[0]).toContain('arriveBy=true');
+    expect(r.minutes).toBe(19);
+    expect(r.legs.map((l) => [l.mode, l.line, l.color, l.from, l.to, l.minutes])).toEqual([
+      ['walk', '', null, '', 'Sants Estació', 4],
+      ['transit', 'L1', '#CE1126', 'Sants Estació', 'Espanya', 5],
+      ['transit', '79', null, 'Espanya', 'Fira', 7],
+      ['walk', '', null, 'Fira', '', 3],
+    ]);
+    expect(r.legs[1].points).toHaveLength(3);
+    expect(r.legs[1].points[0][0]).toBeCloseTo(41.379, 3);
+  });
+  it('has no route when Transitous finds none', async () => {
+    const http: Http = { getJson: async () => ({ itineraries: [], direct: [] }), postJson: async () => ({}) };
+    expect(await new TransitousProvider(undefined, http, now).route(SANTS, FIRA)).toBeNull();
+  });
+  it('keeps a route for a week', async () => {
+    let asked = 0;
+    const route: Route = { minutes: 10, legs: [] };
+    const inner = { name: 'transitous', trips: async () => [], route: async () => { asked++; return route; } };
+    const m = new Map<string, unknown>();
+    const p = new CachedProvider(inner, { get: async (k) => m.get(k) as never, put: async (k, v) => { m.set(k, v); } }, 7, now);
+    expect(await p.route(SANTS, FIRA)).toEqual(route);
+    expect(await p.route(SANTS, FIRA)).toEqual(route);
+    expect(asked).toBe(1);
   });
 });
 

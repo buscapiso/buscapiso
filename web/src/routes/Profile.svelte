@@ -30,6 +30,14 @@
     results[i] = [];
   }
 
+  function move(i: number, lat: number, lon: number) {
+    const d = p?.destinations[i];
+    if (d) {
+      d.lat = Number(lat.toFixed(6));
+      d.lon = Number(lon.toFixed(6));
+    }
+  }
+
   function pick(lat: number, lon: number) {
     const d = p?.destinations[picking];
     if (d) {
@@ -260,7 +268,7 @@
     {/each}
     <button onclick={addPlace}>{t('profile.addDestination')}</button>
     <p class="help">{t('profile.pickHelp')}</p>
-    <MapView label={t('profile.destinationsMap')} places={p.destinations} onpick={pick} height="300px" />
+    <MapView label={t('profile.destinationsMap')} places={p.destinations} onpick={pick} onmove={move} height="300px" />
     {#if err('destinations')}<p class="error">{err('destinations')}</p>{/if}
   </fieldset>
   {/if}

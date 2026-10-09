@@ -126,6 +126,9 @@ export const setStatus = (id: string, status: Status, note?: string) =>
     note === undefined ? { status } : { status, note });
 export const setNote = (id: string, note: string) =>
   call<ListingDetail>('PUT', `/api/listings/${encodeURIComponent(id)}/note`, { note });
+export type { Leg, Route } from '../engine/travel';
+export const getRoutes = (id: string) =>
+  call<{ name: string; route: import('../engine/travel').Route | null }[]>('GET', `/api/listings/${encodeURIComponent(id)}/routes`);
 export const getMeta = () => call<Meta>('GET', '/api/meta');
 export const listProfiles = () => call<ProfileSummary[]>('GET', '/api/profiles');
 export const getActiveProfile = () => call<SearchProfile>('GET', '/api/profiles/active');
