@@ -23,6 +23,16 @@
   {/if}
 </main>
 
+<footer>
+  <p>{t('footer.privacy')}</p>
+  <p>
+    <a href="https://github.com/buscapiso/buscapiso" target="_blank" rel="noopener">{t('footer.source')}</a> ·
+    <a href="https://github.com/buscapiso/buscapiso/issues" target="_blank" rel="noopener">{t('footer.contact')}</a> ·
+    {t('footer.travel')} <a href="https://transitous.org/sources/" target="_blank" rel="noopener">Transitous</a> ·
+    {t('footer.maps')} <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap</a>
+  </p>
+</footer>
+
 <style>
   header {
     position: sticky; top: 0; z-index: 1; background: var(--paper);
@@ -31,5 +41,8 @@
   .brand { font-family: var(--display); font-size: 20px; font-weight: 700; letter-spacing: -0.02em;
     text-decoration: none; color: var(--ink); }
   main { max-width: 960px; margin: 0 auto; padding: 16px; }
-  @media (max-width: 560px) { main { padding-bottom: 96px; } }
+  footer { max-width: 960px; margin: 24px auto 0; padding: 12px 16px 24px; border-top: 1px solid var(--line);
+    font-size: 13px; color: var(--muted); }
+  footer p { margin: 4px 0; }
+  @media (max-width: 560px) { main { padding-bottom: 16px; } footer { padding-bottom: 96px; } }
 </style>

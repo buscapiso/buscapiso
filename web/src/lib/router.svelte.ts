@@ -1,6 +1,6 @@
 export const FILTERS = ['new', 'liked', 'progress', 'ask', 'hidden'] as const;
 export const VIEWS = ['list', 'map', 'board'] as const;
-export const SECTIONS = ['search', 'places', 'zones', 'auto', 'phone', 'ai'] as const;
+export const SECTIONS = ['search', 'places', 'zones', 'auto', 'alerts', 'ai', 'data'] as const;
 export type Filter = (typeof FILTERS)[number];
 export type View = (typeof VIEWS)[number];
 export type Section = (typeof SECTIONS)[number];
@@ -16,7 +16,7 @@ const rooms = (filter: Filter = 'new', view: View = 'list'): Route => ({ name: '
 const LEGACY: Record<string, Route> = {
   inbox: rooms(), liked: rooms('liked'), progress: rooms('progress'), ask: rooms('ask'),
   hidden: rooms('hidden'), map: rooms('new', 'map'), board: rooms('new', 'board'),
-  search: rooms(), phone: { name: 'settings', section: 'phone' },
+  search: rooms(), phone: { name: 'settings', section: 'alerts' },
   profile: { name: 'settings', section: 'search' },
 };
 
@@ -25,7 +25,9 @@ export function parse(hash: string): Route {
   const [head, arg] = path.split('/');
   if (head === 'listing' && arg) return { name: 'listing', id: decodeURIComponent(arg) };
   if (head === 'settings') {
-    const s = (SECTIONS as readonly string[]).includes(arg) ? (arg as Section) : 'search';
+    // "phone" era la seccion del QR de la app de escritorio; sus avisos estan en "alerts".
+    const wanted = arg === 'phone' ? 'alerts' : arg;
+    const s = (SECTIONS as readonly string[]).includes(wanted) ? (wanted as Section) : 'search';
     return { name: 'settings', section: s };
   }
   if (head && head in LEGACY) return LEGACY[head];

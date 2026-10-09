@@ -19,7 +19,7 @@ export interface Listing {
   floor: string; elevator: boolean | null; furnished: boolean | null;
   available_from: string; published: string; also_on: string[];
   status: Status; note: string; group: 'accepted' | 'possible';
-  first_seen: string; last_seen: string;
+  first_seen: string; last_seen: string; missing_since?: string | null;
 }
 
 export interface HistoryEntry { status: Status; note: string; at: string }
@@ -77,18 +77,40 @@ export class ApiError extends Error {
   }
 }
 
-async function call<T>(method: string, url: string, body?: unknown): Promise<T> {
+export type Transport = (method: string, url: string, body?: unknown) => Promise<unknown>;
+
+/** Por HTTP, como en la app de escritorio. Lo usan los tests de componentes. */
+export const fetchTransport: Transport = async (method, url, body) => {
   const init: RequestInit = { method, headers: {} };
   if (body !== undefined) {
     init.body = JSON.stringify(body);
     (init.headers as Record<string, string>)['Content-Type'] = 'application/json';
   }
   const r = await fetch(url, init);
-  if (r.status === 204) return undefined as T;
+  if (r.status === 204) return undefined;
   const data = await r.json().catch(() => ({}));
   if (!r.ok) throw new ApiError(r.status, data.detail ?? r.statusText);
-  return data as T;
+  return data;
+};
+
+let transport: Transport = fetchTransport;
+let subscribe: ((f: (e: SearchEvent) => void) => () => void) | null = null;
+
+/** La web real: el backend vive en el navegador, sobre IndexedDB. */
+export function useLocalBackend(b: { handle: Transport; subscribe: (f: (e: SearchEvent) => void) => () => void }) {
+  transport = async (method, url, body) => {
+    try {
+      return await b.handle(method, url, body);
+    } catch (e) {
+      const err = e as { status?: number; detail?: string };
+      if (typeof err.status === 'number') throw new ApiError(err.status, err.detail ?? String(e));
+      throw new ApiError(500, (e as Error).message ?? String(e));
+    }
+  };
+  subscribe = b.subscribe;
 }
+
+const call = <T>(method: string, url: string, body?: unknown) => transport(method, url, body) as Promise<T>;
 
 export const listListings = (q: { status?: Status[]; group?: 'accepted' | 'possible' } = {}) => {
   const p = new URLSearchParams();
@@ -118,6 +140,14 @@ export const startSearch = (o: { skip_details?: boolean; from_cache?: boolean })
 export const searchState = () => call<SearchState>('GET', '/api/searches/current');
 
 export function streamSearch(onEvent: (e: SearchEvent) => void): () => void {
+  if (subscribe) {
+    let stop = () => {};
+    stop = subscribe((e) => {
+      onEvent(e);
+      if (e.kind === 'done' || e.kind === 'error') queueMicrotask(() => stop());
+    });
+    return () => stop();
+  }
   const source = new EventSource('/api/searches/current/stream');
   source.onmessage = (m) => {
     const e = JSON.parse(m.data) as SearchEvent;
@@ -126,15 +156,15 @@ export function streamSearch(onEvent: (e: SearchEvent) => void): () => void {
   };
   return () => source.close();
 }
+export const stopSearch = () => call<{ stopping: boolean }>('POST', '/api/searches/current/stop');
 
 export interface TravelSettings {
-  travel_provider: 'graph' | 'transitous' | 'google';
-  transitous_contact: string;
+  travel_provider: 'transitous' | 'google';
   has_google_key: boolean;
   motis_url: string;
 }
 export interface RouteTest {
-  graph: { minutes: number; detail: string } | null;
+  estimate: { minutes: number; detail: string } | null;
   provider: { name: string; minutes: number; detail: string } | null;
   error: string | null;
 }
@@ -167,12 +197,9 @@ export const draftMessage = (id: string) =>
 export const suggestProfile = (text: string) =>
   call<ProfileSuggestion>('POST', '/api/profiles/suggest', { text });
 
-export interface AccessInfo { url: string; qr_svg: string; lan: boolean; remember_lan: boolean }
 export interface Schedule { hours: number; from: string; to: string; last_run: string | null }
 export interface NotifySettings { server: string; topic: string; min_score: number }
 
-export const getAccess = () => call<AccessInfo>('GET', '/api/access');
-export const rotateAccess = () => call<{ url: string }>('POST', '/api/access/rotate');
 export const getSchedule = () => call<Schedule>('GET', '/api/schedule');
 export const saveSchedule = (s: { hours: number; from: string; to: string }) =>
   call<Schedule>('PUT', '/api/schedule', s);
@@ -185,8 +212,16 @@ export const getNeighbourhoods = () => call<{ names: string[] }>('GET', '/api/ne
 export const listModels = (base_url: string, key?: string) =>
   call<{ models: string[] }>('POST', '/api/ai/models', key ? { base_url, key } : { base_url });
 
-export interface BrowserState { installed: boolean; installing: boolean; log: string[]; error: string | null }
-export const getBrowser = () => call<BrowserState>('GET', '/api/browser');
-export const installBrowser = () => call<{ started: boolean }>('POST', '/api/browser/install');
-export const quitApp = () => call<{ bye: boolean }>('POST', '/api/quit');
-export const setPhoneAccess = (lan: boolean) => call<AccessInfo>('PUT', '/api/access', { lan });
+// --- datos de este navegador -------------------------------------------------
+export interface ImportPreview {
+  token: string; kind: 'share' | 'backup'; city: string; types: ListingType[];
+  searchedFrom: string | null; searchedTo: string | null;
+  total: number; newToYou: number; skipped: number; states: number; profiles: number;
+}
+export interface ImportResult { added: number; updated: number; missing: number; states: number; profiles: number }
+export interface DataStatus { listings: number; bytes: number | null; persisted: boolean }
+export const exportData = (kind: 'share' | 'backup') => call<Record<string, unknown>>('GET', `/api/data/export?kind=${kind}`);
+export const previewImport = (text: string) => call<ImportPreview>('POST', '/api/data/import/preview', { text });
+export const applyImport = (token: string) => call<ImportResult>('POST', '/api/data/import/apply', { token });
+export const dataStatus = () => call<DataStatus>('GET', '/api/data/status');
+export const clearData = () => call<{ ok: boolean }>('POST', '/api/data/clear');

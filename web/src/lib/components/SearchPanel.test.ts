@@ -43,9 +43,20 @@ test('progress shows inline and the list reloads when the search ends', async ()
   await userEvent.click(await screen.findByRole('button', { name: 'Search now' }));
   FakeSource.last.send('stage', { step: 3, total: 5 }, '3/5 Calculando trayectos...');
   expect((await screen.findAllByText('3/5 Calculando trayectos...')).length).toBeGreaterThan(0);
-  FakeSource.last.send('captcha', {}, 'captcha');
-  expect(await screen.findByRole('alert')).toHaveTextContent('captcha');
+  FakeSource.last.send('captcha', { portal: 'idealista' }, 'captcha');
+  expect(await screen.findByRole('alert')).toHaveTextContent("idealista wants you to confirm you're human");
   FakeSource.last.send('done', { new: 2, accepted: 66, possible: 40, crawled: 900 });
   expect(await screen.findByText(/2 new listings/)).toBeInTheDocument();
   expect(onfinished).toHaveBeenCalled();
+});
+
+test('without the extension, Search now is off and says why', async () => {
+  const { ext } = await import('../extensionState.svelte');
+  ext.status = { installed: false, outdated: false, version: null, browser: null };
+  render(SearchPanel, { onfinished: () => {} });
+  const b = screen.getByRole('button', { name: 'Search now' });
+  expect(b).toBeDisabled();
+  expect(b).toHaveAttribute('title', 'Searching needs the buscapiso extension in this browser.');
+  expect(screen.getByRole('button', { name: 'Re-score without browsing' })).toBeEnabled();
+  ext.status = null;
 });

@@ -14,7 +14,8 @@ test.each([
   ['#/map', { name: 'rooms', filter: 'new', view: 'map' }],
   ['#/board', { name: 'rooms', filter: 'new', view: 'board' }],
   ['#/search', { name: 'rooms', filter: 'new', view: 'list' }],
-  ['#/phone', { name: 'settings', section: 'phone' }],
+  ['#/phone', { name: 'settings', section: 'alerts' }],
+  ['#/settings/phone', { name: 'settings', section: 'alerts' }],
   ['#/profile', { name: 'settings', section: 'search' }],
 ])('parses %s', (hash, route) => {
   expect(parse(hash)).toEqual(route);

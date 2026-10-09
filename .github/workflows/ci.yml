@@ -1,0 +1,26 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm --prefix web ci
+      - name: Types
+        run: npm --prefix web run check
+      - name: Unit tests (engine, store, screens, extension)
+        run: npm --prefix web test
+      - name: Chromium for the end-to-end tests
+        run: npx --prefix web playwright install --with-deps chromium
+      - name: End-to-end tests (real extension, fake portals)
+        run: npm --prefix web run e2e

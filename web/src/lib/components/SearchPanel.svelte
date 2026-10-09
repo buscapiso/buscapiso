@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { ApiError, searchState, startSearch, streamSearch, type SearchEvent } from '../api';
+  import { ApiError, searchState, startSearch, stopSearch, streamSearch, type SearchEvent } from '../api';
+  import { ext } from '../extensionState.svelte';
   import { summarize } from '../searchView';
   import { t } from '../i18n';
 
@@ -12,6 +13,8 @@
   let stop: (() => void) | null = null;
   const view = $derived(summarize(events));
   const last = $derived(events.at(-1)?.message.trim() ?? '');
+  // Sin extension no se puede leer la mayoria de portales: se dice por que.
+  const noExtension = $derived(ext.status !== null && (!ext.status.installed || ext.status.outdated));
 
   function follow() {
     stop?.();
@@ -45,8 +48,10 @@
 
 <section class="panel" aria-label={t('search.title')}>
   <div class="row">
-    <button class="primary" onclick={() => start(false)} disabled={running}>
+    <button class="primary" onclick={() => start(false)} disabled={running || noExtension}
+      title={noExtension ? t('search.needsExtension') : undefined}>
       {running ? t('search.running') : t('search.now')}</button>
+    {#if running}<button onclick={() => stopSearch()}>{t('search.stop')}</button>{/if}
     <button onclick={() => start(true)} disabled={running}>{t('search.rescore')}</button>
     <label class="check"><input type="checkbox" bind:checked={skipDetails} disabled={running} /> {t('search.skip')}</label>
   </div>
@@ -56,7 +61,7 @@
     <p class="muted">{last}</p>
     {#if !events.length}<p class="muted">{t('search.browserNote')}</p>{/if}
   {/if}
-  {#if view.captcha && running}<p class="captcha" role="alert">{t('search.captcha')}</p>{/if}
+  {#if view.captcha && running}<p class="captcha" role="alert">{t('search.captcha', { portal: view.captcha })}</p>{/if}
   {#if view.done && !running}
     <p class="ok">{t('search.done', { new: Number(view.done.data.new), accepted: Number(view.done.data.accepted), possible: Number(view.done.data.possible) })}</p>
   {/if}

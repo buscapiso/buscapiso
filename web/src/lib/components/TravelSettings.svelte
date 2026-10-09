@@ -10,7 +10,7 @@
   let test = $state<RouteTest | null>(null);
   let testing = $state(false);
 
-  const PROVIDERS = ['graph', 'transitous', 'google'] as const;
+  const PROVIDERS = ['transitous', 'google'] as const;
 
   async function load() {
     try { s = await getSettings(); } catch (e) { error = String(e); }
@@ -22,10 +22,7 @@
     const body: Partial<TravelSettings> & { google_key?: string } = {
       travel_provider: s.travel_provider,
     };
-    if (s.travel_provider === 'transitous') {
-      body.transitous_contact = s.transitous_contact;
-      body.motis_url = s.motis_url;
-    }
+    if (s.travel_provider === 'transitous') body.motis_url = s.motis_url;
     if (googleKey.trim()) body.google_key = googleKey.trim();
     try {
       s = await saveSettings(body);
@@ -61,7 +58,6 @@
       <p class="help">{t('travel.serverHelp')}</p>
       {#if s.motis_url.replace(/\/+$/, '') === 'https://api.transitous.org'}
         <p class="help">{t('travel.transitousTerms')}</p>
-        <label>{t('travel.contact')}<input bind:value={s.transitous_contact} /></label>
       {/if}
     {:else if s.travel_provider === 'google'}
       <p class="help">{t('travel.googleHelp')}</p>
@@ -80,7 +76,7 @@
     {#if test}
       <div class="test">
         <p class="help">{t('travel.testRoute')}</p>
-        {#if test.graph}<p>{t('travel.testGraph', { minutes: Math.round(test.graph.minutes) })}</p>{/if}
+        {#if test.estimate}<p>{t('travel.testGraph', { minutes: Math.round(test.estimate.minutes) })}</p>{/if}
         {#if test.provider}
           <p>{t('travel.testProvider', { name: test.provider.name, minutes: Math.round(test.provider.minutes) })}</p>
         {/if}

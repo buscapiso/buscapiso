@@ -2,7 +2,7 @@
   import { getActiveProfile, listListings, saveProfile, setStatus, ApiError,
            type Listing, type SearchProfile, type Status } from '../lib/api';
   import BoardView from '../lib/components/BoardView.svelte';
-  import BrowserBanner from '../lib/components/BrowserBanner.svelte';
+  import ExtensionBanner from '../lib/components/ExtensionBanner.svelte';
   import CriteriaBar from '../lib/components/CriteriaBar.svelte';
   import ListingCard from '../lib/components/ListingCard.svelte';
   import MapView, { type MapPoint } from '../lib/components/MapView.svelte';
@@ -72,7 +72,7 @@
   $effect(() => { load(); });
 </script>
 
-<BrowserBanner />
+<ExtensionBanner />
 <SearchPanel bind:this={panel} onfinished={load} />
 
 {#if profile}<CriteriaBar {profile} onsave={saveCriteria} />{/if}
@@ -116,6 +116,7 @@
       <li><a href={href({ name: 'settings', section: 'search' })}>{t('welcome.budget')}</a></li>
       <li>{t('welcome.search')} <small>{t('welcome.searchHelp')}</small></li>
     </ol>
+    <p class="muted">{t('welcome.city')} <a href={href({ name: 'settings', section: 'data' })}>{t('welcome.import')}</a></p>
   </section>
 {:else if ofType.length === 0}
   <div class="empty"><p>{t('empty.firstRun')}</p>

@@ -1,0 +1,9 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>buscapiso e2e harness</title>
+<!-- Carga el cliente real de la web (src/lib/extension.ts) a traves de vite dev. -->
+<script type="module">
+  import * as ext from '../src/lib/extension.ts';
+  window.ext = ext;
+  window.ready = true;
+</script>

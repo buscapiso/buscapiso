@@ -9,9 +9,12 @@ test('tracks the current stage', () => {
   expect([s.step, s.total, s.done, s.error]).toEqual([3, 5, null, null]);
 });
 
-test('a captcha is pending until the search moves on', () => {
-  expect(summarize([ev('stage', { step: 1, total: 5 }), ev('captcha')]).captcha).toBe(true);
-  expect(summarize([ev('captcha'), ev('progress')]).captcha).toBe(false);
+test('a captcha is pending until that portal moves on or the stage changes', () => {
+  expect(summarize([ev('stage', { step: 1, total: 5 }), ev('captcha', { portal: 'idealista' })]).captcha).toBe('idealista');
+  // Otro portal que sigue a lo suyo no lo resuelve.
+  expect(summarize([ev('captcha', { portal: 'idealista' }), ev('info', { source: 'fotocasa' })]).captcha).toBe('idealista');
+  expect(summarize([ev('captcha', { portal: 'idealista' }), ev('info', { source: 'idealista' })]).captcha).toBeNull();
+  expect(summarize([ev('captcha', { portal: 'idealista' }), ev('stage', { step: 2 })]).captcha).toBeNull();
 });
 
 test('collects warnings and the final event', () => {

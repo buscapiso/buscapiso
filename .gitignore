@@ -1,16 +1,19 @@
+# Datos locales de la app de escritorio retirada (no se versionan)
 .venv/
 .perfil-*/
 cache/
 pisos.db
 *.bak
 informe.html
+*.egg-info/
+buscapiso/web_dist/
 __pycache__/
 *.pyc
 .pytest_cache/
+
+# Herramientas
 .remember/
-*.egg-info/
 .superpowers/
-buscapiso/web_dist/
-web/node_modules/
+node_modules/
 dist/
 build/

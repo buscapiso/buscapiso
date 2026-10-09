@@ -126,6 +126,7 @@
         {#if current.needsKey}
           <label>{t('ai.key')}<input type="password" autocomplete="off" bind:value={key} /></label>
           {#if s.has_key}<p class="help">{t('ai.keySaved')}</p>{/if}
+          <p class="help">{t('ai.keyLocal')}</p>
         {/if}
         <div class="models">
           {#if models.length}
@@ -145,6 +146,7 @@
       {#if preset === 'claude'}
         <label>{t('ai.key')}<input type="password" autocomplete="off" bind:value={key} /></label>
         {#if s.has_key}<p class="help">{t('ai.keySaved')}</p>{/if}
+        <p class="help">{t('ai.keyLocal')}</p>
       {/if}
       <label>{t('ai.aboutMe')}<textarea rows="2" bind:value={s.about_me}></textarea></label>
       <p class="help">{t('ai.aboutMeHelp')}</p>

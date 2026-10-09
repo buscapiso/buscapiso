@@ -1,94 +1,70 @@
 # buscapiso
 
-> This is the last version of the desktop app (v0.3.0). buscapiso is moving to a website with a browser extension; the desktop app won't get more updates.
+buscapiso looks for rooms and whole flats to rent in Barcelona, works out how long it takes to get from each one to the places you go often, and ranks the results so the best ones come first. Rooms come from Idealista, Fotocasa, Roomgo and De Piso en Piso, and whole flats from Idealista, Fotocasa and Habitaclia. You mark the listings you like, write notes, track who you have contacted, and get a phone notification when a good new one appears.
 
-buscapiso looks for rooms and whole flats to rent in Barcelona, works out how long it takes to get from each one to the places you go often, and ranks the results so the best ones come first. Rooms come from Idealista, Fotocasa, Roomgo and De Piso en Piso, and whole flats from Fotocasa and Habitaclia. You mark the listings you like, write notes, track who you have contacted, and get a phone notification when a good new one appears.
+It is a website: open **https://buscapiso.github.io/buscapiso/**. There is nothing to install apart from a small browser extension on the computer you search from. Your listings, notes and keys stay in your browser; buscapiso has no server.
 
-Everything runs on your own computer. Your searches, notes and keys stay there.
+## The browser extension
 
-## Install
+A website can't read other websites, so buscapiso uses a small extension to read the rental portals from your own browser, the same way you would browse them. It only reads Idealista, Fotocasa, Habitaclia, Roomgo and De Piso en Piso, and only when you press Search.
 
-Download the file for your system from the [latest release](https://github.com/feal-ca/buscapiso/releases/latest), unzip it and open `buscapiso`:
+- **Chrome, Edge, Brave, Vivaldi, Opera:** install it from the Chrome Web Store link shown on the site.
+- **Firefox, on a computer or on Android:** install it from the Firefox Add-ons link shown on the site.
+- **iPad, iPhone and Chrome on Android** can't run it. Everything else works there: ask someone to send you an export, or make one yourself on a computer, and import it (see below).
 
-- **Windows:** unzip `buscapiso-windows.zip` and double-click `buscapiso.exe` inside the folder. If Windows SmartScreen warns about an unknown app, click "More info" and then "Run anyway".
-- **macOS:** unzip `buscapiso-macos.zip` and move `buscapiso.app` to Applications. The first time, right-click it and choose "Open", because the app is not signed with an Apple developer account.
-- **Linux:** extract `buscapiso-linux.tar.gz` and run `./buscapiso/buscapiso`.
-
-buscapiso opens in your web browser at `http://127.0.0.1:8770`. Opening it again while it is already running just opens another tab. To stop it, go to Settings and press "Quit buscapiso".
+Until the store pages are up, you can load it by hand: download `buscapiso-chrome.zip` or `buscapiso-firefox.zip` from the [releases](https://github.com/buscapiso/buscapiso/releases), unzip it, and in Chrome open `chrome://extensions`, turn on Developer mode and choose "Load unpacked". In Firefox, open `about:debugging`, "This Firefox", "Load Temporary Add-on".
 
 ## First steps
 
-1. The first time, buscapiso asks to install its own copy of Chromium (about 400 MB). It needs it to read the portals.
-2. In **Settings → Places & travel**, add the places you go often (work, university...). Search by address or click on the map. The travel time limit you set for each place decides which areas are searched.
-3. In **Settings → What you're looking for**, set your budget and who you want to live with. You can also describe what you want in your own words and let the AI fill it in, if you set one up.
-4. In **Rooms**, press **Search now**. A browser window opens and reads the portals for 10 to 15 minutes. Leave it visible: the portals block hidden browsers. If a captcha appears, solve it in that window.
+1. In **Settings → Places & travel**, add the places you go often (work, university...). The travel time limit you set for each one decides which areas are searched.
+2. In **Settings → What you're looking for**, set your budget and who you want to live with, or choose "A whole flat to rent".
+3. In **Rooms**, press **Search now**. buscapiso reads the portals for a few minutes. Idealista sometimes asks you to confirm you're human: a tab opens, you solve it there, and the search carries on.
 
 ## Using it
 
-**Rooms** is where you spend your time. Your criteria appear as buttons ("Up to 650 €", "Women only"...). Press one to change it, then "Re-score now" to see the effect in seconds without searching again. The chips New, Liked, In progress, Ask first and Hidden filter the rooms, and List, Map and Board change how you see them. "Ask first" holds rooms that fit everything except that the listing doesn't say who lives there.
+**Rooms** is where you spend your time. Your criteria appear as buttons ("Up to 650 €", "Women only"...). Press one to change it, then "Re-score now" to see the effect in seconds without searching again. The chips New, Liked, In progress, Ask first and Hidden filter the list, and List, Map and Board change how you see it. "Ask first" holds rooms that fit everything except that the listing doesn't say who lives there.
 
-Each room has its own page with photos, the cost with bills, travel times with the metro lines, why it scored what it did, a map, a status, your notes and their history.
+Each listing has its own page with photos, the cost with bills, travel times, why it scored what it did, a map, a status, your notes and their history.
 
-**Settings** has the rest: what you're looking for, places and travel times, neighbourhoods to prefer or avoid, automatic searches, phone access and notifications, and AI.
+## Sharing a search, and iPad or iPhone
 
-## Whole flats
+In **Settings → Your data**:
 
-To look for a whole flat instead of a room, press the first button in Rooms ("Rooms") and choose "A whole flat to rent". You can also change it in Settings → What you're looking for. A flat has its own rent limit, bedrooms, size, lift and furnished settings, so switching back and forth leaves your room settings as they were. The list shows only the kind you are looking for, and a line above it says how many of the other kind are hidden.
+- **Export to share** saves the listings to a file you can send by AirDrop, WhatsApp or email. Whoever imports it gets the listings scored with *their* criteria and *their* places; their notes are never touched.
+- **Back up everything** also saves your statuses, notes, profiles and settings, to move to another browser. API keys are never exported.
+- **Import** shows what the file holds before anything is merged.
 
-Flats are read with plain requests, so a flat search doesn't open the Chromium window. The settings about who you would live with don't apply to a whole flat and are ignored. When a listing doesn't say whether it has a lift or furniture, it stays in the list and its reasons say "ask". Idealista flats aren't searched yet, because Idealista answers flat searches with a captcha unless they come from a real browser.
-
-## On your phone
-
-In Settings → Phone & alerts, press "Allow access from my phone", then quit buscapiso and open it again. A QR code appears there: scan it with your phone while both are on the same Wi-Fi. Add it to your home screen to use it like an app. The link carries a private key; without it, other devices on your network see nothing. "Revoke phone access" changes the key.
-
-Away from home, install [Tailscale](https://tailscale.com) on the computer and the phone and run `tailscale serve 8770` on the computer.
-
-## Automatic searches and notifications
-
-buscapiso can search on its own every few hours while it is open, within the hours you choose. To get the best new rooms on your phone, turn on notifications in Settings → Phone & alerts, install the free [ntfy](https://ntfy.sh) app, and subscribe to the topic shown there. The topic name is random because anyone who knows it can read it.
+On iPad and iPhone, add buscapiso to the Home Screen (Share → Add to Home Screen) so Safari keeps your data.
 
 ## Travel times
 
-By default, travel times come from a built-in map of the metro, FGC and Rodalies lines. It is free and works offline, and is accurate to a few minutes. For real timetables with buses, choose one of these in Settings → Places & travel:
-
-- **Transitous**, a free community service. It asks for an email or website so its operators can reach you, and is meant for open-source, non-commercial use.
-- **Your own MOTIS server**, the open-source engine behind Transitous. `docs/README.es.md` explains how to set one up with the Barcelona timetables.
-- **Google Maps**, with your own Routes API key. Google charges per route, with a monthly free allowance.
+Travel times come from [Transitous](https://transitous.org), a free community service with real timetables, buses included, and need no setup. In Settings → Places & travel you can instead use your own [MOTIS](https://github.com/motis-project/motis) server, or Google Maps with your own Routes API key (Google charges per route, with a monthly free allowance). If the service doesn't answer, buscapiso estimates from the straight-line distance and says so.
 
 ## AI (optional)
 
-With your own key, the AI reads the descriptions of the best rooms of each search and adds who lives there, bills, house rules, short lets and things to check before paying. It also drafts your first message to the advertiser in the listing's language. Pick a provider in Settings → AI:
+With your own key, the AI reads the descriptions of the best listings of each search and adds who lives there, bills, house rules, short lets and things to check before paying. It also drafts your first message to the advertiser in the listing's language. Pick a provider in Settings → AI: Gemini (free tier at [aistudio.google.com](https://aistudio.google.com)), Claude ([console.anthropic.com](https://console.anthropic.com)), OpenAI, OpenRouter, or Ollama on your own computer (start it with `OLLAMA_ORIGINS` set to the site's address). Keys are stored in this browser only and sent only to that provider.
 
-- **Gemini:** create a key at [aistudio.google.com](https://aistudio.google.com) (it has a free tier).
-- **Claude:** create a key at [console.anthropic.com](https://console.anthropic.com). Haiku 5.5 costs well under a cent per search.
-- **OpenAI** or **OpenRouter:** create a key on their website.
-- **Ollama:** free and private, on your computer. No key needed.
+## Automatic searches and notifications
 
-Keys are stored in your system's keyring, never in buscapiso's database.
-
-## Where your data lives
-
-- **Windows:** `%APPDATA%\buscapiso`
-- **macOS:** `~/Library/Application Support/buscapiso`
-- **Linux:** `~/.local/share/buscapiso`
-
-The folder holds the database with your rooms, statuses and notes, the downloaded pages, and the browser. Set `BUSCAPISO_HOME` to use another folder.
+While a buscapiso tab is open, it can search on its own every few hours, within the hours you choose. To get the best new listings on your phone, turn on notifications in Settings → Alerts, install the free [ntfy](https://ntfy.sh) app and subscribe to the topic shown there. The topic name is random because anyone who knows it can read it.
 
 ## Limitations
 
-- Only Barcelona and its metropolitan area. Whole flats come from Fotocasa and Habitaclia, not Idealista yet.
-- The portals change their pages from time to time, which can break a source until buscapiso is updated.
+- Only Barcelona and its metropolitan area for now.
+- Searching needs a computer (or Firefox on Android) with the extension.
+- The portals change their pages from time to time, which can break a source until buscapiso is updated. Fixes reach everyone as soon as the website is updated.
 - buscapiso reads public listings for your personal use, at the pace of a person browsing. Please don't use it to copy listings in bulk.
 
 ## Building it yourself
 
-You need Python 3.12 or newer and Node 22.
+You need Node 22.
 
 ```bash
-python -m venv .venv
-.venv/bin/pip install -e '.[dev]'
-npm --prefix web ci && npm --prefix web run build
-.venv/bin/buscapiso serve
+npm --prefix web ci
+npm --prefix web run dev          # http://localhost:5173/buscapiso/
+node extension/build.mjs --dev    # extension/dist/chrome-dev and firefox-dev also allow localhost
 ```
 
-Run the tests with `.venv/bin/python -m pytest tests -q` and `npm --prefix web test`. `packaging/build.sh` builds the app for your system in `dist/buscapiso/`, and pushing a `v*` tag builds Windows, macOS and Linux on GitHub. Technical notes, in Spanish, are in `docs/README.es.md`.
+Run the tests with `npm --prefix web test` and the end-to-end tests with `npm --prefix web run e2e`. Pushing to `main` publishes the site on GitHub Pages; pushing an `ext-v*` tag packages the extension. Technical notes, in Spanish, are in `docs/README.es.md`.
+
+The desktop app (v0.3.0 and earlier) is retired. Its code is in the git history.

@@ -1,340 +1,155 @@
-# Buscapiso: habitación en Barcelona
+# buscapiso: notas técnicas
 
-Busca habitaciones en Idealista, Fotocasa, Roomgo y De Piso en Piso, las sitúa en el mapa, calcula el trayecto real
-a **Fira (L9)** y a **Collblanc**, descarta lo que no cumple tus requisitos y te
-deja un informe HTML ordenado, marcando lo que es nuevo desde la última vez.
+buscapiso es una web estática (GitHub Pages) con una extensión de navegador.
+No hay servidor: el motor corre en la página, los datos viven en IndexedDB y la
+extensión lee los portales desde el navegador de cada persona. El diseño está
+en `docs/specs/2026-10-09-web-extension-diseno.md` y el plan, con los hallazgos
+de la prueba de viabilidad, en `docs/superpowers/plans/2026-10-09-fase-7-web.md`.
 
-## Cómo se ejecuta
+La app de escritorio (Python, FastAPI, Playwright) se retiró tras la v0.3.0.
+Su código sigue en el historial de git.
 
-```bash
-cd ~/buscapiso
-.venv/bin/buscapiso
-```
+## Dónde está cada cosa
 
-La primera vez crea el perfil `default` a partir de `config.yaml` y
-`zonas.yaml`. Desde entonces los ajustes viven en `pisos.db`; los flags solo
-cambian la búsqueda en curso.
+| Carpeta | Qué hay |
+|---|---|
+| `web/src/engine/` | El motor, sin DOM de página ni IndexedDB: modelo, fuentes, deduplicado, geocodificación, trayectos, cobertura, ranking, IA, avisos, pipeline, programador |
+| `web/src/engine/sources/` | Un fichero por portal: URLs, parser y marcadores de bloqueo. Ninguno pide nada por su cuenta |
+| `web/src/store/` | IndexedDB (`db.ts`), el "servidor" local que atiende las rutas `/api/...` (`backend.ts`) y exportar/importar (`transfer.ts`) |
+| `web/src/lib/api.ts` | La única puerta de la interfaz. En la web usa el backend local; en los tests de componentes, `fetch` simulado |
+| `web/src/lib/extension.ts` | El cliente de la extensión: `hello`, `fetch`, `cancel` por `window.postMessage` |
+| `extension/` | La extensión (JavaScript sin compilar, para que se pueda revisar tal cual). `build.mjs` genera los paquetes de Chrome y Firefox |
+| `web/e2e/` | Pruebas de punta a punta con Playwright: la extensión real contra un portal falso, y la web compilada |
 
-Se abre una ventana de Chromium. **Déjala visible**: es lo que evita el bloqueo
-anti-bot de Idealista. Tarda unos minutos y al terminar abre `informe.html`.
+## Cómo se lee cada portal
 
-Si aparece un captcha, resuélvelo en esa ventana: el programa espera 90 segundos
-y sigue solo.
+| Portal | Desde la extensión | Género del piso | Ubicación |
+|---|---|---|---|
+| Idealista | `fetch` da 403; pestaña, y la persona resuelve el captcha | icono de la tarjeta, dato fiable | calle, geocodificada |
+| Fotocasa | `fetch` normal | solo si la descripción lo dice | del portal, nivel barrio |
+| Habitaclia (pisos) | `fetch` normal | no aplica | del portal, a veces exacta |
+| Roomgo | `fetch` normal | publicado en la tarjeta | calle, geocodificada |
+| De Piso en Piso | sin extensión: sus endpoints JSON admiten CORS | de la ficha (descripción) | exacta |
 
-### Opciones
+Comprobado el 2026-10-09 con Chromium y un perfil limpio. Si un portal empieza a
+bloquear `fetch`, la extensión pasa sola a modo pestaña; si cambia su HTML, se
+arregla el parser en `web/src/engine/sources/` y basta con desplegar la web.
 
-```bash
-.venv/bin/buscapiso --paginas 5        # rastrea más (por defecto 3)
-.venv/bin/buscapiso --solo-nuevos      # solo lo publicado en 48 h
-.venv/bin/buscapiso --sin-fichas       # más rápido, sin abrir fichas
-.venv/bin/buscapiso --no-abrir         # no abre el navegador al acabar
-.venv/bin/buscapiso --municipios barcelona/sants-montjuic
-.venv/bin/buscapiso --desde-cache      # reusa lo descargado
-.venv/bin/buscapiso --max-minutos 60   # amplía el límite de trayecto
-.venv/bin/buscapiso --presupuesto 700  # amplía el coste máximo
-.venv/bin/buscapiso --fuentes idealista fotocasa
-```
+Idealista: con `fetch` responde 403 (DataDome). En la pestaña aparece el
+captcha y la persona lo resuelve; después la extensión vuelve a probar `fetch`,
+que con la cookie nueva puede bastar. Con el navegador marcado como
+automatizado no pasa nunca, así que el e2e no toca Idealista.
 
-Una búsqueda completa con los tres portales tarda unos **12-15 minutos**: la
-mayor parte se va en geocodificar (Nominatim solo permite 1 consulta/segundo) y
-en abrir fichas. Con `--sin-fichas` baja a la mitad.
+Fotocasa no pinta los anuncios en el HTML: los manda en un JSON incrustado que
+se localiza por su clave `realEstates`, no por el nombre de la variable de
+JavaScript, que cambia en cada despliegue. Se recorre de más barato a más caro
+y se para en cuanto una página entera supera el presupuesto.
 
-`--desde-cache` es la que más usarás después de la primera vez: reprocesa el
-HTML ya guardado sin tocar Idealista, así puedes cambiar los pesos del perfil
-(ver "Qué tocar") y ver el efecto al instante sin arriesgarte a un bloqueo.
+"Se permiten visitas" no existe como dato en Idealista: sus normas son fumar,
+parejas, mascotas y menores. Se usan `no admite parejas` (norma) y la frase de
+ambiente `no suelen tener visitas` (costumbre, resta menos). Solo se sabe
+abriendo la ficha, y solo se abren las mejores candidatas.
 
-### Seguimiento
+## Ficheros dorados
 
-```bash
-.venv/bin/buscapiso mark a1b2c3d4e5f6 contacted "escrito el lunes"
-.venv/bin/buscapiso statuses
-```
+`web/src/engine/__golden__/` guarda la salida de los parsers y del ranking de
+la versión Python sobre las mismas páginas de `__fixtures__/`. Los tests de
+TypeScript tienen que dar lo mismo campo a campo, motivos de puntuación
+incluidos (con el redondeo de Python: al par en los empates, y "-0"). El
+script que los generó (`scripts/golden.py`) está en el historial de git.
 
-Estados: `liked`, `hidden`, `contacted`, `visit_scheduled`, `visited`,
-`applied`, `got_it`, `rejected`, `discarded`. Lo que marcas como `hidden` o
-`discarded` no vuelve a aparecer. Los nombres antiguos (`marcar`, `estados`,
-`interesa`, `contactado`, `visita`, `descartado`) siguen funcionando. Cada
-cambio queda en un historial.
+`idealista_pisos.html` es una página real de pisos del Eixample capturada con
+la extensión resolviendo el captcha; no tiene dorado porque Python nunca leyó
+pisos de Idealista.
 
-### Perfiles
-
-```bash
-.venv/bin/buscapiso profile list                  # el activo lleva *
-.venv/bin/buscapiso profile export default p.json
-.venv/bin/buscapiso profile import p.json --use   # tras editar el JSON
-```
-
-## La web app
+## Tests
 
 ```bash
-.venv/bin/pip install -e '.[dev]'
-npm --prefix web ci && npm --prefix web run build   # una vez, y tras cada cambio en web/
-.venv/bin/buscapiso serve
+npm --prefix web test          # motor, almacén, pantallas y extensión (Vitest)
+npm --prefix web run check     # tipos (svelte-check)
+npm --prefix web run e2e       # Playwright: extensión real y web compilada
 ```
 
-Se abre en `http://127.0.0.1:8770` con dos páginas:
-
-- **Rooms**: arriba, "Search now" (busca en los portales; "Skip full
-  listings" la acorta) y "Re-score without browsing" (vuelve a puntuar lo ya
-  descargado, en segundos). Debajo, tus criterios como botones: pulsa uno para
-  cambiarlo ahí mismo y después "Re-score now" para ver el efecto. Los chips
-  New, Liked, In progress, Ask first y Hidden filtran, y List / Map / Board
-  cambian la vista sin perder el filtro.
-- **Settings**: lo que buscas, lugares y trayectos, barrios (desplegable con
-  buscador), búsquedas automáticas, móvil y avisos, e IA (el modelo se elige
-  de la lista que da el propio proveedor). La ventana de Chromium sigue
-abriéndose al buscar, igual que desde el terminal. La pestaña Map enseña los
-anuncios y tus destinos sobre un mapa de OpenStreetMap.
-
-Para trabajar en el frontend: `buscapiso serve --no-open` en un terminal y
-`npm --prefix web run dev` en otro, que recarga al guardar y reenvía `/api`
-al servidor.
-
-Los motivos de la puntuación se guardan con cada anuncio: tras actualizar,
-pulsa una vez "Re-score without browsing" para verlos en el idioma nuevo.
-
-### Tiempos de trayecto
-
-Por defecto los minutos salen del grafo propio de metro, FGC y Rodalies:
-gratis, sin red y con un error de unos ±4 minutos. En Settings → Travel times
-se puede elegir:
-
-- Transitous: horarios reales, autobuses incluidos, gratis y sin clave. Es un
-  servicio comunitario para proyectos de código abierto y no comerciales;
-  cada petición lleva el contacto que pongas.
-- Google Maps: horarios reales con tu propia clave de la Routes API. Google
-  cobra por trayecto, con un cupo gratuito mensual. La clave se guarda en el
-  llavero del sistema, o en la variable `BUSCAPISO_GOOGLE_KEY`.
-
-Solo se recalculan con horarios reales los mejores anuncios de cada búsqueda
-(40 por defecto); el resto conserva la estimación. Si el proveedor falla, la
-búsqueda sigue con la estimación y lo avisa.
-
-Con Transitous, cada destino cuesta una sola petición: el servidor devuelve
-cuánto antes hay que salir de cada parada para llegar a la hora que pongas en
-"Be there by", y el tiempo de cada piso es el de su mejor parada a menos de
-1,2 km más el tramo a pie. Por eso los minutos incluyen la espera: desde
-plaça de Sants hay que salir 22 minutos antes de las 8:30 para llegar a Fira,
-aunque el tren tarde menos.
-
-#### Tu propio servidor MOTIS
+## Tu propio servidor MOTIS
 
 Transitous es una instancia pública de MOTIS, un motor libre (licencia MIT).
-Puedes montar el tuyo y apuntar buscapiso a él; así no dependes del servidor
-público ni de sus condiciones de uso.
+Puedes montar el tuyo y ponerlo en Settings → Places & travel → Timetable
+server:
 
 ```bash
 mkdir motis && cd motis
 wget https://github.com/motis-project/motis/releases/latest/download/motis-linux-amd64.tar.bz2
 tar xf motis-linux-amd64.tar.bz2
 wget https://download.geofabrik.de/europe/spain/cataluna-latest.osm.pbf   # ~270 MB
-# Horarios GTFS: la lista de feeds de Barcelona que usa Transitous está en
+# Horarios GTFS: la lista de feeds que usa Transitous está en
 # https://github.com/public-transport/transitous/blob/main/feeds/es.json
-# (metro y bus de TMB, bus metropolitano, Cercanías...). El de TMB pide
-# registrarse en developer.tmb.cat.
 ./motis config cataluna-latest.osm.pbf tmb.zip amb.zip rodalies.zip
 ./motis import
 ./motis server        # escucha en http://localhost:8080
 ```
 
-Después, en Settings → Travel times → Transitous, pon `http://localhost:8080`
-como servidor. Con un servidor propio no hace falta poner contacto.
+El servidor tiene que permitir peticiones desde la web (CORS). Para Ollama,
+arráncalo con `OLLAMA_ORIGINS=https://buscapiso.github.io`.
 
-### IA (opcional)
+## Publicar
 
-Con una clave de IA propia, cada búsqueda lee la descripción de los mejores
-anuncios (30 por defecto): quién vive en el piso, gastos, normas, si es de
-temporada, edad de los compañeros, fecha de entrada, un resumen de una frase,
-pros, contras y cosas que comprobar antes de pagar. Un anuncio "posible" cuyo
-género confirma la IA pasa a la bandeja principal. Lo que publica el portal
-siempre manda sobre lo que deduce la IA, y cada anuncio solo se paga una vez:
-el resultado se guarda por su texto.
+### Una sola vez
 
-En la ficha, "Draft a message" escribe el primer mensaje al anunciante en su
-idioma, con lo que pongas en "About you". En Settings, "Describe what you're
-looking for" rellena el perfil a partir de una descripción libre (lo revisas
-antes de guardar).
+1. Crear la organización de GitHub `buscapiso` (gratis, desde la cuenta
+   personal) y transferir el repositorio a `buscapiso/buscapiso`.
+2. En el repositorio, Settings → Pages → Source: GitHub Actions. Cada push a
+   `main` publica la web en `https://buscapiso.github.io/buscapiso/`.
+3. Chrome Web Store: cuenta de desarrollador (5 $ una vez), subir
+   `buscapiso-chrome.zip` y publicarla como oculta (unlisted).
+4. Firefox Add-ons: subir `buscapiso-firefox.zip` como oculta; Mozilla
+   devuelve un `.xpi` firmado.
+5. Poner los dos enlaces en `STORE` de `web/src/lib/extensionState.svelte.ts`.
 
-Se configura en Settings → AI:
+El origen `https://buscapiso.github.io` está dentro de la extensión (el
+content script solo se inyecta ahí). Cambiar de dominio exige publicar otra
+versión de la extensión. No se añade un dominio que aún no sea nuestro: quien
+lo registrase podría pedir páginas de los portales con las cookies de los
+usuarios.
 
-- Claude: clave en console.anthropic.com → API Keys. Opus 5.5 cuesta $4/$20
-  por millón de tokens de entrada/salida; Haiku 5.5, $0,10/$0,50. Con 30
-  anuncios por búsqueda son unos 45.000 tokens de entrada y 12.000 de salida:
-  unos 0,40 $ con Opus 5.5 y menos de 1 céntimo con Haiku 5.5.
-- Gemini: clave en aistudio.google.com → Get API key (tiene nivel gratuito).
-- OpenAI u OpenRouter: clave en su web.
-- Ollama: gratis y privado, en tu ordenador. Instálalo, ejecuta `ollama pull`
-  con un modelo y escribe su nombre. No necesita clave.
+### Cada versión de la extensión
 
-La clave se guarda en el llavero del sistema (o en `BUSCAPISO_<PROVEEDOR>_KEY`,
-por ejemplo `BUSCAPISO_ANTHROPIC_KEY`), nunca en la base de datos. Si la IA
-falla, la búsqueda sigue con las expresiones regulares de siempre y lo avisa.
+Subir la versión en `extension/build.mjs` y en `extension/src/protocol.js`, y
+etiquetar `ext-vX.Y.Z`: el workflow adjunta los dos zip a la release. Si cambia
+el protocolo, subir `PROTOCOL` en los dos lados; la web pide actualizar a quien
+tenga una extensión más antigua.
 
-### En el móvil
+### Comprobación en vivo antes de publicar
 
-```bash
-.venv/bin/buscapiso serve --lan
-```
+Ningún test toca los portales reales. Antes de cada versión, en Chrome y en
+Firefox, con la extensión de la tienda:
 
-Con `--lan`, buscapiso también acepta conexiones de la red de casa. Abre la
-pestaña Phone en el ordenador y escanea el QR con el móvil (misma Wi-Fi). El
-enlace lleva una clave privada: sin ella, desde otro dispositivo solo se ve un
-error 401. "Revoke phone access" cambia la clave y deja fuera a los móviles
-que tenían la anterior. En el propio ordenador nunca se pide.
+- [ ] Búsqueda de habitaciones: Idealista (resolver el captcha si sale),
+      Fotocasa, Roomgo y De Piso en Piso traen anuncios.
+- [ ] Búsqueda de pisos: Idealista, Fotocasa y Habitaclia traen anuncios.
+- [ ] Anotar en el log de la búsqueda qué portales fueron por fetch y cuáles
+      por pestaña.
+- [ ] Parar a mitad cierra las pestañas de trabajo.
+- [ ] Exportar, importar en un iPad (o en otro navegador) y ver la lista
+      puntuada con el perfil de ese dispositivo.
 
-En el móvil, "Añadir a pantalla de inicio" la deja como una app más, con la
-barra de pestañas abajo. Por la Wi-Fi de casa va por HTTP, así que no funciona
-sin conexión. Fuera de casa, instala Tailscale en el ordenador y en el móvil y
-ejecuta `tailscale serve 8770`: tendrás una dirección HTTPS privada con la que
-también funciona como app sin conexión.
+## Antes de abrirla al público
 
-### Búsquedas automáticas
+- Escribir a Transitous: su política pide avisar antes de muchas peticiones
+  de usuarios distintos. buscapiso hace una por destino y búsqueda para el
+  transporte público, y una por anuncio (solo los mejores) a pie o en bici.
+- Revisar si Nominatim sigue siendo aceptable para geocodificar las
+  direcciones de Idealista (máximo 1 petición por segundo) o conviene Photon o
+  el geocodificador de Transitous.
 
-En Settings → Automatic searches, buscapiso busca solo cada 2 a 24 horas
-mientras está abierto, dentro de la franja que elijas (por defecto de 8:00 a
-23:00) y nunca encima de otra búsqueda. La ventana de Chromium se abre cada
-vez, igual que al buscar a mano.
+## Limitaciones
 
-### Avisos en el móvil (ntfy)
-
-En Settings → Phone notifications, activa "Send good new rooms to my phone".
-Instala la app gratuita ntfy (iOS o Android), pulsa + y suscríbete al tema que
-aparece. Tras cada búsqueda llega un aviso si hay anuncios nuevos con al menos
-la puntuación que elijas (80 por defecto), con los tres mejores: coste, minutos
-y barrio. El tema es aleatorio porque en ntfy.sh cualquiera que sepa su nombre
-puede leerlo.
-
-## Las zonas se calculan solas
-
-No hay lista de zonas que mantener. El buscador coge el límite de
-`max_minutos` del primer destino de `destinos` (o `--max-minutos`), calcula con el grafo de
-metro cuánto se tarda desde cada zona del catálogo hasta Fira, y rastrea las que
-entran. Subir el límite amplía el rastreo de verdad:
-
-```
---max-minutos 30  ->  6 zonas
---max-minutos 60  -> 16 zonas, con el Eixample, Gràcia y Ciutat Vella
-```
-
-El catálogo está en `datos/zonas.json`, con el slug de cada portal y el
-centroide de cada zona. Para añadir una, edita `datos/build_zonas.py` y
-ejecútalo: geocodifica el centroide y valida que caiga dentro de la conurbación.
-
-## Pisos sin género confirmado
-
-Fotocasa y De Piso en Piso no publican si el piso es de chicas. Descartarlos
-tiraba opciones buenas por falta de un dato que se resuelve con un mensaje, así
-que van a una sección propia del informe cuando puntúan por encima de
-`requisitos.puntos_minimos_para_preguntar`. Suelen colarse ahí las mejores
-puntuaciones de todo el informe, porque Fotocasa publica la antigüedad exacta y
-un anuncio de hace un día se lleva el bonus de novedad.
-
-Si prefieres no verlos, pon `preguntar_si_genero_desconocido: false`.
-
-## Qué tocar
-
-`config.yaml` y `zonas.yaml` solo se leen la primera vez, para crear el perfil
-`default`. Para cambiar ajustes después, exporta el perfil, edita el JSON e
-impórtalo (ver "Perfiles").
-
-**`config.yaml`** contiene el presupuesto, los requisitos, los pesos del ranking y
-los destinos con los que se crea ese primer perfil.
-
-Los ajustes que más notarás:
-
-| Ajuste | Qué hace |
-|---|---|
-| `presupuesto.coste_total_maximo` | descarte duro por precio total (habitación + gastos) |
-| `destinos[].max_minutos` | descarte duro por tiempo a ese destino (`null` = sin límite) |
-| `requisitos.solo_chicas` | `false` incluye pisos mixtos |
-| `pesos.novedad` | cuánto premia un anuncio recién publicado |
-| `presupuesto.gastos_si_no_declara` | gastos que supongo cuando el anuncio los calla |
-| `busqueda.orden` | `nuevos`, `baratos` o `relevancia` |
-| `fuentes` | qué portales rastrear |
-| `requisitos.preguntar_si_genero_desconocido` | mostrar los de género sin confirmar |
-| `requisitos.puntos_minimos_para_preguntar` | listón para esa sección |
-
-**`zonas.yaml`** tiene tus listas de zonas a `excluir`, `penalizar` y `preferir`.
-Viene vacío a propósito: eso lo decides tú, no yo.
-
-## Cómo funciona
-
-```
-idealista   ─┐
-fotocasa    ─┼─parser──► Anuncio ──deduplicar──► geocodificación ──► lat/lon
-roomgo      ─┤
-depisoenpiso─┘
-                                      │
-                                      ▼
-                          grafo de metro (Dijkstra)
-                                      │
-                                      ▼
-                   filtros duros ──► puntuación ──► informe.html
-                                      │
-                                      ▼
-                            SQLite (histórico y novedades)
-```
-
-El diseño completo y el porqué de cada decisión está en
-`docs/specs/2026-09-17-buscapiso-diseno.md`.
-
-## Tests
-
-```bash
-.venv/bin/python -m pytest tests/ -q
-```
-
-Corren sin red, contra HTML real guardado en `tests/fixtures/`. Si Idealista
-cambia su HTML, estos tests dicen exactamente qué se rompió.
-
-## Qué aporta cada portal
-
-| Portal | Género del piso | Ubicación | Volumen en Barcelona |
-|---|---|---|---|
-| Idealista | filtro por URL, dato fiable | calle (geocodificada) | ~5.100 habitaciones |
-| Fotocasa | solo si la descripción lo dice | del portal, nivel barrio | ~8.000 habitaciones |
-| Roomgo | publicado en la tarjeta | calle (geocodificada) | medio, casi todo mixto |
-| De Piso en Piso | solo si la descripción lo dice | exacta, del portal | ~10 por búsqueda |
-
-Fotocasa no pinta los anuncios en el HTML: los manda en un JSON incrustado que
-luego renderiza con JavaScript. Eso juega a favor, porque ese JSON trae
-coordenadas, antigüedad del anuncio en días y un campo `isTemporaryRental`,
-datos que en Idealista hay que geocodificar o deducir con expresiones
-regulares. El buscador localiza ese JSON por su clave `realEstates` y no por el
-nombre de la variable de JavaScript, que el framework renombra en cada
-despliegue.
-
-Con 8.000 anuncios en Barcelona, Fotocasa se recorre ordenado de más barato a
-más caro. Así las primeras páginas ya contienen todo lo que cabe en el
-presupuesto, y el rastreo se detiene en cuanto una página entera lo supera.
-
-De Piso en Piso no publica el género en la tarjeta, así que el buscador abre la
-ficha de cada anuncio para leer la descripción. Muchas están en catalán
-("Busquem només 3 Noies estudiants"), y la detección lo contempla.
-
-## Habitaclia
-
-Habitaclia ya no tiene sección de habitaciones. Su página
-`/pisoscompartidos.htm`, que aún aparece en los buscadores, devuelve error, lo
-mismo que las cuatro variantes de URL que probé, y su portada no enlaza ninguna
-categoría de habitaciones o pisos compartidos. Pertenece al mismo grupo que
-Fotocasa, donde sí existe esa sección.
-
-## Limitaciones honestas
-
-- **Badi sigue sin funcionar.** Su API responde 401 y exige cuenta. El módulo
-  está escrito (`fuentes/badi.py`) pero desactivado y sin verificar.
-- **Fotocasa no publica el género del piso.** Se deduce de la descripción,
-  así que sobrevive menos de lo que su volumen sugiere.
-- **De Piso en Piso aporta poco volumen**: unos 10 anuncios por búsqueda, de
-  los cuales sobreviven los pocos cuya descripción indica piso de chicas. A
-  cambio son los únicos con coordenadas exactas.
-- **"Se permiten visitas" no existe como dato en Idealista.** Sus normas de la
-  casa son fumar, parejas, mascotas y menores. Se usan las dos señales más
-  cercanas: `no admite parejas` (norma, resta) y la frase de ambiente
-  `no suelen tener visitas` (costumbre, resta menos). Esto solo se sabe abriendo
-  la ficha, y solo se abren las mejores candidatas.
-- **El filtro "solo chicas" de Idealista significa "admite chicas".** El
-  estricto se aplica en local, y por eso sobrevive menos de un 20% de lo
-  rastreado: hacen falta varias páginas para juntar candidatas.
-- **Los tiempos de trayecto son estimaciones** (±4 min), no horarios reales.
+- Solo Barcelona y su área metropolitana (`web/src/engine/data/barcelona.json`).
+- Buscar exige ordenador (o Firefox en Android) con la extensión. En iPad e
+  iPhone se importa.
+- Badi necesita sesión iniciada y no está incluido; con la extensión podría
+  funcionar usando la sesión de cada persona.
+- El filtro "solo chicas" de Idealista significa "admite chicas": el filtro
+  estricto se aplica en local.
+- Safari puede borrar los datos de una web que no se visita en unos 7 días,
+  salvo que esté en la pantalla de inicio. La copia de seguridad está en
+  Settings → Your data.

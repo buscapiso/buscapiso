@@ -4,12 +4,14 @@ import { svelteTesting } from '@testing-library/svelte/vite';
 
 export default defineConfig({
   plugins: [svelte(), svelteTesting()],
-  build: { outDir: '../buscapiso/web_dist', emptyOutDir: true },
-  server: { proxy: { '/api': 'http://127.0.0.1:8770' } },
+  // Se publica en https://buscapiso.github.io/buscapiso/
+  base: '/buscapiso/',
+  build: { outDir: 'dist', emptyOutDir: true },
+  server: { fs: { allow: ['..'] } },
   test: {
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test-setup.ts'],
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.ts', '../extension/test/**/*.test.js'],
   },
 });

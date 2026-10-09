@@ -1,19 +1,13 @@
 <script lang="ts">
   import AISettings from '../lib/components/AISettings.svelte';
   import AutoSettings from '../lib/components/AutoSettings.svelte';
-  import PhonePanel from '../lib/components/PhonePanel.svelte';
+  import DataSettings from '../lib/components/DataSettings.svelte';
   import TravelSettings from '../lib/components/TravelSettings.svelte';
   import Profile from './Profile.svelte';
   import { SECTIONS, href, type Section } from '../lib/router.svelte';
   import { t } from '../lib/i18n';
-  import { quitApp } from '../lib/api';
 
   let { section }: { section: Section } = $props();
-  let closed = $state(false);
-
-  async function quit() {
-    try { await quitApp(); } finally { closed = true; }
-  }
 </script>
 
 <div class="settings">
@@ -35,17 +29,14 @@
         <Profile part="zones" />
       {:else if section === 'auto'}
         <AutoSettings part="schedule" />
-      {:else if section === 'phone'}
-        <PhonePanel />
+      {:else if section === 'alerts'}
         <AutoSettings part="notify" />
       {:else if section === 'ai'}
         <AISettings />
+      {:else if section === 'data'}
+        <DataSettings />
       {/if}
     {/key}
-    <footer>
-      {#if closed}<p class="closed">{t('settings.closed')}</p>
-      {:else}<button onclick={quit}>{t('settings.quit')}</button> <small>{t('settings.quitHelp')}</small>{/if}
-    </footer>
   </div>
 </div>
 
@@ -56,9 +47,6 @@
   nav a[aria-current='page'] { background: var(--surface); color: var(--ink); font-weight: 700;
     border: 1px solid var(--line); }
   .pane { min-width: 0; }
-  footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--line); }
-  footer small { color: var(--muted); }
-  .closed { font-weight: 700; }
   h1 { margin-top: 0; }
   @media (max-width: 760px) {
     .settings { grid-template-columns: 1fr; gap: 12px; }
