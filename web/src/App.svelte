@@ -1,5 +1,7 @@
 <script lang="ts">
-  import { router, href } from './lib/router.svelte';
+  import { router } from './lib/router.svelte';
+  import Nav from './lib/components/Nav.svelte';
+  import Phone from './routes/Phone.svelte';
   import { t } from './lib/i18n';
   import Listings from './routes/Listings.svelte';
   import ListingDetail from './routes/ListingDetail.svelte';
@@ -8,28 +10,11 @@
   import Profile from './routes/Profile.svelte';
   import Search from './routes/Search.svelte';
 
-  const tabs = [
-    { name: 'inbox', label: 'nav.inbox' },
-    { name: 'liked', label: 'nav.liked' },
-    { name: 'progress', label: 'nav.progress' },
-    { name: 'ask', label: 'nav.ask' },
-    { name: 'hidden', label: 'nav.hidden' },
-    { name: 'board', label: 'nav.board' },
-    { name: 'map', label: 'nav.map' },
-    { name: 'search', label: 'nav.search' },
-    { name: 'profile', label: 'nav.profile' },
-  ] as const;
 </script>
 
 <header>
   <a class="brand" href="#/">{t('app.name')}</a>
-  <nav>
-    {#each tabs as tab}
-      <a href={href({ name: tab.name })} aria-current={router.route.name === tab.name ? 'page' : undefined}>
-        {t(tab.label)}
-      </a>
-    {/each}
-  </nav>
+  <Nav current={router.route.name} />
 </header>
 
 <main>
@@ -39,6 +24,8 @@
     <Board />
   {:else if router.route.name === 'map'}
     <MapPage />
+  {:else if router.route.name === 'phone'}
+    <Phone />
   {:else if router.route.name === 'profile'}
     <Profile />
   {:else if router.route.name === 'search'}
@@ -57,8 +44,6 @@
   }
   .brand { font-family: var(--display); font-size: 20px; font-weight: 700; letter-spacing: -0.02em;
     text-decoration: none; color: var(--ink); }
-  nav { display: flex; gap: 14px; overflow-x: auto; margin-top: 6px; scrollbar-width: none; }
-  nav a { color: var(--muted); text-decoration: none; white-space: nowrap; padding: 4px 0; }
-  nav a[aria-current='page'] { color: var(--ink); border-bottom: 2px solid var(--accent); }
   main { max-width: 960px; margin: 0 auto; padding: 16px; }
+  @media (max-width: 560px) { main { padding-bottom: 96px; } }
 </style>

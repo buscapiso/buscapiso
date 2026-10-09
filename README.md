@@ -162,6 +162,40 @@ La clave se guarda en el llavero del sistema (o en `BUSCAPISO_<PROVEEDOR>_KEY`,
 por ejemplo `BUSCAPISO_ANTHROPIC_KEY`), nunca en la base de datos. Si la IA
 falla, la búsqueda sigue con las expresiones regulares de siempre y lo avisa.
 
+### En el móvil
+
+```bash
+.venv/bin/buscapiso serve --lan
+```
+
+Con `--lan`, buscapiso también acepta conexiones de la red de casa. Abre la
+pestaña Phone en el ordenador y escanea el QR con el móvil (misma Wi-Fi). El
+enlace lleva una clave privada: sin ella, desde otro dispositivo solo se ve un
+error 401. "Revoke phone access" cambia la clave y deja fuera a los móviles
+que tenían la anterior. En el propio ordenador nunca se pide.
+
+En el móvil, "Añadir a pantalla de inicio" la deja como una app más, con la
+barra de pestañas abajo. Por la Wi-Fi de casa va por HTTP, así que no funciona
+sin conexión. Fuera de casa, instala Tailscale en el ordenador y en el móvil y
+ejecuta `tailscale serve 8770`: tendrás una dirección HTTPS privada con la que
+también funciona como app sin conexión.
+
+### Búsquedas automáticas
+
+En Settings → Automatic searches, buscapiso busca solo cada 2 a 24 horas
+mientras está abierto, dentro de la franja que elijas (por defecto de 8:00 a
+23:00) y nunca encima de otra búsqueda. La ventana de Chromium se abre cada
+vez, igual que al buscar a mano.
+
+### Avisos en el móvil (ntfy)
+
+En Settings → Phone notifications, activa "Send good new rooms to my phone".
+Instala la app gratuita ntfy (iOS o Android), pulsa + y suscríbete al tema que
+aparece. Tras cada búsqueda llega un aviso si hay anuncios nuevos con al menos
+la puntuación que elijas (80 por defecto), con los tres mejores: coste, minutos
+y barrio. El tema es aleatorio porque en ntfy.sh cualquiera que sepa su nombre
+puede leerlo.
+
 ## Las zonas se calculan solas
 
 No hay lista de zonas que mantener. El buscador coge el límite de

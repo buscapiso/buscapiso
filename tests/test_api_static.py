@@ -53,3 +53,15 @@ def test_serve_on_a_busy_port_explains_and_opens_nothing(monkeypatch, capsys):
         assert cli.main(["serve", "--port", str(puerto)]) == 2
     assert "--port" in capsys.readouterr().out
     assert abiertos == []
+
+
+def test_serve_lan_listens_everywhere_and_protects_the_api(monkeypatch, tmp_path, capsys):
+    import uvicorn
+    from buscapiso import cli
+    monkeypatch.setenv("BUSCAPISO_HOME", str(tmp_path))
+    llamadas = []
+    monkeypatch.setattr(uvicorn, "run", lambda app, **kw: llamadas.append((app, kw)))
+    assert cli.main(["serve", "--lan", "--no-open", "--port", "8797"]) == 0
+    app, kw = llamadas[0]
+    assert kw["host"] == "0.0.0.0" and app.state.lan is True and app.state.port == 8797
+    assert "/?t=" in capsys.readouterr().out

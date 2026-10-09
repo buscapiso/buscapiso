@@ -129,3 +129,21 @@ def test_playwright_started_in_a_dead_thread_is_replaced():
         assert nuevo is not viejo[0]
     finally:
         navegador.cerrar_todo()
+
+
+def test_the_after_hook_sees_every_finished_search(home):
+    vistos = []
+    runner = SearchRunner(run=fake_run(), after=vistos.append)
+    client_with(runner, home).post("/api/searches", json={})
+    runner.wait(5)
+    assert len(vistos) == 1 and vistos[0].crawled == 3
+
+
+def test_a_failing_after_hook_does_not_fail_the_search(home):
+    def roto(r):
+        raise RuntimeError("ntfy exploded")
+    runner = SearchRunner(run=fake_run(), after=roto)
+    c = client_with(runner, home)
+    c.post("/api/searches", json={})
+    runner.wait(5)
+    assert c.get("/api/searches/current").json()["events"][-1]["kind"] == "done"
