@@ -10,11 +10,17 @@ from buscapiso.transporte import haversine_m
 
 TOLERANCIA_PRECIO = 10      # euros
 TOLERANCIA_METROS = 150.0
+TOLERANCIA_M2 = 5           # el mismo piso puede anunciarse con 70 y 72 m2
 
 
 def _mismo_piso(a, b) -> bool:
     if a.portal == b.portal:
         return False                      # dentro de un portal ya deduplicamos por id
+    if a.tipo != b.tipo:
+        return False                      # una habitacion no es el piso entero
+    if (a.superficie_m2 and b.superficie_m2
+            and abs(a.superficie_m2 - b.superficie_m2) > TOLERANCIA_M2):
+        return False
     if a.precio is None or b.precio is None:
         return False
     if abs(a.precio - b.precio) > TOLERANCIA_PRECIO:
@@ -30,7 +36,9 @@ def _fusionar(ganador, perdedor):
                          ("foto", ""), ("companeros", None), ("habitaciones", None),
                          ("gastos_extra", None), ("edad_companeros", ""),
                          ("disponible_desde", ""), ("admite_parejas", None),
-                         ("barrio", ""), ("direccion", "")):
+                         ("barrio", ""), ("direccion", ""), ("superficie_m2", None),
+                         ("banos", None), ("planta", ""), ("ascensor", None),
+                         ("amueblado", None)):
         if getattr(ganador, campo) in (vacio, None) and getattr(perdedor, campo) not in (vacio, None):
             setattr(ganador, campo, getattr(perdedor, campo))
     if not ganador.genero_confirmado and perdedor.genero_confirmado:

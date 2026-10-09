@@ -4,7 +4,10 @@ import CriteriaBar from './CriteriaBar.svelte';
 import type { SearchProfile } from '../api';
 
 const profile = {
-  name: 'default', sources: ['idealista', 'fotocasa'],
+  name: 'default', listing_type: 'room', sources: ['idealista', 'fotocasa'],
+  flat_sources: ['fotocasa', 'habitaclia'],
+  flat: { ideal_rent: 1100, max_rent: 1400, assumed_bills: 120, min_bedrooms: 1, min_surface_m2: null,
+          elevator_required: false, furnished: 'any' },
   destinations: [{ name: 'Fira', lat: 41.35, lon: 2.13, max_minutes: 30, minute_weight: 2, mode: 'transit', depart_at: '08:30' },
                  { name: 'Gym', lat: 41.38, lon: 2.17, max_minutes: null, minute_weight: 1, mode: 'walk', depart_at: '19:00' }],
   budget: { ideal_total: 500, max_total: 650, assumed_expenses: 55 },
@@ -56,4 +59,34 @@ test('cancel closes the editor without saving', async () => {
   await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
   expect(onsave).not.toHaveBeenCalled();
   expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
+});
+
+test('switching to whole flats keeps the room budget and sources', async () => {
+  const onsave = vi.fn();
+  render(CriteriaBar, { profile, onsave });
+  await userEvent.click(screen.getByRole('button', { name: 'Rooms' }));
+  await userEvent.click(screen.getByLabelText('A whole flat to rent'));
+  await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+  const saved = onsave.mock.calls[0][0] as SearchProfile;
+  expect(saved.listing_type).toBe('flat');
+  expect(saved.budget.max_total).toBe(650);
+  expect(saved.sources).toEqual(['idealista', 'fotocasa']);
+});
+
+test('a flat profile edits the flat rent, size and flat portals', async () => {
+  const onsave = vi.fn();
+  const flat = { ...profile, listing_type: 'flat' } as SearchProfile;
+  render(CriteriaBar, { profile: flat, onsave });
+  await userEvent.click(screen.getByRole('button', { name: '1+ bedroom' }));
+  const m2 = screen.getByLabelText('Size, at least (m²)');
+  await userEvent.type(m2, '70');
+  await userEvent.click(screen.getByLabelText('It must have a lift'));
+  await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+  const saved = onsave.mock.calls[0][0] as SearchProfile;
+  expect(saved.flat.min_surface_m2).toBe(70);
+  expect(saved.flat.elevator_required).toBe(true);
+
+  await userEvent.click(screen.getByRole('button', { name: '2 portals' }));
+  expect(screen.getByLabelText('habitaclia')).toBeChecked();
+  expect(screen.queryByLabelText('idealista')).toBeNull();
 });

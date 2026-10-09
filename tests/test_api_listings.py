@@ -117,3 +117,25 @@ def test_listings_saved_before_phase_0_still_show_their_travel_times(tmp_path):
     l = listing_from_row(fila)
     assert l.travel == {"Fira": 19.2, "Collblanc": 7.6}
     assert l.routes == {"Fira": "4 min a Sants + L5 > L9S"}
+
+
+def test_flats_come_with_their_type_and_details(tmp_path):
+    ruta = tmp_path / "f.db"
+    con = almacen.abrir(ruta)
+    piso = Anuncio(portal="habitaclia", id_portal="9", url="https://x/9", tipo="piso",
+                   precio=1200, habitaciones=3, superficie_m2=85, banos=2, planta="4",
+                   ascensor=True, amueblado=False)
+    almacen.registrar(con, [piso])
+    # Un anuncio guardado antes de la fase 5, sin campo "tipo".
+    con.execute("INSERT INTO anuncios (id, portal, id_portal, url, primera_vez, ultima_vez,"
+                " estado, datos, grupo) VALUES ('old', 'idealista', '1', 'u', '2026-01-01',"
+                " '2026-01-01', 'new', '{\"id\": \"old\", \"portal\": \"idealista\"}', 'accepted')")
+    con.commit()
+    con.close()
+    c = TestClient(create_app(db_path=ruta, static_dir=tmp_path / "no-dist"))
+    por_id = {x["id"]: x for x in c.get("/api/listings").json()}
+    f = por_id[piso.id]
+    assert (f["type"], f["bedrooms"], f["surface_m2"], f["bathrooms"], f["floor"],
+            f["elevator"], f["furnished"]) == ("flat", 3, 85, 2, "4", True, False)
+    assert por_id["old"]["type"] == "room"
+    assert c.get("/api/meta").json()["flat_sources"] == ["fotocasa", "habitaclia"]

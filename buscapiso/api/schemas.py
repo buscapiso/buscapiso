@@ -26,6 +26,7 @@ class Listing(BaseModel):
     id: str
     portal: str
     url: str
+    type: Literal["room", "flat"] = "room"
     title: str
     price: int | None
     expenses: int | None
@@ -49,6 +50,12 @@ class Listing(BaseModel):
     gender: str
     gender_confirmed: bool
     roommates: int | None
+    bedrooms: int | None = None
+    surface_m2: int | None = None
+    bathrooms: int | None = None
+    floor: str = ""
+    elevator: bool | None = None
+    furnished: bool | None = None
     available_from: str
     published: str
     also_on: list[str]
@@ -96,6 +103,8 @@ def listing_from_row(row: dict) -> Listing:
     d = row["datos"]
     return Listing(
         id=d["id"], portal=d["portal"], url=_web_url(d.get("url", "")), title=d.get("titulo", ""),
+        # Los anuncios guardados antes de la fase 5 no tienen tipo: eran habitaciones.
+        type="flat" if d.get("tipo") == "piso" else "room",
         price=d.get("precio"), expenses=d.get("gastos_extra"),
         total_cost=d.get("coste_total"),
         neighbourhood=d.get("barrio", ""), municipality=d.get("municipio", ""),
@@ -109,7 +118,10 @@ def listing_from_row(row: dict) -> Listing:
         score=d.get("puntuacion", 0.0), reasons=d.get("motivos", []),
         gender=_GENERO.get(d.get("genero_piso", "desconocido"), "unknown"),
         gender_confirmed=d.get("genero_confirmado", False),
-        roommates=d.get("companeros"), available_from=d.get("disponible_desde", ""),
+        roommates=d.get("companeros"), bedrooms=d.get("habitaciones"),
+        surface_m2=d.get("superficie_m2"), bathrooms=d.get("banos"),
+        floor=d.get("planta", ""), elevator=d.get("ascensor"), furnished=d.get("amueblado"),
+        available_from=d.get("disponible_desde", ""),
         published=d.get("publicado_texto", ""), also_on=d.get("tambien_en", []),
         status=row["estado"], note=row["nota"], group=row["grupo"],
         first_seen=row["primera_vez"], last_seen=row["ultima_vez"],

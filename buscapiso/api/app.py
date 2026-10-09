@@ -35,6 +35,7 @@ from buscapiso.travel import (TRANSITOUS_URL, GraphProvider, TravelError,
 
 WEB_DIST = pathlib.Path(__file__).resolve().parents[1] / "web_dist"
 SOURCES = ["idealista", "fotocasa", "roomgo", "depisoenpiso"]
+FLAT_SOURCES = ["fotocasa", "habitaclia"]
 GENDERS = ["female_only", "male_only", "mixed", "any"]
 
 
@@ -210,6 +211,7 @@ def create_app(db_path: pathlib.Path | None = None,
     @app.get("/api/meta")
     def meta() -> dict:
         return {"statuses": list(almacen.ESTADOS), "sources": SOURCES,
+                "flat_sources": FLAT_SOURCES,
                 "genders": GENDERS}
 
     @app.get("/api/listings")

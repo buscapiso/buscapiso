@@ -1,13 +1,16 @@
 import { render, screen, within } from '@testing-library/svelte';
 import Rooms from './Rooms.svelte';
 
-const L = (id: string, status: string, group = 'accepted') => ({
-  id, status, group, title: `Room ${id}`, total_cost: 500, price: 450, expenses: 50, score: 90,
+const L = (id: string, status: string, group = 'accepted', type = 'room') => ({
+  id, status, group, type, title: `${type === 'flat' ? 'Flat' : 'Room'} ${id}`, total_cost: 500, price: 450, expenses: 50, score: 90,
   travel: {}, routes: {}, neighbourhood: 'Sants', municipality: 'Barcelona', photo: '', portal: 'idealista',
   lat: 41.37, lon: 2.14, summary: '', reasons: [],
 });
 
-const profile = { name: 'default', sources: ['idealista'], destinations: [],
+const FLAT = { ideal_rent: 1100, max_rent: 1400, assumed_bills: 120, min_bedrooms: 2,
+  min_surface_m2: 60, elevator_required: false, furnished: 'any' };
+const profile = { name: 'default', listing_type: 'room', sources: ['idealista'],
+  flat_sources: ['fotocasa', 'habitaclia'], flat: FLAT, destinations: [],
   budget: { ideal_total: 500, max_total: 650, assumed_expenses: 55 },
   household: { gender: 'female_only' }, zones: { exclude: [], penalize: [], prefer: [] }, crawl: {}, weights: {} };
 
@@ -67,4 +70,22 @@ test('the first time, it shows where to start', async () => {
   expect(await screen.findByRole('heading', { name: 'Welcome to buscapiso' })).toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'Add the places you go often' })).toHaveAttribute('href', '#/settings/places');
   expect(screen.getByRole('link', { name: 'Set your budget and household' })).toHaveAttribute('href', '#/settings');
+});
+
+test('a flat search shows only whole flats, and says how many rooms are hidden', async () => {
+  vi.mocked(globalThis.fetch).mockImplementation(async (url) => {
+    const u = String(url);
+    if (u.includes('/api/listings')) return new Response(JSON.stringify([
+      L('a', 'new'), L('b', 'new'), L('x', 'new', 'accepted', 'flat')]));
+    if (u.includes('/api/profiles/active')) return new Response(JSON.stringify({ ...profile, listing_type: 'flat' }));
+    return new Response(JSON.stringify({ running: false, id: null, events: [], summary: null }));
+  });
+  render(Rooms, { filter: 'new', view: 'list' });
+  expect(await screen.findByText('Flat x')).toBeInTheDocument();
+  expect(screen.queryByText('Room a')).toBeNull();
+  expect(screen.getByText(/2 saved rooms are hidden because you're looking for whole flats/)).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Whole flats' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Up to 1400 €' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: '2+ bedrooms · 60+ m²' })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Women only' })).toBeNull();
 });

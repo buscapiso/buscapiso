@@ -53,6 +53,16 @@
     <p class="cost"><strong>{l.total_cost ?? '?'} €</strong> {t('listing.perMonth')}
       <small>{costLine(l)}</small></p>
 
+    {#if l.type === 'flat'}
+      <ul class="facts">
+        {#if l.bedrooms !== null}<li>{t(l.bedrooms === 1 ? 'listing.bedroom' : 'listing.bedrooms', { count: l.bedrooms })}</li>{/if}
+        {#if l.bathrooms !== null}<li>{t(l.bathrooms === 1 ? 'listing.bathroom' : 'listing.bathrooms', { count: l.bathrooms })}</li>{/if}
+        {#if l.surface_m2}<li>{t('listing.surface', { m2: l.surface_m2 })}</li>{/if}
+        {#if l.floor}<li>{t('listing.floor', { floor: l.floor })}</li>{/if}
+        {#if l.elevator}<li>{t('listing.lift')}</li>{/if}
+        {#if l.furnished !== null}<li>{t(l.furnished ? 'listing.furnished' : 'listing.unfurnished')}</li>{/if}
+      </ul>
+    {/if}
     {#if l.group === 'possible'}<p class="warn">{t('listing.genderUnknown')}</p>{/if}
 
     <div class="row">
@@ -127,6 +137,9 @@
 {/if}
 
 <style>
+  .facts { list-style: none; padding: 0; margin: 0 0 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .facts li { border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; font-size: 14px;
+    background: var(--surface); }
   .flags { border-left: 3px solid var(--warn); padding: 2px 12px; margin: 8px 0; }
   .flags ul, .proscons ul { margin: 4px 0; padding-left: 18px; }
   .proscons { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; }

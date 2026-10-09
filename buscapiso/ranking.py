@@ -9,7 +9,9 @@ from __future__ import annotations
 import datetime as dt
 import re
 
-from buscapiso.modelo import DESCONOCIDO, GENERO_CUALQUIERA, Anuncio
+from buscapiso.modelo import (DESCONOCIDO, GENERO_CUALQUIERA, TIPO_HABITACION, TIPO_PISO,
+                              Anuncio)
+from buscapiso.profiles import DEFAULT_WEIGHTS
 
 _AMBIENTE_JOVEN = re.compile(
     r"estudiant|j[oó]ven|joven|profesional|trabajador|erasmus|universitari", re.I)
@@ -39,6 +41,35 @@ def _publicado(a: Anuncio) -> str:
     return "posted recently"
 
 
+SUPERFICIE_MINIMA_PISO = 15
+_TIPO = {TIPO_HABITACION: "a room in a shared flat", TIPO_PISO: "a whole flat"}
+
+
+def _filtro_piso(a: Anuncio, piso: dict) -> str | None:
+    """Motivo para dejar fuera un piso entero, o None si cumple.
+
+    Lo que el anuncio no dice no descarta: Fotocasa solo pone "ascensor"
+    cuando lo hay, asi que su ausencia no significa que no haya.
+    """
+    # Habitaciones anunciadas como piso: 450 EUR y 9 m2 en "alquiler viviendas".
+    if a.superficie_m2 is not None and a.superficie_m2 < SUPERFICIE_MINIMA_PISO:
+        return f"{a.superficie_m2} m², looks like a single room"
+    minimo = piso.get("habitaciones_min") or 0
+    if a.habitaciones is not None and a.habitaciones < minimo:
+        return f"{a.habitaciones} bedroom{'s' if a.habitaciones != 1 else ''}, you want {minimo}+"
+    m2 = piso.get("superficie_min")
+    if m2 and a.superficie_m2 is not None and a.superficie_m2 < m2:
+        return f"{a.superficie_m2} m², you want {m2}+"
+    if piso.get("ascensor") and a.ascensor is False:
+        return "no lift"
+    amueblado = piso.get("amueblado", "da_igual")
+    if amueblado == "si" and a.amueblado is False:
+        return "unfurnished"
+    if amueblado == "no" and a.amueblado is True:
+        return "furnished"
+    return None
+
+
 def _texto(a: Anuncio) -> str:
     return f"{a.titulo} {a.descripcion}"
 
@@ -63,11 +94,17 @@ def filtrar(anuncios: list[Anuncio], cfg: dict, zonas: dict,
 
     ok, posibles, fuera = [], [], []
     preguntar = req.get("preguntar_si_genero_desconocido", False)
+    tipo = cfg.get("tipo", TIPO_HABITACION)
+    piso = tipo == TIPO_PISO
     for a in anuncios:
         if a.id in descartados:
             fuera.append((a, "you discarded it before")); continue
+        if a.tipo != tipo:
+            fuera.append((a, f"{_TIPO[a.tipo]}, not {_TIPO[tipo]}")); continue
         dudoso = False
-        genero = req.get("genero", GENERO_CUALQUIERA)
+        # En un piso entero no hay con quien convivir: ni genero, ni
+        # propietario, ni normas de visitas.
+        genero = GENERO_CUALQUIERA if piso else req.get("genero", GENERO_CUALQUIERA)
         if genero != GENERO_CUALQUIERA and a.genero_piso != genero:
             if a.genero_piso == DESCONOCIDO and preguntar:
                 dudoso = True          # sigue el resto de filtros y va aparte
@@ -81,9 +118,13 @@ def filtrar(anuncios: list[Anuncio], cfg: dict, zonas: dict,
             fuera.append((a, "no price")); continue
         if estimado > pres["coste_total_maximo"]:
             fuera.append((a, f"{estimado} € a month in total, above your maximum")); continue
-        if req.get("sin_propietario") and a.propietario_vive is True:
+        if piso:
+            motivo = _filtro_piso(a, cfg.get("piso") or {})
+            if motivo:
+                fuera.append((a, motivo)); continue
+        elif req.get("sin_propietario") and a.propietario_vive is True:
             fuera.append((a, "the owner lives in the flat")); continue
-        if req.get("visitas_permitidas") == "estricto":
+        elif req.get("visitas_permitidas") == "estricto":
             if a.visitas_permitidas is False or _VISITAS_TEXTO_NO.search(_texto(a)):
                 fuera.append((a, "no guests allowed")); continue
         limitados = [d for d in destinos if d.get("max_minutos") is not None]
@@ -151,7 +192,8 @@ def puntuar(a: Anuncio, cfg: dict, zonas: dict) -> float:
         total += p["novedad"]
         motivos.append(f"{_publicado(a)} (+{p['novedad']:.0f})")
 
-    if _AMBIENTE_JOVEN.search(_texto(a)):
+    piso = a.tipo == TIPO_PISO
+    if not piso and _AMBIENTE_JOVEN.search(_texto(a)):
         total += p["ambiente_joven"]
         motivos.append(f"young people or students (+{p['ambiente_joven']:.0f})")
     if _AMBIENTE_MALO.search(_texto(a)):
@@ -163,25 +205,27 @@ def puntuar(a: Anuncio, cfg: dict, zonas: dict) -> float:
     for alerta in a.ia_alertas:
         motivos.append(f"AI warning: {alerta}")
 
-    if a.companeros and a.companeros > p["companeros_comodos"]:
+    if piso:
+        total += _puntuar_piso(a, cfg.get("piso") or {}, p, motivos)
+    elif a.companeros and a.companeros > p["companeros_comodos"]:
         castigo = (a.companeros - p["companeros_comodos"]) * p["por_companero_extra"]
         total -= castigo
         motivos.append(f"{a.companeros} roommates ({-castigo:+.0f})")
 
-    if a.visitas_permitidas is True or _VISITAS_TEXTO_SI.search(_texto(a)):
+    if not piso and (a.visitas_permitidas is True or _VISITAS_TEXTO_SI.search(_texto(a))):
         total += p["visitas"]
         motivos.append(f"guests allowed (+{p['visitas']:.0f})")
-    elif a.ambiente and _AMBIENTE_CERRADO.search(a.ambiente):
+    elif not piso and a.ambiente and _AMBIENTE_CERRADO.search(a.ambiente):
         # Costumbre de la casa, no norma: resta, pero no descarta.
         total -= p["visitas"]
         motivos.append(f"a quiet house that rarely has guests (-{p['visitas']:.0f})")
-    if a.admite_parejas is False:
+    if not piso and a.admite_parejas is False:
         total -= p["no_admite_parejas"]
         motivos.append(f"no couples (-{p['no_admite_parejas']:.0f})")
 
     # Edad real de los companeros: mucho mejor senal que buscar "joven" en
     # el texto libre del anuncio.
-    if a.edad_companeros:
+    if a.edad_companeros and not piso:
         try:
             menor, mayor = (int(x) for x in a.edad_companeros.split("-"))
             if abs((menor + mayor) / 2 - p["edad_afin"]) <= p["margen_edad"]:
@@ -228,6 +272,28 @@ def puntuar(a: Anuncio, cfg: dict, zonas: dict) -> float:
     a.puntuacion = round(total, 1)
     a.motivos = motivos
     return a.puntuacion
+
+
+def _puntuar_piso(a: Anuncio, piso: dict, p: dict, motivos: list[str]) -> float:
+    """Lo propio de un piso entero: metros por encima del minimo, y decir lo
+    que el anuncio calla de lo que la usuaria exige."""
+    suma = 0.0
+    if a.superficie_m2:
+        base = piso.get("superficie_min") or 0
+        # Un config.yaml anterior a la fase 5 no trae estos pesos.
+        por_m2 = p.get("por_m2_extra", DEFAULT_WEIGHTS["por_m2_extra"])
+        tope = p.get("tope_m2_extra", DEFAULT_WEIGHTS["tope_m2_extra"])
+        extra = min((a.superficie_m2 - base) * por_m2, tope) if base else 0
+        if extra > 0:
+            suma += extra
+            motivos.append(f"{a.superficie_m2} m² (+{extra:.0f})")
+        else:
+            motivos.append(f"{a.superficie_m2} m²")
+    if piso.get("ascensor") and a.ascensor is None:
+        motivos.append("lift not stated: ask")
+    if piso.get("amueblado", "da_igual") != "da_igual" and a.amueblado is None:
+        motivos.append("furnishing not stated: ask")
+    return suma
 
 
 def ordenar(anuncios: list[Anuncio], cfg: dict, zonas: dict) -> list[Anuncio]:

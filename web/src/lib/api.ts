@@ -2,8 +2,10 @@ export type Status =
   | 'new' | 'liked' | 'hidden' | 'contacted' | 'visit_scheduled'
   | 'visited' | 'applied' | 'got_it' | 'rejected' | 'discarded';
 
+export type ListingType = 'room' | 'flat';
+
 export interface Listing {
-  id: string; portal: string; url: string; title: string;
+  id: string; portal: string; url: string; title: string; type: ListingType;
   price: number | null; expenses: number | null; total_cost: number | null;
   neighbourhood: string; municipality: string;
   lat: number | null; lon: number | null; approximate_location: boolean;
@@ -12,7 +14,10 @@ export interface Listing {
   summary: string; pros: string[]; cons: string[]; red_flags: string[];
   score: number; reasons: string[];
   gender: 'female_only' | 'male_only' | 'mixed' | 'unknown'; gender_confirmed: boolean;
-  roommates: number | null; available_from: string; published: string; also_on: string[];
+  roommates: number | null;
+  bedrooms: number | null; surface_m2: number | null; bathrooms: number | null;
+  floor: string; elevator: boolean | null; furnished: boolean | null;
+  available_from: string; published: string; also_on: string[];
   status: Status; note: string; group: 'accepted' | 'possible';
   first_seen: string; last_seen: string;
 }
@@ -26,9 +31,18 @@ export interface Destination {
   mode: 'transit' | 'walk' | 'bike'; depart_at: string;
 }
 
+export interface FlatPrefs {
+  ideal_rent: number; max_rent: number; assumed_bills: number;
+  min_bedrooms: number; min_surface_m2: number | null;
+  elevator_required: boolean; furnished: 'any' | 'yes' | 'no';
+}
+
 export interface SearchProfile {
   name: string;
+  listing_type: ListingType;
   sources: string[];
+  flat_sources: string[];
+  flat: FlatPrefs;
   destinations: Destination[];
   budget: { ideal_total: number; max_total: number; assumed_expenses: number };
   household: {
@@ -44,7 +58,7 @@ export interface SearchProfile {
 }
 
 export interface ProfileSummary { name: string; active: boolean }
-export interface Meta { statuses: Status[]; sources: string[]; genders: string[] }
+export interface Meta { statuses: Status[]; sources: string[]; flat_sources: string[]; genders: string[] }
 
 export interface SearchEvent {
   kind: 'stage' | 'progress' | 'info' | 'warning' | 'captcha' | 'done' | 'error';

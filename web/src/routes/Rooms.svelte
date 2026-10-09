@@ -28,8 +28,13 @@
     hidden: (l) => l.status === 'hidden' || l.status === 'discarded',
   };
 
-  const shown = $derived((all ?? []).filter(MATCH[filter]));
-  const count = (f: Filter) => (all ?? []).filter(MATCH[f]).length;
+  // Habitaciones y pisos enteros nunca se mezclan: se ve el tipo que busca
+  // el perfil, y se dice cuantos del otro quedan ocultos.
+  const type = $derived(profile?.listing_type ?? 'room');
+  const ofType = $derived(all === null ? null : all.filter((l) => l.type === type));
+  const otherType = $derived((all?.length ?? 0) - (ofType?.length ?? 0));
+  const shown = $derived((ofType ?? []).filter(MATCH[filter]));
+  const count = (f: Filter) => (ofType ?? []).filter(MATCH[f]).length;
   const best = $derived(Math.max(0, ...shown.map((l) => l.score)));
   const points = $derived<MapPoint[]>(shown.filter((l) => l.lat !== null && l.lon !== null).map((l) => {
     const [place, minutes] = Object.entries(l.travel)[0] ?? ['', 0];
@@ -93,9 +98,15 @@
   </nav>
 </div>
 
-{#if all === null}
+{#if ofType && otherType > 0}
+  <p class="muted other">{t('rooms.otherType', { count: otherType,
+    what: t(type === 'flat' ? 'type.room' : 'type.flat').toLowerCase(),
+    current: t(`type.${type}`).toLowerCase() })}</p>
+{/if}
+
+{#if ofType === null}
   <p class="muted">…</p>
-{:else if all.length === 0 && profile && profile.destinations.length === 0}
+{:else if ofType.length === 0 && profile && profile.destinations.length === 0}
   <section class="welcome">
     <h2>{t('welcome.title')}</h2>
     <p>{t('welcome.intro')}</p>
@@ -106,11 +117,11 @@
       <li>{t('welcome.search')} <small>{t('welcome.searchHelp')}</small></li>
     </ol>
   </section>
-{:else if all.length === 0}
+{:else if ofType.length === 0}
   <div class="empty"><p>{t('empty.firstRun')}</p>
     <button class="primary" onclick={() => panel?.start(false)}>{t('search.now')}</button></div>
 {:else if view === 'board'}
-  <BoardView items={all} onmove={changeStatus} />
+  <BoardView items={ofType} onmove={changeStatus} />
 {:else if view === 'map'}
   <MapView label={t('map.title')} {points} places={profile?.destinations ?? []} height="65vh" />
 {:else if shown.length === 0}
@@ -141,4 +152,5 @@
   .empty { text-align: center; padding: 40px 16px; color: var(--muted); border: 1px dashed var(--line); border-radius: var(--radius); }
   .error { color: var(--bad); }
   .muted { color: var(--muted); }
+  .other { font-size: 13px; margin: 0 0 8px; }
 </style>

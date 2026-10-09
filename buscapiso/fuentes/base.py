@@ -57,6 +57,20 @@ def inferir_genero(texto: str) -> tuple[str, bool]:
     return DESCONOCIDO, False
 
 
+def superficie(valor) -> int | None:
+    """Metros cuadrados, o None si el portal no los sabe.
+
+    Muchos anunciantes rellenan "1" para no dar el dato: 17 pisos de 2
+    habitaciones y 900-1.400 EUR en Habitaclia el 2026-10-09. Leerlo como
+    1 m2 los descartaria todos por pequenos.
+    """
+    try:
+        n = int(valor)
+    except (TypeError, ValueError):
+        return None
+    return n if n > 1 else None
+
+
 class Fuente(ABC):
     nombre: str = "base"
 

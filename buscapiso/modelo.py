@@ -11,6 +11,8 @@ GENERO_MIXTO = "mixto"
 GENERO_CHICOS = "chicos"
 DESCONOCIDO = "desconocido"
 GENERO_CUALQUIERA = "cualquiera"
+TIPO_HABITACION = "habitacion"
+TIPO_PISO = "piso"
 
 
 @dataclass
@@ -18,6 +20,9 @@ class Anuncio:
     portal: str
     id_portal: str
     url: str
+    # Habitacion en piso compartido o piso entero. Los anuncios guardados
+    # antes de la fase 5 no tienen el campo: eran todos habitaciones.
+    tipo: str = TIPO_HABITACION
     titulo: str = ""
     precio: int | None = None
     gastos_extra: int | None = None      # None = el anuncio no lo dice
@@ -51,6 +56,12 @@ class Anuncio:
     foto: str = ""
     ficha_leida: bool = False
     descripcion_extra: str = ""   # avisos del portal (alquiler temporal, etc.)
+    # Pisos enteros
+    superficie_m2: int | None = None
+    banos: int | None = None
+    planta: str = ""
+    ascensor: bool | None = None      # None = el anuncio no lo dice
+    amueblado: bool | None = None
 
     # Calculados despues
     trayectos: dict[str, float] = field(default_factory=dict)  # minutos por destino
@@ -102,7 +113,7 @@ class Anuncio:
         """Cuantos campos utiles trae. Decide cual gana al deduplicar."""
         campos = (self.lat, self.descripcion, self.foto, self.companeros,
                   self.habitaciones, self.gastos_extra, self.edad_companeros,
-                  self.disponible_desde, self.admite_parejas)
+                  self.disponible_desde, self.admite_parejas, self.superficie_m2)
         puntos = sum(1 for c in campos if c not in (None, "", []))
         return puntos + (3 if self.genero_confirmado else 0)
 

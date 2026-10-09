@@ -13,6 +13,8 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 Source = Literal["idealista", "fotocasa", "roomgo", "depisoenpiso"]
+FlatSource = Literal["fotocasa", "habitaclia"]
+ListingType = Literal["room", "flat"]
 Sort = Literal["newest", "cheapest", "relevance"]
 Mode = Literal["transit", "walk", "bike"]
 
@@ -38,6 +40,8 @@ DEFAULT_WEIGHTS: dict[str, float] = {
     "zona_preferida": 12,
     "zona_penalizada": 20,
     "ubicacion_estimada": 6,
+    "por_m2_extra": 0.25,
+    "tope_m2_extra": 15,
 }
 
 _GENDER = {"female_only": "chicas", "male_only": "chicos", "mixed": "mixto",
@@ -45,6 +49,8 @@ _GENDER = {"female_only": "chicas", "male_only": "chicos", "mixed": "mixto",
 _MODE = {"transit": "transporte", "walk": "a_pie", "bike": "bici"}
 _VISITS = {"strict": "estricto", "preferred": "preferible", "indifferent": "indiferente"}
 _SORT = {"newest": "nuevos", "cheapest": "baratos", "relevance": "relevancia"}
+_TYPE = {"room": "habitacion", "flat": "piso"}
+_FURNISHED = {"any": "da_igual", "yes": "si", "no": "no"}
 _IDEALISTA = {"no_live_in_owner": "sin_propietario", "with_students": "con_estudiantes",
               "with_workers": "con_trabajadores", "exterior": "exterior",
               "non_smokers": "sin_fumadores", "last_48h": "publicado_48h"}
@@ -73,6 +79,25 @@ class Budget(BaseModel):
     def _ideal_not_above_max(self) -> "Budget":
         if self.ideal_total > self.max_total:
             raise ValueError("ideal_total cannot be above max_total")
+        return self
+
+
+class FlatPrefs(BaseModel):
+    """Lo que cuenta cuando se busca un piso entero. Tiene su propio
+    presupuesto: el de una habitacion no sirve para un piso, y asi cambiar
+    de tipo no pisa el otro."""
+    ideal_rent: int = Field(default=1100, gt=0)
+    max_rent: int = Field(default=1400, gt=0)
+    assumed_bills: int = Field(default=120, ge=0)
+    min_bedrooms: int = Field(default=1, ge=0, le=10)
+    min_surface_m2: int | None = Field(default=None, gt=0, le=1000)
+    elevator_required: bool = False
+    furnished: Literal["any", "yes", "no"] = "any"
+
+    @model_validator(mode="after")
+    def _ideal_not_above_max(self) -> "FlatPrefs":
+        if self.ideal_rent > self.max_rent:
+            raise ValueError("ideal_rent cannot be above max_rent")
         return self
 
 
@@ -111,9 +136,13 @@ class Crawl(BaseModel):
 
 class SearchProfile(BaseModel):
     name: str = Field(min_length=1, max_length=60)
+    listing_type: ListingType = "room"
     sources: list[Source] = Field(
         default_factory=lambda: ["idealista", "fotocasa", "roomgo", "depisoenpiso"],
         min_length=1)
+    flat_sources: list[FlatSource] = Field(
+        default_factory=lambda: ["fotocasa", "habitaclia"], min_length=1)
+    flat: FlatPrefs = Field(default_factory=FlatPrefs)
     destinations: list[Destination] = Field(default_factory=list)
     budget: Budget = Field(default_factory=Budget)
     household: Household = Field(default_factory=Household)
@@ -141,16 +170,36 @@ class SearchProfile(BaseModel):
 
 def to_engine_cfg(p: SearchProfile) -> tuple[dict, dict]:
     """(cfg, zonas) con la forma que espera pipeline.run_search."""
+    piso = p.listing_type == "flat"
     cfg = {
-        "fuentes": list(p.sources),
+        "tipo": _TYPE[p.listing_type],
+        "fuentes": list(p.flat_sources if piso else p.sources),
+        "fuentes_habitacion": list(p.sources),
+        "fuentes_piso": list(p.flat_sources),
         "filtros_idealista": {
             "precio_max": p.idealista.max_price,
             **{_IDEALISTA[k]: getattr(p.idealista, k) for k in _IDEALISTA},
         },
+        # El motor solo ve el presupuesto del tipo que se busca.
         "presupuesto": {
+            "coste_total_ideal": p.flat.ideal_rent if piso else p.budget.ideal_total,
+            "coste_total_maximo": p.flat.max_rent if piso else p.budget.max_total,
+            "gastos_si_no_declara": (p.flat.assumed_bills if piso
+                                     else p.budget.assumed_expenses),
+        },
+        "presupuesto_habitacion": {
             "coste_total_ideal": p.budget.ideal_total,
             "coste_total_maximo": p.budget.max_total,
             "gastos_si_no_declara": p.budget.assumed_expenses,
+        },
+        "piso": {
+            "coste_total_ideal": p.flat.ideal_rent,
+            "coste_total_maximo": p.flat.max_rent,
+            "gastos_si_no_declara": p.flat.assumed_bills,
+            "habitaciones_min": p.flat.min_bedrooms,
+            "superficie_min": p.flat.min_surface_m2,
+            "ascensor": p.flat.elevator_required,
+            "amueblado": _FURNISHED[p.flat.furnished],
         },
         "requisitos": {
             "genero": _GENDER[p.household.gender],
@@ -182,12 +231,28 @@ def to_engine_cfg(p: SearchProfile) -> tuple[dict, dict]:
 
 def from_engine_cfg(cfg: dict, zonas: dict, name: str) -> SearchProfile:
     """Convierte un config.yaml + zonas.yaml en un perfil."""
-    req, pres, bus = cfg["requisitos"], cfg["presupuesto"], cfg["busqueda"]
+    req, bus = cfg["requisitos"], cfg["busqueda"]
+    # Con un piso, "presupuesto" es el del piso y el de la habitacion va aparte.
+    pres = cfg.get("presupuesto_habitacion") or cfg["presupuesto"]
+    piso = cfg.get("piso") or {}
+    tipo = _invert(_TYPE)[cfg.get("tipo", "habitacion")]
     filtros = cfg.get("filtros_idealista", {})
     idealista_en = _invert(_IDEALISTA)
     return SearchProfile(
         name=name,
-        sources=cfg.get("fuentes", ["idealista"]),
+        listing_type=tipo,
+        sources=cfg.get("fuentes_habitacion") or (
+            cfg.get("fuentes", ["idealista"]) if tipo == "room" else ["idealista"]),
+        flat_sources=cfg.get("fuentes_piso") or ["fotocasa", "habitaclia"],
+        flat=FlatPrefs(
+            ideal_rent=piso.get("coste_total_ideal", 1100),
+            max_rent=piso.get("coste_total_maximo", 1400),
+            assumed_bills=piso.get("gastos_si_no_declara", 120),
+            min_bedrooms=piso.get("habitaciones_min", 1),
+            min_surface_m2=piso.get("superficie_min"),
+            elevator_required=piso.get("ascensor", False),
+            furnished=_invert(_FURNISHED)[piso.get("amueblado", "da_igual")],
+        ),
         destinations=[
             Destination(name=d["nombre"], lat=d["lat"], lon=d["lon"],
                         max_minutes=d.get("max_minutos"),

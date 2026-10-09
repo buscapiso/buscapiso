@@ -164,3 +164,57 @@ def test_progress_messages_are_in_english(home, cfg):
     assert "re-reading" in texto and "calculating" in texto and "saving" in texto
     for palabra in ("anuncios", "situando", "calculando", "guardando", "zonas", "fichas"):
         assert palabra not in texto, palabra
+
+
+# --- pisos enteros (fase 5) ---
+from buscapiso import pipeline  # noqa: E402
+from buscapiso.profiles import SearchProfile, to_engine_cfg  # noqa: E402
+
+
+def _cfg_piso(**kw):
+    cfg, zonas = to_engine_cfg(SearchProfile(name="t", listing_type="flat", **kw))
+    return cfg, zonas
+
+
+def test_rescoring_from_cache_keeps_rooms_and_flats_apart(home):
+    for f in ("fotocasa_listado.html", "fotocasa_pisos.html", "habitaclia_pisos.html"):
+        shutil.copy(RAIZ / "tests" / "fixtures" / f,
+                    home / "cache" / f.replace("_listado", "_rooms").replace(".html", "_x.html"))
+    cfg, zonas = _cfg_piso(flat={"max_rent": 99999, "ideal_rent": 1000})
+    con = almacen.abrir(home / "t.db")
+    res = run_search(cfg, zonas, SearchOptions(from_cache=True, offline=True), con)
+    assert res.crawled > 0
+    assert {a.tipo for a in res.accepted} == {"piso"}
+    assert {a.portal for a in res.accepted} == {"fotocasa", "habitaclia"}
+
+    cfg_hab, zonas = to_engine_cfg(SearchProfile(name="t"))
+    res = run_search(cfg_hab, zonas, SearchOptions(from_cache=True, offline=True), con)
+    assert {a.tipo for a in res.accepted + res.possible} <= {"habitacion"}
+
+
+def test_a_flat_search_uses_flat_portals_and_no_browser(home, monkeypatch):
+    usadas, seen = [], []
+
+    class Falsa:
+        def __init__(self, nombre, tipo):
+            self.nombre, self.tipo = nombre, tipo
+
+        def buscar(self, cfg, max_paginas=3):
+            usadas.append((self.nombre, self.tipo, bool(cfg.get("zonas_habitaclia"))))
+            return []
+
+        def cerrar(self):
+            pass
+
+    monkeypatch.setattr(pipeline, "_crear_fuente", lambda n, t="habitacion": Falsa(n, t))
+    cfg, zonas = _cfg_piso()
+    cfg["fuentes"] = ["fotocasa", "habitaclia", "idealista"]
+    previous = events.set_sink(seen.append)
+    try:
+        run_search(cfg, zonas, SearchOptions(offline=True), almacen.abrir(home / "t.db"))
+    finally:
+        events.set_sink(previous)
+    assert usadas == [("fotocasa", "piso", True), ("habitaclia", "piso", True)]
+    textos = " ".join(e.message for e in seen)
+    assert "idealista is not searched for whole flats" in textos
+    assert "Chromium" not in textos

@@ -8,6 +8,12 @@
   const link = $derived(href({ name: 'listing', id: listing.id }));
   // Fotocasa titula con el barrio: no repetirlo justo debajo.
   const title = $derived(listing.title || listing.neighbourhood);
+  const facts = $derived(listing.type !== 'flat' ? '' : [
+    listing.bedrooms !== null ? t(listing.bedrooms === 1 ? 'listing.bedroom' : 'listing.bedrooms', { count: listing.bedrooms }) : '',
+    listing.surface_m2 ? t('listing.surface', { m2: listing.surface_m2 }) : '',
+    listing.elevator ? t('listing.lift') : '',
+    listing.furnished === true ? t('listing.furnished') : listing.furnished === false ? t('listing.unfurnished') : '',
+  ].filter(Boolean).join(' · '));
   const place = $derived(
     [title === listing.neighbourhood ? '' : listing.neighbourhood, listing.municipality]
       .filter(Boolean).join(', '));
@@ -22,6 +28,7 @@
       <span>{t('listing.perMonth')}</span> <small>{costLine(listing)}</small></p>
     <h3><a href={link}>{title}</a></h3>
     <p class="where">{place} <span class="portal">{listing.portal}</span></p>
+    {#if facts}<p class="facts">{facts}</p>{/if}
     {#if listing.summary}<p class="summary">{listing.summary}</p>{/if}
     <ul class="travel">
       {#each Object.entries(listing.travel) as [dest, minutes]}
@@ -59,10 +66,12 @@
   .cost strong { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
   .cost span { color: var(--muted); }
   .cost small { font-family: var(--text); color: var(--muted); font-size: 13px; margin-left: 4px; }
-  h3 { font-size: 16px; margin: 2px 0 0; font-weight: 600; }
+  h3 { font-size: 16px; margin: 2px 0 0; font-weight: 600;
+    display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   h3 a { color: var(--ink); text-decoration: none; }
   h3 a:hover { text-decoration: underline; }
   .where { color: var(--muted); font-size: 14px; margin: 0 0 6px; }
+  .facts { font-size: 14px; margin: -4px 0 6px; }
   .summary { font-size: 14px; margin: 0 0 6px; }
   .portal { margin-left: 8px; font-size: 12px; border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; }
   .travel { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; font-size: 14px; }

@@ -137,3 +137,62 @@ def test_la_antiguedad_sale_como_numero_de_dias(anuncios):
 def test_texto_y_numero_de_antiguedad_concuerdan(anuncios):
     a = next(x for x in anuncios if x.antiguedad_dias and x.antiguedad_dias > 1)
     assert str(a.antiguedad_dias) in a.publicado_texto
+
+
+# --- Pisos enteros (fase 5) ---
+
+from buscapiso.fuentes.fotocasa import Fotocasa  # noqa: E402
+from buscapiso.modelo import TIPO_HABITACION, TIPO_PISO  # noqa: E402
+
+PISOS = pathlib.Path(__file__).parent / "fixtures" / "fotocasa_pisos.html"
+
+
+@pytest.fixture(scope="module")
+def pisos():
+    return parsear_listado(PISOS.read_text(encoding="utf-8"))
+
+
+def test_rooms_are_rooms(anuncios):
+    assert {a.tipo for a in anuncios} == {TIPO_HABITACION}
+
+
+def test_flats_are_flats_with_their_details(pisos):
+    assert len(pisos) == 30
+    assert {a.tipo for a in pisos} == {TIPO_PISO}
+    assert sum(1 for a in pisos if a.superficie_m2) == 29
+    assert sum(1 for a in pisos if a.banos) == 22
+    assert sum(1 for a in pisos if a.ascensor) == 11
+    assert all(a.ascensor in (True, None) for a in pisos)
+    assert sum(1 for a in pisos if a.amueblado is True) == 24
+    assert sum(1 for a in pisos if a.amueblado is False) == 4
+
+
+def test_a_whole_flat_has_no_inferred_household(pisos):
+    assert {a.genero_piso for a in pisos} == {"desconocido"}
+
+
+def test_flat_url():
+    assert construir_url("barcelona-capital/todas-las-zonas", 2, tipo=TIPO_PISO) == (
+        "https://www.fotocasa.es/es/alquiler/viviendas/barcelona-capital/todas-las-zonas/l/2")
+
+
+def test_flats_are_read_by_plain_request_without_the_browser(monkeypatch):
+    html = PISOS.read_text(encoding="utf-8")
+    pedidas = []
+
+    def get(url):
+        pedidas.append(url)
+        return html
+
+    f = Fotocasa(tipo=TIPO_PISO, get=get, pausa=(0, 0))
+    res = f.buscar({"zonas_fotocasa": ["barcelona-capital/todas-las-zonas"],
+                    "busqueda": {"orden_fotocasa": "relevancia"}}, max_paginas=1)
+    assert len(res) == 30 and f._ctx is None
+    assert "/alquiler/viviendas/" in pedidas[0]
+
+
+def test_a_room_page_on_a_flat_search_gives_no_flats(anuncios):
+    html = (pathlib.Path(__file__).parent / "fixtures" / "fotocasa_listado.html").read_text(
+        encoding="utf-8")
+    f = Fotocasa(tipo=TIPO_PISO, get=lambda u: html, pausa=(0, 0))
+    assert f.buscar({"zonas_fotocasa": ["x"], "busqueda": {}}, max_paginas=1) == []

@@ -17,7 +17,7 @@ from buscapiso.cobertura import Catalogo
 from buscapiso.deduplicar import deduplicar
 from buscapiso.events import emit
 from buscapiso.geocodificador import Geocodificador
-from buscapiso.modelo import GENERO_CHICAS
+from buscapiso.modelo import GENERO_CHICAS, TIPO_HABITACION, TIPO_PISO
 from buscapiso.ranking import filtrar, ordenar
 from buscapiso.transporte import Red
 from buscapiso.travel import TravelError, graph_trip
@@ -64,7 +64,10 @@ def run_search(cfg: dict, zonas: dict, options: SearchOptions,
 
     if options.from_cache:
         _stage(1, "Re-reading the pages already downloaded (no browsing)...")
-        anuncios = _leer_cache(paths.cache_dir())
+        tipo = cfg.get("tipo", TIPO_HABITACION)
+        # La cache guarda paginas de habitaciones y de pisos: solo cuentan
+        # las del tipo que se busca.
+        anuncios = [a for a in _leer_cache(paths.cache_dir()) if a.tipo == tipo]
         brutos = len(anuncios)
         anuncios, fusionados = deduplicar(anuncios)
         emit("info", f"    {brutos} listings from the saved pages"
@@ -121,6 +124,7 @@ def _elegir_zonas(cfg: dict, red: Red, options: SearchOptions) -> None:
         [d for d in cfg.get("destinos", []) if not d.get("fuera_de_red")], red)
     cfg["municipios"] = catalogo.slugs(seleccion, "idealista")
     cfg["zonas_fotocasa"] = catalogo.slugs(seleccion, "fotocasa")
+    cfg["zonas_habitaclia"] = catalogo.slugs(seleccion, "habitaclia")
     emit("info", f"Areas to search: {len(seleccion)}",
          zones=[z["nombre"] for z in seleccion])
     emit("info", "   " + ", ".join(
@@ -194,6 +198,7 @@ def _leer_cache(carpeta: pathlib.Path) -> list:
     from buscapiso.fuentes.depisoenpiso import parsear_listado as parsear_dpp
     from buscapiso.fuentes.fotocasa import parsear_listado as parsear_fotocasa
     from buscapiso.fuentes.idealista import parsear_listado as parsear_idealista
+    from buscapiso.fuentes.habitaclia import parsear_listado as parsear_habitaclia
     from buscapiso.fuentes.roomgo import parsear_listado as parsear_roomgo
     anuncios, vistos = [], set()
     for f in sorted(carpeta.glob("*.html")):
@@ -204,6 +209,8 @@ def _leer_cache(carpeta: pathlib.Path) -> list:
             parser = parsear_dpp
         elif nombre.startswith("fotocasa_"):
             parser = parsear_fotocasa
+        elif nombre.startswith("habitaclia_"):
+            parser = parsear_habitaclia
         else:
             parser = parsear_idealista
         for a in parser(f.read_text(encoding="utf-8")):
@@ -214,7 +221,19 @@ def _leer_cache(carpeta: pathlib.Path) -> list:
     return anuncios
 
 
-def _crear_fuente(nombre: str):
+# Portales que publican cada tipo. Idealista tiene pisos enteros, pero sin
+# navegador responde con captcha: falta capturar una pagina real.
+PORTALES = {TIPO_HABITACION: ("idealista", "fotocasa", "roomgo", "depisoenpiso"),
+            TIPO_PISO: ("fotocasa", "habitaclia")}
+# Los que necesitan la ventana de Chromium.
+_CON_NAVEGADOR = {TIPO_HABITACION: {"idealista", "fotocasa", "roomgo", "depisoenpiso"},
+                  TIPO_PISO: set()}
+
+
+def _crear_fuente(nombre: str, tipo: str = TIPO_HABITACION):
+    if nombre == "habitaclia":
+        from buscapiso.fuentes.habitaclia import Habitaclia
+        return Habitaclia(cache_dir=paths.cache_dir())
     if nombre == "roomgo":
         from buscapiso.fuentes.roomgo import Roomgo
         return Roomgo(cache_dir=paths.cache_dir())
@@ -223,19 +242,28 @@ def _crear_fuente(nombre: str):
         return DePisoEnPiso(cache_dir=paths.cache_dir())
     if nombre == "fotocasa":
         from buscapiso.fuentes.fotocasa import Fotocasa
-        return Fotocasa(cache_dir=paths.cache_dir())
+        return Fotocasa(cache_dir=paths.cache_dir(), tipo=tipo)
     return None
 
 
 def _rastrear(cfg: dict, idealista, paginas: int) -> list:
-    activas = cfg.get("fuentes", ["idealista"])
-    _stage(1, f"Searching {', '.join(activas)}...")
-    emit("info", "    A Chromium window will open: leave it visible, that is what\n"
-                 "    keeps the portals from blocking. Solve any captcha it shows.\n")
+    tipo = cfg.get("tipo", TIPO_HABITACION)
+    activas = []
+    for nombre in cfg.get("fuentes", ["idealista"]):
+        if nombre in PORTALES[tipo]:
+            activas.append(nombre)
+        else:
+            emit("warning", f"  {nombre} is not searched for "
+                            f"{'whole flats' if tipo == TIPO_PISO else 'rooms'}; skipping it")
+    que = "whole flats" if tipo == TIPO_PISO else "rooms"
+    _stage(1, f"Searching {', '.join(activas) or 'nothing'} for {que}...")
+    if _CON_NAVEGADOR[tipo] & set(activas):
+        emit("info", "    A Chromium window will open: leave it visible, that is what\n"
+                     "    keeps the portals from blocking. Solve any captcha it shows.\n")
     anuncios: list = []
     otras: list = []
     for nombre in activas:
-        f = idealista if nombre == "idealista" else _crear_fuente(nombre)
+        f = idealista if nombre == "idealista" else _crear_fuente(nombre, tipo)
         if f is None:
             emit("warning", f"  {nombre}: unknown portal, skipping it")
             continue
@@ -255,7 +283,7 @@ def _rastrear(cfg: dict, idealista, paginas: int) -> list:
     brutos = len(anuncios)
     anuncios, fusionados = deduplicar(anuncios)
     if fusionados:
-        emit("info", f"    {brutos} listings, {fusionados} were the same room on "
+        emit("info", f"    {brutos} listings, {fusionados} were the same {que[:-1]} on "
                      f"two portals -> {len(anuncios)}\n")
     else:
         emit("info", f"    {len(anuncios)} listings found\n")
@@ -309,9 +337,9 @@ def _procesar(anuncios, cfg, zonas, con, geo, red, options, idealista,
                  f"{len(fuera)} left out\n")
 
     fichas = 0
-    if ok and not options.skip_details and not options.from_cache:
-        de_idealista = [a for a in ok if a.portal == "idealista"]
-        tope = min(cfg["busqueda"]["fichas_a_enriquecer"], len(de_idealista))
+    de_idealista = [a for a in ok if a.portal == "idealista"]
+    tope = min(cfg["busqueda"]["fichas_a_enriquecer"], len(de_idealista))
+    if tope and not options.skip_details and not options.from_cache:
         _stage(4, f"Reading the {tope} best full listings (guests, owner)...")
         idealista.enriquecer(de_idealista, maximo=tope)
         fichas = sum(1 for a in ok if a.ficha_leida)

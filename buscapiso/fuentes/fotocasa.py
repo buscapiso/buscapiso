@@ -1,4 +1,5 @@
-"""Fuente Fotocasa, seccion "compartir pisos" (~8.000 habitaciones en Barcelona).
+"""Fuente Fotocasa: "compartir pisos" (~8.000 habitaciones en Barcelona) y,
+desde la fase 5, "alquiler viviendas" (pisos enteros).
 
 Fotocasa no pinta los anuncios en el HTML: los entrega en un JSON incrustado
 en la pagina y los renderiza despues con JavaScript. Eso es una ventaja, no un
@@ -16,6 +17,11 @@ direccion real.
 
 Habitaclia, del mismo grupo, ya no tiene seccion de habitaciones: su pagina
 /pisoscompartidos.htm y las cuatro variantes de URL probadas devuelven error.
+Sus pisos enteros si: ver habitaclia.py.
+
+Los pisos enteros se piden primero por HTTP normal, que el 2026-10-09
+respondia con la pagina completa; solo si la respuesta es corta se abre el
+navegador. Asi una busqueda de pisos no necesita Chromium.
 """
 from __future__ import annotations
 
@@ -27,8 +33,8 @@ import time
 
 from buscapiso import navegador, paths
 from buscapiso.events import emit
-from buscapiso.fuentes.base import BloqueoAntiBot, Fuente, inferir_genero
-from buscapiso.modelo import Anuncio
+from buscapiso.fuentes.base import BloqueoAntiBot, Fuente, inferir_genero, superficie
+from buscapiso.modelo import DESCONOCIDO, TIPO_HABITACION, TIPO_PISO, Anuncio
 
 BASE = "https://www.fotocasa.es"
 PERFIL = paths.browser_profile("fotocasa")
@@ -43,8 +49,14 @@ _UNIDADES = {"DAYS": ("día", "días"), "HOURS": ("hora", "horas"),
              "MONTHS": ("mes", "meses"), "MINUTES": ("minuto", "minutos")}
 
 
-def construir_url(zona: str, pagina: int = 1, orden: str = "relevancia") -> str:
-    url = f"{BASE}/es/compartir/pisos/{zona}/l"
+_SECCION = {TIPO_HABITACION: "compartir/pisos", TIPO_PISO: "alquiler/viviendas"}
+# transactionTypeId del JSON: 5 es compartir, 3 es alquiler.
+_ALQUILER = 3
+
+
+def construir_url(zona: str, pagina: int = 1, orden: str = "relevancia",
+                  tipo: str = TIPO_HABITACION) -> str:
+    url = f"{BASE}/es/{_SECCION[tipo]}/{zona}/l"
     if pagina > 1:
         url += f"/{pagina}"
     return url + ORDENES.get(orden, "")
@@ -134,13 +146,19 @@ def _a_anuncio(bruto: dict) -> Anuncio | None:
             break
 
     descripcion = (bruto.get("description") or "").strip()
-    genero, confirmado = inferir_genero(descripcion)
+    piso = bruto.get("transactionTypeId") == _ALQUILER
+    # En un piso entero no hay convivencia que inferir.
+    genero, confirmado = (DESCONOCIDO, False) if piso else inferir_genero(descripcion)
+    claves = {f.get("key") for f in bruto.get("features") or []}
+    planta = _feature(bruto, "floor")
 
     return Anuncio(
         portal="fotocasa",
         id_portal=str(id_portal),
         url=BASE + ruta if ruta.startswith("/") else ruta,
-        titulo=dir_.get("upperLevel") or dir_.get("neighborhood") or "Habitación",
+        tipo=TIPO_PISO if piso else TIPO_HABITACION,
+        titulo=(dir_.get("upperLevel") or dir_.get("neighborhood")
+                or ("Piso" if piso else "Habitación")),
         precio=bruto.get("rawPrice") or None,
         direccion=dir_.get("upperLevel", "") or "",
         barrio=dir_.get("neighborhood") or dir_.get("district") or "",
@@ -152,6 +170,14 @@ def _a_anuncio(bruto: dict) -> Anuncio | None:
         genero_piso=genero,
         genero_confirmado=confirmado,
         habitaciones=_feature(bruto, "rooms"),
+        banos=_feature(bruto, "bathrooms"),
+        superficie_m2=superficie(_feature(bruto, "surface")),
+        planta="" if planta is None else str(planta),
+        # Fotocasa solo pone la caracteristica cuando la hay: su ausencia no
+        # dice que no haya ascensor.
+        ascensor=True if "elevator" in claves else None,
+        amueblado=(True if "furnished" in claves else
+                   False if "not_furnished" in claves else None),
         descripcion=descripcion,
         descripcion_extra=("Alquiler temporal según el portal"
                            if bruto.get("isTemporaryRental") else ""),
@@ -171,9 +197,15 @@ def parsear_listado(html: str) -> list[Anuncio]:
 class Fotocasa(Fuente):
     nombre = "fotocasa"
 
-    def __init__(self, cache_dir: pathlib.Path | None = None, pausa=(3.0, 7.0)):
+    def __init__(self, cache_dir: pathlib.Path | None = None, pausa=(3.0, 7.0),
+                 tipo: str = TIPO_HABITACION, get=None):
         self.cache_dir = cache_dir
         self.pausa = pausa
+        self.tipo = tipo
+        # Pisos: HTTP primero (get), navegador si la respuesta no sirve.
+        if get is None and tipo == TIPO_PISO:
+            from buscapiso.fuentes.habitaclia import _get_http as get
+        self._get = get
         self._ctx = self._pagina = None
 
     def _navegador(self):
@@ -183,7 +215,22 @@ class Fotocasa(Fuente):
         self._pagina = self._ctx.pages[0] if self._ctx.pages else self._ctx.new_page()
         return self._pagina
 
+    def _por_http(self, url: str) -> str | None:
+        if self._get is None:
+            return None
+        try:
+            html = self._get(url)
+        except Exception as e:
+            emit("info", f"     fotocasa by plain request failed ({str(e)[:40]}); "
+                         "opening the browser")
+            return None
+        return html if extraer_json(html, "realEstates") else None
+
     def abrir(self, url: str) -> str:
+        html = self._por_http(url)
+        if html is not None:
+            self._guardar(url, html)
+            return html
         pg = self._navegador()
         pg.goto(url, wait_until="domcontentloaded", timeout=60000)
         time.sleep(3)
@@ -196,6 +243,10 @@ class Fotocasa(Fuente):
         html = pg.content()
         if len(html) < 20000:
             raise BloqueoAntiBot(f"respuesta corta en {url}")
+        self._guardar(url, html)
+        return html
+
+    def _guardar(self, url: str, html: str) -> None:
         if self.cache_dir:
             import hashlib
             self.cache_dir.mkdir(parents=True, exist_ok=True)
@@ -203,7 +254,6 @@ class Fotocasa(Fuente):
             firma = hashlib.sha1(url.encode()).hexdigest()[:8]
             (self.cache_dir / f"fotocasa_{nombre}_{firma}.html").write_text(
                 html, encoding="utf-8")
-        return html
 
     def buscar(self, cfg: dict, max_paginas: int = 3) -> list[Anuncio]:
         zonas = cfg.get("zonas_fotocasa") or ["barcelona-capital/todas-las-zonas"]
@@ -216,7 +266,7 @@ class Fotocasa(Fuente):
         for zona in zonas:
             for pagina in range(1, max_paginas + 1):
                 try:
-                    html = self.abrir(construir_url(zona, pagina, orden))
+                    html = self.abrir(construir_url(zona, pagina, orden, self.tipo))
                 except BloqueoAntiBot as e:
                     emit("warning", f"  fotocasa: {e}")
                     break
@@ -228,7 +278,8 @@ class Fotocasa(Fuente):
                     emit("warning", f"  fotocasa {zona} page {pagina} failed "
                           f"({str(e)[:55]}); going on")
                     break
-                lote = [a for a in parsear_listado(html) if a.id_portal not in vistos]
+                lote = [a for a in parsear_listado(html)
+                        if a.id_portal not in vistos and a.tipo == self.tipo]
                 vistos.update(a.id_portal for a in lote)
                 resultados.extend(lote)
                 emit("info", f"  fotocasa {zona.split('/')[0]} page {pagina}: {len(lote)} listings")

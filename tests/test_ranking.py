@@ -280,3 +280,92 @@ def test_reasons_are_in_english(cfg, zonas):
     assert "approximate location" in texto
     for palabra in ("gastos", "publicado", "compañeros", "parejas", "ubicacion"):
         assert palabra not in texto
+
+
+# --- pisos enteros (fase 5) ---------------------------------------------
+from buscapiso.modelo import TIPO_PISO  # noqa: E402
+
+
+@pytest.fixture
+def cfg_piso(cfg):
+    cfg = dict(cfg, tipo=TIPO_PISO)
+    cfg["presupuesto"] = {"coste_total_ideal": 1000, "coste_total_maximo": 1400,
+                          "gastos_si_no_declara": 120}
+    cfg["piso"] = {"habitaciones_min": 2, "superficie_min": 60, "ascensor": True,
+                   "amueblado": "da_igual"}
+    return cfg
+
+
+def piso(**kw) -> Anuncio:
+    base = dict(tipo=TIPO_PISO, portal="habitaclia", precio=1100, gastos_extra=None,
+                genero_piso=DESCONOCIDO, companeros=None, habitaciones=2,
+                superficie_m2=70, ascensor=True)
+    base.update(kw)
+    return anuncio(**base)
+
+
+def test_a_flat_is_never_left_out_for_household_reasons(cfg_piso, zonas):
+    cfg_piso["requisitos"] = dict(cfg_piso["requisitos"], genero=GENERO_CHICAS,
+                                  sin_propietario=True, visitas_permitidas="estricto")
+    a = piso(propietario_vive=True, visitas_permitidas=False,
+             descripcion="no se permiten visitas")
+    ok, posibles, fuera = filtrar([a], cfg_piso, zonas)
+    assert ok == [a] and posibles == [] and fuera == []
+
+
+def test_rooms_and_flats_never_mix(cfg, cfg_piso, zonas):
+    ok, _, fuera = filtrar([piso()], cfg, zonas)
+    assert ok == [] and fuera[0][1] == "a whole flat, not a room in a shared flat"
+    ok, _, fuera = filtrar([anuncio()], cfg_piso, zonas)
+    assert ok == [] and fuera[0][1] == "a room in a shared flat, not a whole flat"
+
+
+@pytest.mark.parametrize("kw, motivo", [
+    ({"habitaciones": 1}, "1 bedroom, you want 2+"),
+    ({"superficie_m2": 45}, "45 m², you want 60+"),
+    ({"ascensor": False}, "no lift"),
+    ({"precio": 1350}, "1470 € a month in total, above your maximum"),
+])
+def test_flat_requirements(cfg_piso, zonas, kw, motivo):
+    _, _, fuera = filtrar([piso(**kw)], cfg_piso, zonas)
+    assert fuera[0][1] == motivo
+
+
+def test_what_the_listing_does_not_say_does_not_leave_it_out(cfg_piso, zonas):
+    a = piso(habitaciones=None, superficie_m2=None, ascensor=None)
+    ok, _, _ = filtrar([a], cfg_piso, zonas)
+    assert ok == [a]
+    puntuar(a, cfg_piso, zonas)
+    assert "lift not stated: ask" in a.motivos
+
+
+@pytest.mark.parametrize("quiere, amueblado, pasa", [
+    ("si", False, False), ("si", True, True), ("si", None, True),
+    ("no", True, False), ("no", False, True), ("da_igual", True, True)])
+def test_furnished(cfg_piso, zonas, quiere, amueblado, pasa):
+    cfg_piso["piso"]["amueblado"] = quiere
+    ok, _, _ = filtrar([piso(amueblado=amueblado)], cfg_piso, zonas)
+    assert bool(ok) is pasa
+
+
+def test_more_space_scores_more_up_to_a_cap(cfg_piso, zonas):
+    pequeno, grande, enorme = piso(superficie_m2=60), piso(superficie_m2=90), piso(superficie_m2=400)
+    for a in (pequeno, grande, enorme):
+        puntuar(a, cfg_piso, zonas)
+    assert grande.puntuacion > pequeno.puntuacion
+    assert enorme.puntuacion - pequeno.puntuacion == pytest.approx(15)
+
+
+def test_flat_scoring_ignores_room_signals(cfg_piso, zonas):
+    neutro = piso()
+    ruidoso = piso(descripcion="ideal estudiantes, se permiten visitas",
+                   admite_parejas=False, edad_companeros="25-28", companeros=6)
+    for a in (neutro, ruidoso):
+        puntuar(a, cfg_piso, zonas)
+    assert ruidoso.puntuacion == neutro.puntuacion
+
+
+def test_a_room_posted_as_a_flat_is_left_out(cfg_piso, zonas):
+    cfg_piso["piso"]["superficie_min"] = None
+    _, _, fuera = filtrar([piso(superficie_m2=9, precio=450)], cfg_piso, zonas)
+    assert fuera[0][1] == "9 m², looks like a single room"

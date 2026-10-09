@@ -72,3 +72,32 @@ def test_no_deduplica_dentro_del_mismo_portal():
 
 def test_lista_vacia():
     assert deduplicar([]) == ([], 0)
+
+
+# --- pisos enteros (fase 5) ---
+from buscapiso.deduplicar import deduplicar as _dedup  # noqa: E402
+from buscapiso.modelo import Anuncio as _A, TIPO_PISO as _PISO  # noqa: E402
+
+
+def _piso(portal, **kw):
+    base = dict(portal=portal, id_portal=portal, url="u", precio=1200, lat=41.39,
+                lon=2.16, tipo=_PISO, superficie_m2=70)
+    base.update(kw)
+    return _A(**base)
+
+
+def test_the_same_flat_on_fotocasa_and_habitaclia_is_merged():
+    unicos, n = _dedup([_piso("fotocasa", ascensor=True), _piso("habitaclia", banos=2,
+                                                                 superficie_m2=72)])
+    assert n == 1 and unicos[0].ascensor is True and unicos[0].banos == 2
+
+
+def test_a_room_and_a_flat_in_the_same_spot_are_not_merged():
+    _, n = _dedup([_piso("fotocasa"), _piso("idealista", tipo="habitacion",
+                                            superficie_m2=None)])
+    assert n == 0
+
+
+def test_two_flats_of_different_size_are_not_merged():
+    _, n = _dedup([_piso("fotocasa"), _piso("habitaclia", superficie_m2=95)])
+    assert n == 0

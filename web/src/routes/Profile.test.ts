@@ -3,7 +3,10 @@ import userEvent from '@testing-library/user-event';
 import Profile from './Profile.svelte';
 
 const profile = {
-  name: 'default', sources: ['idealista'], destinations: [
+  name: 'default', listing_type: 'room', sources: ['idealista'], flat_sources: ['fotocasa', 'habitaclia'],
+  flat: { ideal_rent: 1100, max_rent: 1400, assumed_bills: 120, min_bedrooms: 1, min_surface_m2: null,
+          elevator_required: false, furnished: 'any' },
+  destinations: [
     { name: 'Fira', lat: 41.35, lon: 2.13, max_minutes: 30, minute_weight: 2 }],
   budget: { ideal_total: 500, max_total: 650, assumed_expenses: 55 },
   household: { gender: 'female_only', ask_if_gender_unknown: true, min_score_to_ask: 60,
@@ -37,7 +40,7 @@ beforeEach(() => {
       { name: 'Fira Gran Via, Barcelona', lat: 41.354, lon: 2.127 }]));
     if (u.endsWith('/api/profiles')) return new Response(JSON.stringify([{ name: 'default', active: true }]));
     if (u.endsWith('/api/meta')) return new Response(JSON.stringify({
-      statuses: [], sources: ['idealista', 'fotocasa'], genders: ['female_only', 'male_only', 'mixed', 'any'] }));
+      statuses: [], sources: ['idealista', 'fotocasa'], flat_sources: ['fotocasa', 'habitaclia'], genders: ['female_only', 'male_only', 'mixed', 'any'] }));
     return new Response(JSON.stringify(profile));
   });
 });
@@ -98,4 +101,24 @@ test('each destination has a travel mode and a departure time', async () => {
   await userEvent.click(screen.getByRole('button', { name: 'Save' }));
   await screen.findByText('Saved');
   expect((saved as { destinations: { mode: string }[] }).destinations[0].mode).toBe('bike');
+});
+
+test('choosing a whole flat swaps the room settings for the flat ones', async () => {
+  render(Profile);
+  await userEvent.click(await screen.findByLabelText('A whole flat to rent'));
+  expect(screen.queryByLabelText('Maximum monthly cost')).toBeNull();
+  expect(screen.queryByText("Who you'd live with")).toBeNull();
+  expect(screen.getByLabelText('habitaclia')).toBeChecked();
+  expect(screen.queryByLabelText('idealista')).toBeNull();
+  const max = screen.getByLabelText('Maximum monthly rent (bills included)');
+  await userEvent.clear(max);
+  await userEvent.type(max, '1300');
+  await userEvent.selectOptions(screen.getByLabelText('Furnished'), 'no');
+  await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+  const p = saved as { listing_type: string; flat: { max_rent: number; furnished: string };
+                       budget: { max_total: number } };
+  expect(p.listing_type).toBe('flat');
+  expect(p.flat.max_rent).toBe(1300);
+  expect(p.flat.furnished).toBe('no');
+  expect(p.budget.max_total).toBe(650);
 });

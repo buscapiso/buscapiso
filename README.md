@@ -1,6 +1,8 @@
 # buscapiso
 
-buscapiso looks for rooms to rent in Barcelona on Idealista, Fotocasa, Roomgo and De Piso en Piso, works out how long it takes to get from each room to the places you go often, and ranks the results so the best ones come first. You mark the rooms you like, write notes, track who you have contacted, and get a phone notification when a good new room appears.
+> This is the last version of the desktop app (v0.3.0). buscapiso is moving to a website with a browser extension; the desktop app won't get more updates.
+
+buscapiso looks for rooms and whole flats to rent in Barcelona, works out how long it takes to get from each one to the places you go often, and ranks the results so the best ones come first. Rooms come from Idealista, Fotocasa, Roomgo and De Piso en Piso, and whole flats from Fotocasa and Habitaclia. You mark the listings you like, write notes, track who you have contacted, and get a phone notification when a good new one appears.
 
 Everything runs on your own computer. Your searches, notes and keys stay there.
 
@@ -28,6 +30,12 @@ buscapiso opens in your web browser at `http://127.0.0.1:8770`. Opening it again
 Each room has its own page with photos, the cost with bills, travel times with the metro lines, why it scored what it did, a map, a status, your notes and their history.
 
 **Settings** has the rest: what you're looking for, places and travel times, neighbourhoods to prefer or avoid, automatic searches, phone access and notifications, and AI.
+
+## Whole flats
+
+To look for a whole flat instead of a room, press the first button in Rooms ("Rooms") and choose "A whole flat to rent". You can also change it in Settings → What you're looking for. A flat has its own rent limit, bedrooms, size, lift and furnished settings, so switching back and forth leaves your room settings as they were. The list shows only the kind you are looking for, and a line above it says how many of the other kind are hidden.
+
+Flats are read with plain requests, so a flat search doesn't open the Chromium window. The settings about who you would live with don't apply to a whole flat and are ignored. When a listing doesn't say whether it has a lift or furniture, it stays in the list and its reasons say "ask". Idealista flats aren't searched yet, because Idealista answers flat searches with a captcha unless they come from a real browser.
 
 ## On your phone
 
@@ -68,7 +76,7 @@ The folder holds the database with your rooms, statuses and notes, the downloade
 
 ## Limitations
 
-- Only Barcelona and its metropolitan area, and only rooms for now (not whole flats).
+- Only Barcelona and its metropolitan area. Whole flats come from Fotocasa and Habitaclia, not Idealista yet.
 - The portals change their pages from time to time, which can break a source until buscapiso is updated.
 - buscapiso reads public listings for your personal use, at the pace of a person browsing. Please don't use it to copy listings in bulk.
 

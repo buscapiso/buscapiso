@@ -64,6 +64,14 @@ BBOX = (1.95, 41.47, 2.30, 41.25)
 DENTRO = (41.25, 41.47, 1.95, 2.30)   # lat_min, lat_max, lon_min, lon_max
 
 
+def slug_habitaclia(nombre: str, idealista: str | None, fotocasa: str | None) -> str | None:
+    """Habitaclia nombra los distritos como idealista y los municipios como
+    fotocasa. Las 19 zonas comprobadas a mano el 2026-10-09."""
+    if nombre.endswith(", Barcelona") and idealista:
+        return "barcelona-capital/" + idealista.split("/")[1]
+    return fotocasa.removesuffix("/todas-las-zonas") if fotocasa else None
+
+
 def main() -> int:
     con = sqlite3.connect(paths.db_path())
     geo = Geocodificador(con)
@@ -83,7 +91,8 @@ def main() -> int:
             fallos.append(f"{nombre}: {lat:.4f},{lon:.4f} fuera del area")
             continue
         zonas.append({"nombre": nombre, "lat": lat, "lon": lon,
-                      "idealista": idealista, "fotocasa": fotocasa})
+                      "idealista": idealista, "fotocasa": fotocasa,
+                      "habitaclia": slug_habitaclia(nombre, idealista, fotocasa)})
         print(f"  {nombre:34s} {lat:.4f},{lon:.4f}")
     if fallos:
         print("ERROR: sin coordenadas:", ", ".join(fallos), file=sys.stderr)

@@ -110,9 +110,13 @@
     profiles = await listProfiles();
   }
 
+  const flat = $derived(p?.listing_type === 'flat');
+  const sourceKey = $derived(flat ? 'flat_sources' : 'sources');
+
   function toggleSource(s: string, on: boolean) {
     if (!p) return;
-    p.sources = on ? [...p.sources, s] : p.sources.filter((x) => x !== s);
+    const k = sourceKey;
+    p[k] = on ? [...p[k], s] : p[k].filter((x) => x !== s);
   }
 
   const err = (path: string) => errors[path];
@@ -150,17 +154,48 @@
 
   {#if show('basics')}
   <fieldset>
+    <legend>{t('profile.lookingFor')}</legend>
+    {#each ['room', 'flat'] as k}
+      <label class="check"><input type="radio" name="listing-type" value={k} bind:group={p.listing_type} />
+        {t(`type.${k}Long`)}</label>
+    {/each}
+  </fieldset>
+
+  <fieldset>
     <legend>{t('profile.sources')}</legend>
-    {#each meta.sources as s}
-      <label class="check"><input type="checkbox" checked={p.sources.includes(s)}
+    {#each flat ? meta.flat_sources : meta.sources as s}
+      <label class="check"><input type="checkbox" checked={p[sourceKey].includes(s)}
         onchange={(e) => toggleSource(s, (e.currentTarget as HTMLInputElement).checked)} /> {s}</label>
     {/each}
-    {#if err('sources')}<p class="error">{err('sources')}</p>{/if}
-    {#each under('sources') as m}<p class="error">{m}</p>{/each}
+    {#if flat}<p class="help">{t('profile.flatSourcesHelp')}</p>{/if}
+    {#if err(sourceKey)}<p class="error">{err(sourceKey)}</p>{/if}
+    {#each under(sourceKey) as m}<p class="error">{m}</p>{/each}
   </fieldset>
   {/if}
 
-  {#if show('basics')}
+  {#if show('basics') && flat}
+  <fieldset>
+    <legend>{t('profile.flatBudget')}</legend>
+    <label>{t('profile.idealRent')}<input type="number" bind:value={p.flat.ideal_rent} /></label>
+    <label>{t('profile.maxRent')}<input type="number" bind:value={p.flat.max_rent} /></label>
+    <label>{t('profile.assumedBills')}<input type="number" bind:value={p.flat.assumed_bills} /></label>
+  </fieldset>
+  <fieldset>
+    <legend>{t('profile.flatNeeds')}</legend>
+    <label>{t('profile.minBedrooms')}<input type="number" min="0" max="10" bind:value={p.flat.min_bedrooms} /></label>
+    <label>{t('profile.minSurface')}<input type="number" min="1" value={p.flat.min_surface_m2 ?? ''}
+      oninput={(e) => { const v = (e.currentTarget as HTMLInputElement).value; p!.flat.min_surface_m2 = v === '' ? null : Number(v); }} /></label>
+    <label class="check"><input type="checkbox" bind:checked={p.flat.elevator_required} /> {t('profile.elevatorRequired')}</label>
+    <label>{t('profile.furnished')}
+      <select bind:value={p.flat.furnished}>
+        {#each ['any', 'yes', 'no'] as f}<option value={f}>{t(`furnished.${f}`)}</option>{/each}
+      </select>
+    </label>
+    {#each under('flat') as m}<p class="error">{m}</p>{/each}
+  </fieldset>
+  {/if}
+
+  {#if show('basics') && !flat}
   <fieldset>
     <legend>{t('profile.budget')}</legend>
     <label>{t('profile.idealTotal')}<input type="number" bind:value={p.budget.ideal_total} /></label>
@@ -171,7 +206,7 @@
   </fieldset>
   {/if}
 
-  {#if show('basics')}
+  {#if show('basics') && !flat}
   <fieldset>
     <legend>{t('profile.household')}</legend>
     {#each under('household') as m}<p class="error">{m}</p>{/each}
@@ -284,7 +319,7 @@
     margin: 0 0 16px; padding: 12px 16px; display: grid; gap: 10px; }
   legend { font-weight: 600; padding: 0 4px; }
   label { display: grid; gap: 4px; font-size: 14px; min-width: 0; }
-  label :is(input:not([type='checkbox']), select) { width: 100%; min-width: 0; }
+  label :is(input:not([type='checkbox']):not([type='radio']), select) { width: 100%; min-width: 0; }
   label.check { display: flex; gap: 8px; align-items: center; }
   .dest { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;
     align-items: end; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
