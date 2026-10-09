@@ -33,3 +33,17 @@ describe('ranking matches ranking.py', () => {
     });
   }
 });
+
+describe('roommates who are not young', () => {
+  const p = parseProfile({ name: 'T' });
+  const base = (o: Partial<Scorable>): Scorable => ({ ...golden('idealista_listado')[0] as RawListing, id: 'x', travel: {},
+    title: 'Habitación', description: '', roommateAges: '', ...o });
+  const young = (l: Scorable) => score(l, p, '2026-10-09').reasons.some((r) => r.startsWith('young people'));
+  it('workers are not a sign of young people', () => {
+    expect(young(base({ description: 'Somos dos chicas trabajadoras, muy limpias' }))).toBe(false);
+    expect(young(base({ description: 'Piso de estudiantes' }))).toBe(true);
+  });
+  it('known ages above 35 cancel the bonus', () => {
+    expect(young(base({ description: 'Piso de estudiantes', roommateAges: '37-41' }))).toBe(false);
+  });
+});

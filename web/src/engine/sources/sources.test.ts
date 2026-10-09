@@ -76,6 +76,19 @@ describe('fotocasa', () => {
     expect(fotocasa.buildUrl('barcelona-capital/todas-las-zonas', 2, 'relevance', 'flat'))
       .toBe('https://www.fotocasa.es/es/alquiler/viviendas/barcelona-capital/todas-las-zonas/l/2');
   });
+  it('idealista only lists what fits the budget, unless a price filter was set by hand', () => {
+    const area = { name: 'Gràcia', lat: 41.4, lon: 2.15, idealista: 'barcelona/gracia' } as never;
+    const p = defaultProfile();
+    p.budget.max_total = 520;
+    // Escalones de 50, como los del propio buscador.
+    expect(SOURCES.idealista.listUrl(area, p, 1)).toContain('precio-hasta_550');
+    p.idealista.max_price = 400;
+    expect(SOURCES.idealista.listUrl(area, p, 1)).toContain('precio-hasta_400');
+    const flat = defaultProfile();
+    flat.listing_type = 'flat';
+    flat.flat.max_rent = 1200;
+    expect(SOURCES.idealista.listUrl(area, flat, 1)).toContain('precio-hasta_1200');
+  });
   it('searches the whole city when an area has no fotocasa slug', () => {
     const p = defaultProfile();
     expect(SOURCES.fotocasa.listUrl(null, p, 1)).toContain('barcelona-capital/todas-las-zonas');

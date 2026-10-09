@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { AICache, ListingFacts } from './ai/extract';
 import { AIError, ClaudeProvider, type AIProvider } from './ai/providers';
 import { Geocoder } from './geocode';
-import type { Derived, FetchPage, StoredListing } from './model';
+import { emptyListing, type Derived, type FetchPage, type StoredListing } from './model';
 import { rescore, runSearch, type Deps, type PipelineStore, type SearchEvent } from './pipeline';
 import { parseProfile } from './profiles';
 import { fixture } from './testing';
@@ -245,7 +245,7 @@ describe('rescore', () => {
   });
   it('applies AI facts to the score without touching the stored listing', async () => {
     const ls = await stored();
-    const facts: ListingFacts = { household_gender: 'mixed', bills_included: true, bills_amount_eur: null, owner_lives_in: null,
+    const facts: ListingFacts = { household_gender: 'mixed', bills_included: true, bills_eur_min: null, bills_eur_max: null, owner_lives_in: null, smoking_allowed: null, exterior: null,
       couples_allowed: null, visitors_allowed: null, seasonal_or_short_let: true, min_stay_months: null, roommates: null,
       roommates_age_range: null, roommates_occupation: null, available_from: null, summary: 'ok', pros: [], cons: [], red_flags: ['check'] };
     const cache: AICache = { get: async () => facts, put: async () => {} };
@@ -258,15 +258,56 @@ describe('rescore', () => {
     expect(ls).toEqual(copy);
   });
 
-  const FACTS: ListingFacts = { household_gender: 'mixed', bills_included: null, bills_amount_eur: null, owner_lives_in: null,
+  const FACTS: ListingFacts = { household_gender: 'mixed', bills_included: null, bills_eur_min: null, bills_eur_max: null, owner_lives_in: null, smoking_allowed: null, exterior: null,
     couples_allowed: null, visitors_allowed: null, seasonal_or_short_let: null, min_stay_months: null, roommates: null,
     roommates_age_range: null, roommates_occupation: null, available_from: null, summary: 'read', pros: [], cons: [], red_flags: [] };
   const noCache: AICache = { get: async () => undefined, put: async () => {} };
-  function fakeAI(answer: (n: number) => Promise<ListingFacts>): AIProvider {
+  /** Contesta a cada lote con los hechos que da `answer` para cada anuncio. */
+  function fakeAI(answer: (n: number, title: string) => Promise<ListingFacts>, prompts: string[] = []): AIProvider {
     let n = 0;
     return { name: 'fake', model: 'm', usage: { calls: 0, inputTokens: 0, outputTokens: 0 }, text: async () => '',
-      json: (async () => answer(n++)) as AIProvider['json'] };
+      json: (async (_s: string, user: string, schema: { parse(x: unknown): unknown }) => {
+        prompts.push(user);
+        const call = n++;
+        const tags = [...user.matchAll(/<listing id="(\d+)">\nTitle: ([^\n]*)/g)];
+        const listings = [];
+        for (const [, id, title] of tags) listings.push({ ...(await answer(call, title)), id });
+        return schema.parse({ listings });
+      }) as AIProvider['json'] };
   }
+  const place = { lat: 41.3851, lon: 2.1734 };
+  const room = (id: string, o: Partial<StoredListing>): StoredListing => ({ ...emptyListing('fotocasa', id, `https://x/${id}`),
+    id: `fotocasa:${id}`, city: 'barcelona', firstSeen: '', lastSeen: '', ...place, approximateLocation: false,
+    gender: 'mixed', genderConfirmed: true, ...o });
+  const tight = () => profile({ budget: { ideal_total: 400, max_total: 500 },
+    destinations: [{ name: 'Work', lat: 41.39, lon: 2.17, max_minutes: 60 }], crawl: { ai_listings: 30 } });
+
+  it('reads bills written in the description and says where the figure came from', async () => {
+    const ds = await rescore([room('a', { title: 'A', price: 420, description: 'Precio 420€ + gastos a parte (50-100€/mes)' })],
+      tight(), { travel: null, ai: null, aiCache: noCache, now: () => new Date() }, new Set());
+    expect(ds[0].reasons).toContain('420 € + ~75 € bills (from the description) = 495 € a month (-11)');
+  });
+  it('lets the AI rescue a listing whose only problem was a hidden fact, before travel times', async () => {
+    const prompts: string[] = [];
+    const ai = fakeAI(async () => ({ ...FACTS, bills_included: true }), prompts);
+    const origins: number[] = [];
+    const travel: TravelProvider = { name: 'transitous', trips: async (o) => { origins.push(o.length); return o.map(() => ({ minutes: 20, detail: '', source: 'transitous' })); } };
+    const ls = [room('a', { title: 'Hidden bills', price: 470 }), room('b', { title: 'Too dear', price: 900 })];
+    const ds = await rescore(ls, tight(), { travel, ai, aiCache: noCache, now: () => new Date() }, new Set());
+    // 470 + 55 supuestos pasa del maximo; con gastos incluidos, no.
+    expect(ds.find((d) => d.id === 'fotocasa:a')!.group).toBe('accepted');
+    // El alquiler solo ya pasa del maximo: la IA no lo puede arreglar y no se le pregunta.
+    expect(prompts.join('')).toContain('Hidden bills');
+    expect(prompts.join('')).not.toContain('Too dear');
+  });
+  it('only uses cached AI facts when asked not to call the AI', async () => {
+    const prompts: string[] = [];
+    const ai = fakeAI(async () => FACTS, prompts);
+    const ds = await rescore([room('a', { title: 'A', price: 420 })], tight(), { travel: null, ai, aiCache: noCache,
+      now: () => new Date() }, new Set(), undefined, { aiCacheOnly: true });
+    expect(prompts).toEqual([]);
+    expect(ds[0].summary).toBe('');
+  });
   it('asks the AI about several listings at once, but not all of them', async () => {
     let inFlight = 0, most = 0;
     const ai = fakeAI(async () => {
@@ -284,9 +325,11 @@ describe('rescore', () => {
   it('waits and retries when the AI says it is getting too many requests', async () => {
     const waits: number[] = [];
     const ai = fakeAI(async (n) => { if (n === 0) throw new AIError('HTTP 429', 429); return FACTS; });
+
     const ds = await rescore(await stored(), profile({ crawl: { ai_listings: 3 } }), { travel: null, ai, aiCache: noCache,
       now: () => new Date(), sleep: async (ms) => { waits.push(ms); } }, new Set());
     expect(waits.length).toBeGreaterThan(0);
-    expect(ds.filter((x) => x.summary === 'read')).toHaveLength(3);
+    // Todos los que aun podian valer, no solo los tres primeros.
+    expect(ds.filter((x) => x.summary === 'read').length).toBeGreaterThan(3);
   });
 });

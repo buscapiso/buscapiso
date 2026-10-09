@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { emptyListing } from '../model';
-import { applyFacts, extractFacts, listingFacts, suggestProfile, type ListingFacts } from './extract';
+import { applyFacts, extractFacts, extractMany, listingFacts, suggestProfile, type ListingFacts } from './extract';
+import type { AIProvider } from './providers';
 import { AIError, ClaudeProvider, estimateCost, listModels, OpenAICompatProvider } from './providers';
 import { notifyNew, randomTopic } from '../notify';
 
 const FACTS: ListingFacts = listingFacts.parse({ household_gender: 'female_only', bills_included: null,
-  bills_amount_eur: 40, owner_lives_in: false, couples_allowed: null, visitors_allowed: true,
+  bills_eur_min: 40, bills_eur_max: 40, owner_lives_in: false, couples_allowed: null, visitors_allowed: true,
+  smoking_allowed: false, exterior: null,
   seasonal_or_short_let: true, min_stay_months: 6, roommates: 2, roommates_age_range: '24-28',
   roommates_occupation: 'students', available_from: '2026-11-01', summary: 'Bright room.',
   pros: ['light'], cons: [], red_flags: ['asks for a deposit before visiting'] });
@@ -89,20 +91,87 @@ describe('facts', () => {
     expect(applyFacts(base(), FACTS).listing.gender).toBe('female_only');
     expect(applyFacts(base(), { ...FACTS, bills_included: true }).listing.expenses).toBe(0);
   });
+  it('count a range of bills as its midpoint and say which facts they filled', () => {
+    const r = applyFacts(base(), { ...FACTS, bills_included: false, bills_eur_min: 50, bills_eur_max: 100 });
+    expect(r.listing.expenses).toBe(75);
+    expect(r.listing.smokingAllowed).toBe(false);
+    expect(r.filled).toContain('expenses');
+    expect(applyFacts({ ...base(), expenses: 30 }, FACTS).filled).not.toContain('expenses');
+  });
   it('are cached by listing text, so a second search does not pay again', async () => {
     const store = new Map<string, ListingFacts>();
     const cache = { get: async (k: string) => store.get(k), put: async (k: string, f: ListingFacts) => { store.set(k, f); } };
-    const { calls, post } = recorder([claudeText(JSON.stringify(FACTS))]);
+    const { calls, post } = recorder([claudeText(JSON.stringify({ listings: [{ ...FACTS, id: '0' }] }))]);
     const p = new ClaudeProvider('k', undefined, post);
     await extractFacts(p, base(), cache);
     await extractFacts(p, base(), cache);
     expect(calls).toHaveLength(1);
-    expect(calls[0].body.messages[0].content).toContain('<listing>');
+    expect(calls[0].body.messages[0].content).toContain('<listing id="0">');
   });
   it('turns a description into a profile suggestion', async () => {
     const { post } = recorder([claudeText(JSON.stringify({ budget_max: 700, places: [{ name: 'UPC', address: 'Campus Nord' }] }))]);
     const s = await suggestProfile(new ClaudeProvider('k', undefined, post), 'max 700, I study at UPC');
     expect(s).toMatchObject({ budget_max: 700, budget_ideal: null, places: [{ name: 'UPC', mode: 'transit', max_minutes: null }] });
+  });
+});
+
+describe('batched extraction', () => {
+  const listing = (i: number) => ({ ...emptyListing('idealista', String(i), `https://x/${i}`), title: `Room ${i}`, description: `Text ${i}` });
+  const memory = () => {
+    const store = new Map<string, ListingFacts>();
+    return { store, cache: { get: async (k: string) => store.get(k), put: async (k: string, f: ListingFacts) => { store.set(k, f); } } };
+  };
+  /** Un proveedor falso que contesta por los ids que ve en el mensaje. */
+  /** `rooms[i]` es el numero de la habitacion que lleva el id i en este lote. */
+  function fake(answer: (ids: string[], call: number, rooms: string[]) => unknown[]): AIProvider & { prompts: string[] } {
+    const prompts: string[] = [];
+    return { name: 'fake', model: 'm', usage: { calls: 0, inputTokens: 0, outputTokens: 0 }, prompts, text: async () => '',
+      json: (async (_s: string, user: string, schema: { parse(x: unknown): unknown }) => {
+        prompts.push(user);
+        const tags = [...user.matchAll(/<listing id="(\d+)">\nTitle: Room (\d+)/g)];
+        return schema.parse({ listings: answer(tags.map((m) => m[1]), prompts.length - 1, tags.map((m) => m[2])) });
+      }) as AIProvider['json'] };
+  }
+  const facts = (id: string, summary = `s${id}`) => ({ ...FACTS, id, summary });
+
+  it('reads several listings in one call and caches each one', async () => {
+    const { store, cache } = memory();
+    const p = fake((ids) => ids.map((id) => facts(id)));
+    const ls = [0, 1, 2].map(listing);
+    const r = await extractMany(p, ls, cache);
+    expect(p.prompts).toHaveLength(1);
+    expect(ls.map((l) => r.facts.get(l)?.summary)).toEqual(['s0', 's1', 's2']);
+    expect(store.size).toBe(3);
+    await extractMany(p, ls, cache);
+    expect(p.prompts).toHaveLength(1);
+  });
+  it('sends at most ten listings per call', async () => {
+    const p = fake((ids) => ids.map((id) => facts(id)));
+    const r = await extractMany(p, Array.from({ length: 23 }, (_, i) => listing(i)), memory().cache);
+    expect(p.prompts).toHaveLength(3);
+    expect(r.facts.size).toBe(23);
+  });
+  it('asks again once for listings the answer left out, then gives up on them', async () => {
+    // La habitacion 1 falta la primera vez; la 2, siempre.
+    const p = fake((ids, call, rooms) => ids.filter((_, i) => (call > 0 || rooms[i] !== '1') && rooms[i] !== '2').map((id) => facts(id)));
+    const ls = [0, 1, 2].map(listing);
+    const r = await extractMany(p, ls, memory().cache);
+    expect(p.prompts).toHaveLength(2);
+    expect(r.facts.has(ls[1])).toBe(true);
+    expect(r.facts.has(ls[2])).toBe(false);
+  });
+  it('skips an item that does not match the schema without losing the rest', async () => {
+    const p = fake((ids) => ids.map((id) => (id === '0' ? { id, household_gender: 'robots' } : facts(id))));
+    const ls = [0, 1].map(listing);
+    const r = await extractMany(p, ls, memory().cache);
+    expect(r.facts.has(ls[0])).toBe(false);
+    expect(r.facts.get(ls[1])?.summary).toBe('s1');
+  });
+  it('keeps going when a whole call fails, and reports it', async () => {
+    const p = fake(() => { throw new AIError('HTTP 500', 500); });
+    const r = await extractMany(p, [listing(0)], memory().cache);
+    expect(r.facts.size).toBe(0);
+    expect(r.failures[0].message).toBe('HTTP 500');
   });
 });
 

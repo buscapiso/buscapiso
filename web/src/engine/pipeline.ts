@@ -3,12 +3,12 @@
 //
 // rescore() es la mitad que no rastrea: trayectos, IA, filtro y puntuacion.
 // La usan tambien "Re-score now" y la importacion de un fichero.
-import { applyFacts, extractFacts, type AICache, type AIDerived } from './ai/extract';
+import { applyFacts, extractMany, type AICache, type AIDerived } from './ai/extract';
 import { AIError, type AIProvider } from './ai/providers';
 import { CITIES, selectAreas, type Trips } from './coverage';
 import { dedupe } from './dedupe';
 import type { Geocoder } from './geocode';
-import { emptyDerived, listingId, type Derived, type FetchPage, type RawListing, type StoredListing } from './model';
+import { billsFromText, emptyDerived, listingId, type Derived, type FetchPage, type RawListing, type StoredListing } from './model';
 import { activeSources, type Destination, type SearchProfile } from './profiles';
 import { filter, score, type Scorable } from './ranking';
 import { inferGender, type Area, type Source } from './sources/base';
@@ -172,28 +172,6 @@ async function crawlSource(src: Source, areas: Area[], p: SearchProfile, pages: 
 }
 
 // --- puntuar ----------------------------------------------------------------
-// Las APIs gratuitas (Gemini) limitan las peticiones por minuto: pocas a la
-// vez, y ante un 429 se espera y se reintenta.
-const AI_PARALLEL = 4;
-const AI_RETRIES = 3;
-const AI_BACKOFF_MS = 10_000;
-
-async function eachLimited<T>(items: T[], limit: number, fn: (x: T) => Promise<void>): Promise<void> {
-  let next = 0;
-  const worker = async () => { while (next < items.length) await fn(items[next++]); };
-  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
-}
-
-async function factsWithRetry(ai: AIProvider, l: StoredListing, cache: AICache, sleep: (ms: number) => Promise<void>) {
-  for (let attempt = 0; ; attempt++) {
-    try {
-      return await extractFacts(ai, l, cache);
-    } catch (e) {
-      if (!(e instanceof AIError) || e.status !== 429 || attempt >= AI_RETRIES) throw e;
-      await sleep(AI_BACKOFF_MS * 2 ** attempt);
-    }
-  }
-}
 interface Working { stored: StoredListing; effective: Scorable; derived: Derived }
 
 function tripsWithFallback(provider: TravelProvider | null, emit: Emit): Trips {
@@ -239,14 +217,39 @@ function setTravel(w: Working, d: Destination, t: Trip) {
   w.derived.routes[d.name] = t.detail;
 }
 
-/** Trayectos, IA, filtro y puntuacion de los anuncios dados. No rastrea. */
+/** Margen del trayecto estimado al decidir si merece la pena preguntar a la IA. */
+const ESTIMATE_SLACK_MIN = 15;
+
+/** Falla incluso en el mejor caso: gastos no dichos a 0, genero no dicho como
+ * el buscado, trayectos 15 min mas cortos. La IA no lo puede arreglar. */
+function hopeless(w: Working, p: SearchProfile, discarded: Set<string>): boolean {
+  const e = w.effective;
+  const best: Scorable = { ...e,
+    expenses: e.expenses ?? 0,
+    gender: e.gender === 'unknown' && p.household.gender !== 'any' ? p.household.gender : e.gender,
+    travel: Object.fromEntries(Object.entries(e.travel).map(([k, v]) => [k, Math.max(0, v - ESTIMATE_SLACK_MIN)])) };
+  return filter([best], p, discarded).rejected.length > 0;
+}
+
+export interface RescoreOptions {
+  /** Solo hechos ya guardados, sin llamar a la IA: para las vistas previas. */
+  aiCacheOnly?: boolean;
+}
+
+/** Trayectos, IA, filtro y puntuacion de los anuncios dados. No rastrea.
+ * Lo barato primero: estimacion sin red, IA sobre lo que aun puede valer,
+ * y horarios reales al final. */
 export async function rescore(listings: StoredListing[], p: SearchProfile,
   deps: Pick<Deps, 'travel' | 'ai' | 'aiCache' | 'now'> & Partial<Pick<Deps, 'sleep'>>,
-  discarded: Set<string>, emit: Emit = () => {}): Promise<Derived[]> {
+  discarded: Set<string>, emit: Emit = () => {}, opts: RescoreOptions = {}): Promise<Derived[]> {
   const today = localDate(deps.now());
-  const ws: Working[] = listings.map((l) => ({ stored: l,
-    effective: { ...l, travel: {}, aiTemporary: null, redFlags: [] },
-    derived: { ...emptyDerived(l.id), alsoOn: [...(l.alsoOn ?? [])] } }));
+  const ws: Working[] = listings.map((l) => {
+    const bills = l.expenses === null ? billsFromText(`${l.title} ${l.description}`) : null;
+    return { stored: l,
+      effective: { ...l, travel: {}, aiTemporary: null, redFlags: [],
+        ...(bills !== null ? { expenses: bills, billsFromText: true } : {}) },
+      derived: { ...emptyDerived(l.id), alsoOn: [...(l.alsoOn ?? [])] } };
+  });
   const placed = ws.filter((w) => w.stored.lat !== null && w.stored.lon !== null && w.stored.type === p.listing_type);
   const origins = (xs: Working[]): Origin[] => xs.map((w) => [w.stored.lat!, w.stored.lon!]);
 
@@ -257,7 +260,29 @@ export async function rescore(listings: StoredListing[], p: SearchProfile,
   for (const w of placed) w.derived.travelSource = 'estimate';
   classify(ws, p, discarded, today);
 
-  // 2. Horarios reales: transporte publico con Transitous es una peticion por
+  // 2. IA sobre todo lo que aun puede valer, en lotes. Un lote que falla se
+  // salta; si fallan todos, aviso.
+  if (deps.ai && p.crawl.ai_listings) {
+    const ai = deps.ai;
+    const candidates = ws.filter((w) => w.stored.type === p.listing_type && !hopeless(w, p, discarded));
+    const byListing = new Map(candidates.map((w) => [w.stored, w]));
+    const r = await extractMany(ai, candidates.map((w) => w.stored), deps.aiCache, { sleep: deps.sleep,
+      cacheOnly: opts.aiCacheOnly,
+      onProgress: (done, total) => emit('progress', `    AI ${done}/${total}`, { done, total }) });
+    for (const [l, facts] of r.facts) {
+      const w = byListing.get(l)!;
+      const { listing, ai: derived, filled } = applyFacts(w.effective, facts);
+      w.effective = { ...listing, aiTemporary: derived.aiTemporary, redFlags: derived.redFlags,
+        billsFromText: w.effective.billsFromText || filled.includes('expenses') };
+      Object.assign(w.derived, derived satisfies AIDerived);
+    }
+    if (r.calls && !r.facts.size && r.failures.length) {
+      emit('warning', `    The AI did not answer (${r.failures.at(-1)!.message}); going on without it`);
+    } else if (r.calls) emit('info', `    AI: read ${r.facts.size} listings in ${r.calls} calls`, { calls: ai.usage.calls });
+    classify(ws, p, discarded, today);
+  }
+
+  // 3. Horarios reales: transporte publico con Transitous es una peticion por
   // destino, asi que va para todos; lo demas, para los mejores.
   if (deps.travel && p.destinations.length) {
     const top = ranked(ws).filter((w) => placed.includes(w)).slice(0, p.crawl.real_travel_times);
@@ -280,31 +305,6 @@ export async function rescore(listings: StoredListing[], p: SearchProfile,
       if (!(e instanceof TravelError)) throw e;
       emit('warning', `    ${deps.travel.name} did not answer (${e.message}); using estimated times`, { provider: deps.travel.name });
     }
-    classify(ws, p, discarded, today);
-  }
-
-  // 3. IA sobre los mejores, varios a la vez. Un fallo suelto se salta; si
-  // fallan todos, aviso.
-  if (deps.ai && p.crawl.ai_listings) {
-    const ai = deps.ai;
-    const sleep = deps.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
-    const top = ranked(ws).slice(0, p.crawl.ai_listings);
-    let read = 0;
-    const failures: AIError[] = [];
-    await eachLimited(top, AI_PARALLEL, async (w) => {
-      try {
-        const facts = await factsWithRetry(ai, w.stored, deps.aiCache, sleep);
-        const { listing, ai: derived } = applyFacts(w.stored, facts);
-        w.effective = { ...listing, travel: w.effective.travel, aiTemporary: derived.aiTemporary, redFlags: derived.redFlags };
-        Object.assign(w.derived, derived satisfies AIDerived);
-        read++;
-      } catch (e) {
-        if (!(e instanceof AIError)) throw e;
-        failures.push(e);
-      }
-    });
-    if (top.length && !read && failures.length) emit('warning', `    The AI did not answer (${failures.at(-1)!.message}); going on without it`);
-    else if (read) emit('info', `    AI: read ${read} listings`, { calls: ai.usage.calls });
     classify(ws, p, discarded, today);
   }
   return ws.map((w) => w.derived);

@@ -12,6 +12,8 @@ export interface Scorable extends RawListing {
   travel: Record<string, number>;
   aiTemporary?: boolean | null;
   redFlags?: string[];
+  /** Los gastos no los dio el portal: salen del texto (regex o IA). */
+  billsFromText?: boolean;
 }
 export interface Scored { score: number; reasons: string[] }
 
@@ -35,7 +37,10 @@ export function fmt0(x: number, signed = false): string {
   return neg ? `-${body}` : signed ? `+${body}` : body;
 }
 
-const YOUNG = /estudiant|j[oó]ven|joven|profesional|trabajador|erasmus|universitari/i;
+const YOUNG = /estudiant|j[oó]ven|joven|profesional|erasmus|universitari/i;
+/** Edad mas baja de "37-41" o "25", si se sabe. */
+const youngest = (ages: string) => { const m = ages.match(/\d+/); return m ? +m[0] : null; };
+const OLDER_HOUSE = 35;
 const QUIET = /no\s+suelen\s+tener\s+visitas|abunda\s+el\s+silencio/i;
 const MONTHS = 'enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre';
 // "de octubre a diciembre" es un alquiler temporal aunque no diga "temporada".
@@ -148,8 +153,9 @@ export function score(l: Scorable, p: SearchProfile, today: string): Scored {
   if (est !== null) {
     const penalty = Math.max(0, est - budget.ideal) * w.euro_sobre_ideal;
     total -= penalty;
-    const label = l.expenses ? `${l.price} € + ${l.expenses} € bills = ${est} € a month`
-      : l.expenses === 0 ? `${l.price} € bills included`
+    const from = l.billsFromText ? ' (from the description)' : '';
+    const label = l.expenses ? `${l.price} € + ${from ? '~' : ''}${l.expenses} € bills${from} = ${est} € a month`
+      : l.expenses === 0 ? `${l.price} € bills included${from}`
       : `${l.price} € + bills not stated (counting ~${budget.assumed} €) = ${est} € a month`;
     reasons.push(`${label} (${fmt0(-penalty, true)})`);
   }
@@ -173,7 +179,8 @@ export function score(l: Scorable, p: SearchProfile, today: string): Scored {
     reasons.push(`${published(l)} (+${fmt0(w.novedad)})`);
   }
   const flat = l.type === 'flat';
-  if (!flat && YOUNG.test(text(l))) {
+  const minAge = youngest(l.roommateAges);
+  if (!flat && YOUNG.test(text(l)) && !(minAge !== null && minAge > OLDER_HOUSE)) {
     total += w.ambiente_joven;
     reasons.push(`young people or students (+${fmt0(w.ambiente_joven)})`);
   }

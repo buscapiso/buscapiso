@@ -125,6 +125,22 @@ export function listingId(source: string, sourceId: string): string {
   return sha1(`${source}:${sourceId}`).slice(0, 12);
 }
 
+// Gastos escritos en la descripcion: "gastos a parte (50-100€/mes)" cuenta la
+// media. Solo cifras DESPUES de "gastos": la de delante suele ser el alquiler.
+const BILLS = String.raw`(?:gastos|despeses|bills)[^.\n\d€]{0,40}?`;
+const BILLS_RANGE = new RegExp(String.raw`${BILLS}(\d{2,3})\s*(?:€|eur\w*)?\s*(?:-|–|a|y|i)\s*(\d{2,3})\s*(?:€|eur)`, 'i');
+const BILLS_ONE = new RegExp(String.raw`${BILLS}(\d{2,3})\s*(?:€|eur)`, 'i');
+const BILLS_INCLUDED = /gastos\s+(?:est[aá]n\s+)?inclu[ií]d|incluye\s+(?:los\s+)?gastos|despeses\s+incloses|bills\s+included/i;
+
+/** Gastos al mes segun el texto: 0 si estan incluidos, null si no lo dice. */
+export function billsFromText(text: string): number | null {
+  const r = text.match(BILLS_RANGE);
+  if (r) return Math.round((+r[1] + +r[2]) / 2);
+  const one = text.match(BILLS_ONE);
+  if (one) return +one[1];
+  return BILLS_INCLUDED.test(text) ? 0 : null;
+}
+
 /** Lo que pagas de verdad al mes con los gastos declarados. */
 export function totalCost(l: Pick<RawListing, 'price' | 'expenses'>): number | null {
   return l.price === null ? null : l.price + (l.expenses ?? 0);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { emptyListing, estimatedCost, listingId, richness, sha1, totalCost } from './model';
+import { billsFromText, emptyListing, estimatedCost, listingId, richness, sha1, totalCost } from './model';
 import { inferGender, surface } from './sources/base';
 
 describe('listingId', () => {
@@ -61,5 +61,18 @@ describe('surface', () => {
     expect(surface('70')).toBe(70);
     expect(surface('abc')).toBeNull();
     expect(surface(null)).toBeNull();
+  });
+});
+
+describe('bills from the description', () => {
+  it('reads a range as its midpoint, and a single amount', () => {
+    expect(billsFromText('El precio són 420€ + gastos a parte (50-100€/mes dependiendo de los consumos). Fianza 1 mes.')).toBe(75);
+    expect(billsFromText('Gastos aparte: 40 € al mes')).toBe(40);
+    expect(billsFromText('despeses 30-50€')).toBe(40);
+  });
+  it('knows included bills, and says nothing when the text does not', () => {
+    expect(billsFromText('Todos los gastos incluidos')).toBe(0);
+    expect(billsFromText('Gastos no incluidos')).toBeNull();
+    expect(billsFromText('Fianza 1 mes, 420 €')).toBeNull();
   });
 });

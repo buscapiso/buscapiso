@@ -18,7 +18,7 @@ export interface AIProvider {
   model: string;
   usage: Usage;
   text(system: string, user: string, maxTokens?: number): Promise<string>;
-  json<T>(system: string, user: string, schema: Schema<T>, jsonSchema: object): Promise<T>;
+  json<T>(system: string, user: string, schema: Schema<T>, jsonSchema: object, maxTokens?: number): Promise<T>;
 }
 
 type Post = (url: string, headers: Record<string, string>, body: unknown) => Promise<{ status: number; data: any }>;  // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -79,8 +79,8 @@ export class ClaudeProvider implements AIProvider {
   }
 
   text(system: string, user: string, maxTokens = 1024) { return this.complete(system, user, maxTokens); }
-  json<T>(system: string, user: string, schema: Schema<T>, jsonSchema: object) {
-    return jsonWithRetry((sys) => this.complete(sys, user, 4096), system, schema, jsonSchema);
+  json<T>(system: string, user: string, schema: Schema<T>, jsonSchema: object, maxTokens = 4096) {
+    return jsonWithRetry((sys) => this.complete(sys, user, maxTokens), system, schema, jsonSchema);
   }
 }
 
@@ -115,8 +115,8 @@ export class OpenAICompatProvider implements AIProvider {
     if (!t) throw new AIError('The AI provider returned no text');
     return t;
   }
-  json<T>(system: string, user: string, schema: Schema<T>, jsonSchema: object) {
-    return jsonWithRetry((sys) => this.complete(sys, user, 4096, true), system, schema, jsonSchema);
+  json<T>(system: string, user: string, schema: Schema<T>, jsonSchema: object, maxTokens = 4096) {
+    return jsonWithRetry((sys) => this.complete(sys, user, maxTokens, true), system, schema, jsonSchema);
   }
 }
 
