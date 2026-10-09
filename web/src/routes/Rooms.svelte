@@ -18,6 +18,13 @@
   let changed = $state(false);
   let error = $state('');
   let panel = $state<SearchPanel>();
+  let hovered = $state<string | null>(null);
+  let selected = $state<string | null>(null);
+
+  function select(id: string) {
+    selected = id;
+    document.getElementById(`card-${id}`)?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+  }
 
   const PROGRESS: Status[] = ['contacted', 'visit_scheduled', 'visited', 'applied'];
   const MATCH: Record<Filter, (l: Listing) => boolean> = {
@@ -128,12 +135,28 @@
 {:else if shown.length === 0}
   <div class="empty"><p>{filter === 'new' ? t('empty.inbox') : t('empty.other')}</p></div>
 {:else}
-  {#each shown as l (l.id)}
-    <ListingCard listing={l} onstatus={filter === 'new' || filter === 'ask' ? (s) => changeStatus(l, s) : undefined} />
-  {/each}
+  <!-- En pantalla ancha, el mapa al lado de la lista; en el movil se queda la pestaña Mapa. -->
+  <div class="split">
+    <div class="cards">
+      {#each shown as l (l.id)}
+        <ListingCard listing={l} active={l.id === selected} onhover={(id) => (hovered = id)}
+          onstatus={filter === 'new' || filter === 'ask' ? (s) => changeStatus(l, s) : undefined} />
+      {/each}
+    </div>
+    <aside class="side">
+      <MapView label={t('map.title')} {points} places={profile?.destinations ?? []} height="calc(100vh - 32px)"
+        highlight={hovered ?? selected} onselect={select} />
+    </aside>
+  </div>
 {/if}
 
 <style>
+  .split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(340px, 44%); gap: 20px; align-items: start; }
+  .side { position: sticky; top: 16px; }
+  @media (max-width: 900px) {
+    .split { display: block; }
+    .side { display: none; }
+  }
   .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 8px; }
   .filters { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
   .filters a { border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; white-space: nowrap;

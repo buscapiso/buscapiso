@@ -89,3 +89,10 @@ test('a flat search shows only whole flats, and says how many rooms are hidden',
   expect(screen.getByRole('button', { name: '2+ bedrooms · 60+ m²' })).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Women only' })).toBeNull();
 });
+
+test('the list has its map beside it, and each card can be found from its pin', async () => {
+  render(Rooms, { filter: 'new', view: 'list' });
+  expect(await screen.findByText('Room a')).toBeInTheDocument();
+  expect(screen.getByRole('region', { name: 'Map of your listings' })).toBeInTheDocument();
+  expect(document.getElementById('card-a')).not.toBeNull();
+});

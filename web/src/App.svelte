@@ -13,7 +13,7 @@
   <Nav route={router.route} />
 </header>
 
-<main>
+<main class:wide={router.route.name === 'rooms'}>
   {#if router.route.name === 'listing'}
     <ListingDetail id={router.route.id} />
   {:else if router.route.name === 'settings'}
@@ -41,6 +41,8 @@
   .brand { font-family: var(--display); font-size: 20px; font-weight: 700; letter-spacing: -0.02em;
     text-decoration: none; color: var(--ink); }
   main { max-width: 960px; margin: 0 auto; padding: 16px; }
+  /* La lista con su mapa al lado aprovecha la pantalla del portatil. */
+  main.wide { max-width: 1440px; }
   footer { max-width: 960px; margin: 24px auto 0; padding: 12px 16px 24px; border-top: 1px solid var(--line);
     font-size: 13px; color: var(--muted); }
   footer p { margin: 4px 0; }

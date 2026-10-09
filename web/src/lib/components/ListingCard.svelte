@@ -4,7 +4,13 @@
   import { costLine, lineChips, lineColor } from '../format';
   import { t } from '../i18n';
 
-  let { listing, onstatus }: { listing: Listing; onstatus?: (s: Status) => void } = $props();
+  let { listing, onstatus, onhover, active = false }: {
+    listing: Listing; onstatus?: (s: Status) => void;
+    /** El puntero entra (id) o sale (null): el mapa de al lado resalta su punto. */
+    onhover?: (id: string | null) => void;
+    /** Elegido desde el mapa. */
+    active?: boolean;
+  } = $props();
   const link = $derived(href({ name: 'listing', id: listing.id }));
   // Fotocasa titula con el barrio: no repetirlo justo debajo.
   const title = $derived(listing.title || listing.neighbourhood);
@@ -19,7 +25,8 @@
       .filter(Boolean).join(', '));
 </script>
 
-<article class:fresh={listing.status === 'new'}>
+<article id="card-{listing.id}" class:fresh={listing.status === 'new'} class:active
+  onmouseenter={() => onhover?.(listing.id)} onmouseleave={() => onhover?.(null)}>
   <a class="photo" href={link} tabindex="-1" aria-hidden="true">
     {#if listing.photo}<img src={listing.photo} alt="" loading="lazy" />{/if}
   </a>
@@ -56,6 +63,7 @@
     display: grid; grid-template-columns: 120px 1fr auto; gap: 4px 16px;
     padding: 16px 0; border-bottom: 1px solid var(--line); position: relative;
   }
+  article.active { background: color-mix(in srgb, var(--accent) 8%, transparent); }
   article.fresh::before {
     content: ''; position: absolute; left: -12px; top: 22px;
     width: 6px; height: 6px; border-radius: 50%; background: var(--accent);

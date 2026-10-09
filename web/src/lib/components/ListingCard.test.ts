@@ -38,3 +38,12 @@ test('marks the listings the AI has read', () => {
   render(ListingCard, { listing: { ...listing, ai_facts: [] } });
   expect(screen.queryByTitle('Read by AI')).toBeNull();
 });
+
+test('says when the pointer is over it, so the map can light up its pin', async () => {
+  const onhover = vi.fn();
+  render(ListingCard, { listing, onhover });
+  await userEvent.hover(screen.getByRole('article'));
+  expect(onhover).toHaveBeenLastCalledWith('a1');
+  await userEvent.unhover(screen.getByRole('article'));
+  expect(onhover).toHaveBeenLastCalledWith(null);
+});

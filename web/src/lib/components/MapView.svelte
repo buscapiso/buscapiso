@@ -9,8 +9,12 @@
   /** Un tramo de camino: color de la linea, a trazos si se va andando. */
   export interface MapRoute { points: [number, number][]; color: string; dashed?: boolean; stops?: MapPlace[] }
 
-  let { points = [], places = [], routes = [], onpick, onmove, height = '360px', label }: {
+  let { points = [], places = [], routes = [], onpick, onmove, onselect, highlight = null, height = '360px', label }: {
     points?: MapPoint[]; places?: MapPlace[]; routes?: MapRoute[];
+    /** Clic en un punto: su id. */
+    onselect?: (id: string) => void;
+    /** Punto resaltado (la tarjeta bajo el puntero). */
+    highlight?: string | null;
     onpick?: (lat: number, lon: number) => void;
     /** Arrastrar el destino i a otro sitio. */
     onmove?: (i: number, lat: number, lon: number) => void;
@@ -20,6 +24,7 @@
   let el: HTMLDivElement;
   let map = $state.raw<L.Map | null>(null);
   let layer: L.LayerGroup;
+  let markers = new Map<string, L.CircleMarker>();
   let bounds: L.LatLngExpression[] = [];
   // Se encuadra mientras llegan datos (el anuncio, luego los destinos, luego
   // el camino) hasta que la persona toca el mapa: desde entonces manda ella.
@@ -78,10 +83,13 @@
       }
       bounds.push(...r.points);
     }
+    markers = new Map();
     for (const p of points) {
-      L.circleMarker([p.lat, p.lon], { radius: 7, color: '#fff', weight: 2,
+      const m = L.circleMarker([p.lat, p.lon], { radius: 7, color: '#fff', weight: 2,
         fillColor: resolve(p.color), fillOpacity: 1 })
         .bindPopup(popupContent(p)).addTo(layer);
+      if (onselect) m.on('click', () => onselect(p.id));
+      markers.set(p.id, m);
       bounds.push([p.lat, p.lon]);
     }
     places.forEach((d, i) => {
@@ -94,6 +102,19 @@
     });
     if (onpick ? !framed : !touched) fit(map);
     if (bounds.length || onpick) framed = true;
+  });
+
+  // Resaltar sin redibujar: solo cambia un punto. Depende tambien de los
+  // puntos para volver a aplicarse cuando se redibujan.
+  $effect(() => {
+    const h = highlight;
+    void points;
+    if (!map) return;
+    for (const [id, m] of markers) {
+      m.setRadius(id === h ? 12 : 7);
+      m.setStyle({ weight: id === h ? 3 : 2 });
+    }
+    if (h) markers.get(h)?.bringToFront();
   });
 </script>
 
