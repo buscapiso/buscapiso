@@ -48,6 +48,10 @@ export interface SearchSummary { accepted: number; possible: number; new: number
 
 const CAPTCHA_TIMEOUT_MS = 180_000;
 const localDate = (d: Date) => d.toLocaleDateString('sv-SE');
+function duration(ms: number): string {
+  const s = Math.round(ms / 1000);
+  return s < 60 ? `${s} s` : `${Math.floor(s / 60)} min ${s % 60} s`;
+}
 const stage = (emit: Emit, step: number, message: string) => emit('stage', `${step}/5 ${message}`, { step, total: 5 });
 
 class Cancelled extends Error {}
@@ -154,6 +158,28 @@ async function crawlSource(src: Source, areas: Area[], p: SearchProfile, pages: 
 }
 
 // --- puntuar ----------------------------------------------------------------
+// Las APIs gratuitas (Gemini) limitan las peticiones por minuto: pocas a la
+// vez, y ante un 429 se espera y se reintenta.
+const AI_PARALLEL = 4;
+const AI_RETRIES = 3;
+const AI_BACKOFF_MS = 10_000;
+
+async function eachLimited<T>(items: T[], limit: number, fn: (x: T) => Promise<void>): Promise<void> {
+  let next = 0;
+  const worker = async () => { while (next < items.length) await fn(items[next++]); };
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+}
+
+async function factsWithRetry(ai: AIProvider, l: StoredListing, cache: AICache, sleep: (ms: number) => Promise<void>) {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await extractFacts(ai, l, cache);
+    } catch (e) {
+      if (!(e instanceof AIError) || e.status !== 429 || attempt >= AI_RETRIES) throw e;
+      await sleep(AI_BACKOFF_MS * 2 ** attempt);
+    }
+  }
+}
 interface Working { stored: StoredListing; effective: Scorable; derived: Derived }
 
 function tripsWithFallback(provider: TravelProvider | null, emit: Emit): Trips {
@@ -200,7 +226,8 @@ function setTravel(w: Working, d: Destination, t: Trip) {
 }
 
 /** Trayectos, IA, filtro y puntuacion de los anuncios dados. No rastrea. */
-export async function rescore(listings: StoredListing[], p: SearchProfile, deps: Pick<Deps, 'travel' | 'ai' | 'aiCache' | 'now'>,
+export async function rescore(listings: StoredListing[], p: SearchProfile,
+  deps: Pick<Deps, 'travel' | 'ai' | 'aiCache' | 'now'> & Partial<Pick<Deps, 'sleep'>>,
   discarded: Set<string>, emit: Emit = () => {}): Promise<Derived[]> {
   const today = localDate(deps.now());
   const ws: Working[] = listings.map((l) => ({ stored: l,
@@ -242,35 +269,50 @@ export async function rescore(listings: StoredListing[], p: SearchProfile, deps:
     classify(ws, p, discarded, today);
   }
 
-  // 3. IA sobre los mejores. Un fallo suelto se salta; si fallan todos, aviso.
+  // 3. IA sobre los mejores, varios a la vez. Un fallo suelto se salta; si
+  // fallan todos, aviso.
   if (deps.ai && p.crawl.ai_listings) {
+    const ai = deps.ai;
+    const sleep = deps.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
     const top = ranked(ws).slice(0, p.crawl.ai_listings);
     let read = 0;
-    let last: Error | null = null;
-    for (const w of top) {
+    const failures: AIError[] = [];
+    await eachLimited(top, AI_PARALLEL, async (w) => {
       try {
-        const facts = await extractFacts(deps.ai, w.stored, deps.aiCache);
-        const { listing, ai } = applyFacts(w.stored, facts);
-        w.effective = { ...listing, travel: w.effective.travel, aiTemporary: ai.aiTemporary, redFlags: ai.redFlags };
-        Object.assign(w.derived, ai satisfies AIDerived);
+        const facts = await factsWithRetry(ai, w.stored, deps.aiCache, sleep);
+        const { listing, ai: derived } = applyFacts(w.stored, facts);
+        w.effective = { ...listing, travel: w.effective.travel, aiTemporary: derived.aiTemporary, redFlags: derived.redFlags };
+        Object.assign(w.derived, derived satisfies AIDerived);
         read++;
       } catch (e) {
         if (!(e instanceof AIError)) throw e;
-        last = e;
+        failures.push(e);
       }
-    }
-    if (top.length && !read && last) emit('warning', `    The AI did not answer (${last.message}); going on without it`);
-    else if (read) emit('info', `    AI: read ${read} listings`, { calls: deps.ai.usage.calls });
+    });
+    if (top.length && !read && failures.length) emit('warning', `    The AI did not answer (${failures.at(-1)!.message}); going on without it`);
+    else if (read) emit('info', `    AI: read ${read} listings`, { calls: ai.usage.calls });
     classify(ws, p, discarded, today);
   }
   return ws.map((w) => w.derived);
 }
 
 // --- la busqueda ----------------------------------------------------------
-export async function runSearch(p: SearchProfile, deps: Deps, emit: Emit, opts: SearchOptions = {}): Promise<SearchSummary> {
+export async function runSearch(p: SearchProfile, deps: Deps, rawEmit: Emit, opts: SearchOptions = {}): Promise<SearchSummary> {
   const city = CITIES[p.city];
   if (!city) throw new Error(`unknown city ${p.city}`);
   const pages = opts.pages ?? p.crawl.max_pages;
+  // Cada evento lleva los segundos desde el inicio, y cada etapa dice cuanto
+  // tardo: si una busqueda es lenta, el registro dice donde.
+  const clock = () => deps.now().getTime();
+  const start = clock();
+  let lap = start;
+  const emit: Emit = (kind, message, data = {}) => rawEmit(kind, message, { ...data, elapsed: Math.round((clock() - start) / 1000) });
+  const took = () => {
+    const t = clock();
+    emit('info', `    took ${duration(t - lap)}`);
+    lap = t;
+  };
+  const next = (step: number, message: string) => { took(); stage(emit, step, message); };
   try {
     stage(emit, 1, 'Choosing areas and reading the portals...');
     const areas = await selectAreas(city.areas, p.destinations, tripsWithFallback(deps.travel, emit));
@@ -292,32 +334,55 @@ export async function runSearch(p: SearchProfile, deps: Deps, emit: Emit, opts: 
     const { unique, alsoOn, merged } = dedupe(raw);
     emit('info', merged ? `    ${raw.length} listings, ${merged} were on two portals -> ${unique.length}` : `    ${unique.length} listings found`);
 
-    stage(emit, 2, 'Placing them on the map (Nominatim, 1 request a second)...');
+    next(2, 'Placing them on the map by neighbourhood...');
     const before = await deps.store.listings(p.city);
     const known = new Map(before.map((l) => [l.id, l]));
-    let i = 0;
-    for (const l of unique) {
-      if (deps.signal?.aborted) throw new Cancelled();
-      const id = listingId(l.source, l.sourceId);
-      const old = known.get(id);
-      if (l.lat === null && old?.lat != null) Object.assign(l, { lat: old.lat, lon: old.lon, approximateLocation: old.approximateLocation });
-      if (l.lat === null) await deps.geocoder.place(l);
-      if (++i % 25 === 0) emit('progress', `    ${i}/${unique.length}`, { done: i, total: unique.length });
-    }
     const now = deps.now().toISOString();
     const stored: StoredListing[] = unique.map((l) => {
       const id = listingId(l.source, l.sourceId);
       const old = known.get(id);
-      // Lo que ya leimos de la ficha no se pierde al volver a ver el listado.
+      // Lo que ya leimos de la ficha no se pierde al volver a ver el listado,
+      // ni una posicion ya conocida.
       const detail = old?.detailRead && !l.detailRead ? pickDetail(old) : {};
-      return { ...l, ...detail, id, city: p.city, firstSeen: old?.firstSeen ?? now, lastSeen: now,
+      const where = l.lat === null && old?.lat != null
+        ? { lat: old.lat, lon: old.lon, approximateLocation: old.approximateLocation } : {};
+      return { ...l, ...detail, ...where, id, city: p.city, firstSeen: old?.firstSeen ?? now, lastSeen: now,
         alsoOn: alsoOn.get(l) ?? old?.alsoOn ?? [] };
     });
+    // Guardado antes de situarlos: parar aqui no pierde lo rastreado.
     await deps.store.saveListings(stored);
+    // Solo se geocodifica lo que el portal no situa; una posicion difuminada
+    // a proposito por el portal se respeta.
+    const noCoords = new Set(stored.filter((_, k) => unique[k].lat === null).map((l) => l.id));
+    const unplaced = stored.filter((l) => l.lat === null);
+    let i = 0;
+    for (const l of unplaced) {
+      if (deps.signal?.aborted) throw new Cancelled();
+      await deps.geocoder.placeRoughly(l);
+      if (++i % 25 === 0) emit('progress', `    ${i}/${unplaced.length}`, { done: i, total: unplaced.length });
+    }
+    if (unplaced.length) await deps.store.saveListings(unplaced);
 
-    stage(emit, 3, 'Calculating travel times and scores...');
+    next(3, 'Calculating travel times and scores...');
     const discarded = await deps.store.discarded();
-    const all = await deps.store.listings(p.city);
+    let all = await deps.store.listings(p.city);
+    // La calle exacta solo para los mejores. Para elegirlos basta la
+    // estimacion sobre el barrio, sin red.
+    const guess = await rescore(all, p, { ...deps, travel: null, ai: null }, discarded);
+    const byId = new Map(all.map((l) => [l.id, l]));
+    const best = guess.filter((d) => d.group !== 'rejected').sort((a, b) => b.score - a.score)
+      .slice(0, p.crawl.real_travel_times).map((d) => byId.get(d.id)!);
+    const vague = best.filter((l) => noCoords.has(l.id) && l.approximateLocation && l.address);
+    let pinned = 0;
+    for (const l of vague) {
+      if (deps.signal?.aborted) throw new Cancelled();
+      if (await deps.geocoder.pinpoint(l)) pinned++;
+    }
+    if (vague.length) emit('info', `    Exact address found for ${pinned} of ${vague.length} of the best`);
+    if (pinned) {
+      await deps.store.saveListings(vague);
+      all = await deps.store.listings(p.city);
+    }
     let derived = await rescore(all, p, deps, discarded, emit);
 
     // 4. Fichas de los mejores de Idealista (dueño, visitas, parejas).
@@ -328,7 +393,7 @@ export async function runSearch(p: SearchProfile, deps: Deps, emit: Emit, opts: 
       .map((d) => fresh.get(d.id)).filter((l): l is StoredListing => !!l && l.source === 'idealista' && !l.detailRead)
       .slice(0, p.crawl.details_to_read);
     if (toRead.length && !opts.skipDetails && deps.fetchPage) {
-      stage(emit, 4, `Reading the ${toRead.length} best full listings (guests, owner)...`);
+      next(4, `Reading the ${toRead.length} best full listings (guests, owner)...`);
       let read = 0;
       for (const l of toRead) {
         const r = await fetchOne(idealista, idealista.detailRequest!(l).url, deps, emit);
@@ -344,9 +409,9 @@ export async function runSearch(p: SearchProfile, deps: Deps, emit: Emit, opts: 
       await deps.store.saveListings(toRead);
       derived = await rescore(await deps.store.listings(p.city), p, deps, discarded, emit);
       emit('info', `    ${read} full listings read`);
-    } else stage(emit, 4, 'Full listings skipped');
+    } else next(4, 'Full listings skipped');
 
-    stage(emit, 5, 'Saving...');
+    next(5, 'Saving...');
     await deps.store.saveDerived(derived);
     const newIds = new Set(stored.filter((l) => !known.has(l.id)).map((l) => l.id));
     const accepted = derived.filter((d) => d.group === 'accepted');
@@ -358,6 +423,7 @@ export async function runSearch(p: SearchProfile, deps: Deps, emit: Emit, opts: 
       await deps.notify(accepted.filter((d) => newIds.has(d.id)).map((d) => ({ listing: byId.get(d.id)!, derived: d })), p.listing_type)
         .catch(() => 0);
     }
+    took();
     emit('info', `    ${summary.accepted} fit all your criteria, ${summary.possible} to ask about`);
     emit('done', 'Done', { ...summary });
     return summary;

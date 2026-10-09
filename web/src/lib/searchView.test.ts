@@ -1,4 +1,4 @@
-import { summarize } from './searchView';
+import { clock, summarize } from './searchView';
 import type { SearchEvent } from './api';
 
 const ev = (kind: SearchEvent['kind'], data: Record<string, unknown> = {}, message = ''): SearchEvent =>
@@ -21,4 +21,12 @@ test('collects warnings and the final event', () => {
   const s = summarize([ev('warning', {}, 'roomgo failed'), ev('done', { new: 2 })]);
   expect(s.warnings).toEqual(['roomgo failed']);
   expect(s.done?.data.new).toBe(2);
+});
+
+test('shows how far into the search each line came', () => {
+  expect(clock(ev('info', { elapsed: 7 }))).toBe('0:07');
+  expect(clock(ev('info', { elapsed: 432 }))).toBe('7:12');
+  expect(clock(ev('info', { elapsed: 3725 }))).toBe('62:05');
+  // Una busqueda guardada por una version anterior no trae el dato.
+  expect(clock(ev('info'))).toBe('');
 });

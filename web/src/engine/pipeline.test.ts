@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AICache, ListingFacts } from './ai/extract';
-import { ClaudeProvider } from './ai/providers';
+import { AIError, ClaudeProvider, type AIProvider } from './ai/providers';
 import { Geocoder } from './geocode';
 import type { Derived, FetchPage, StoredListing } from './model';
 import { rescore, runSearch, type Deps, type PipelineStore, type SearchEvent } from './pipeline';
@@ -124,6 +124,57 @@ describe('runSearch', () => {
     expect(events.at(-1)).toMatchObject({ kind: 'error', data: { cancelled: true } });
   });
 
+  it('keeps the crawled listings when stopped while placing them on the map', async () => {
+    const ctl = new AbortController();
+    const geocoder = new Geocoder({ get: async () => undefined, put: async () => {} },
+      async () => { ctl.abort(); return []; }, async () => {}, () => 0);
+    const { d, mem } = deps({ geocoder, signal: ctl.signal });
+    const { events, emit } = collect();
+    await runSearch(profile({ sources: ['idealista'] }), d, emit);
+    expect(events.at(-1)).toMatchObject({ kind: 'error', data: { cancelled: true } });
+    expect([...mem.listings.values()].filter((l) => l.source === 'idealista').length).toBeGreaterThan(0);
+  }, 30_000);
+
+  it('places every listing by its neighbourhood and looks up only the best addresses', async () => {
+    const queries: string[] = [];
+    const geoStore = new Map();
+    const geocoder = new Geocoder({ get: async (q) => geoStore.get(q), put: async (q, v) => { geoStore.set(q, v); } },
+      async (url) => { queries.push(new URL(url).searchParams.get('q')!); return [{ lat: '41.39', lon: '2.16' }]; },
+      async () => {}, () => 0);
+    const { d, mem } = deps({ geocoder });
+    await runSearch(profile({ sources: ['idealista'], crawl: { max_pages: 1, details_to_read: 0, real_travel_times: 2 } }), d, collect().emit);
+    const ls = [...mem.listings.values()];
+    expect(ls.length).toBeGreaterThan(2);
+    expect(ls.every((l) => l.lat !== null)).toBe(true);
+    const addressQueries = queries.filter((q) => ls.some((l) => l.address && l.address !== l.neighbourhood && q.startsWith(`${l.address},`)));
+    expect(addressQueries).toHaveLength(2);
+    expect(ls.filter((l) => !l.approximateLocation)).toHaveLength(2);
+  }, 30_000);
+
+  it('leaves alone the position a portal gives, even a vague one', async () => {
+    const queries: string[] = [];
+    // Un sitio que ningun portal daria: si aparece, lo puso el geocodificador.
+    const geocoder = new Geocoder({ get: async () => undefined, put: async () => {} },
+      async (url) => { queries.push(new URL(url).searchParams.get('q')!); return [{ lat: '1', lon: '1' }]; },
+      async () => {}, () => 0);
+    const { d, mem } = deps({ geocoder });
+    await runSearch(profile({ sources: ['fotocasa'], crawl: { max_pages: 1, details_to_read: 0 } }), d, collect().emit);
+    const ls = [...mem.listings.values()];
+    expect(queries).toEqual([]);
+    expect(ls.filter((l) => l.lat === 1)).toEqual([]);
+    // Fotocasa da coordenadas, aproximadas a proposito en muchos anuncios.
+    expect(ls.some((l) => l.approximateLocation && l.address)).toBe(true);
+  }, 30_000);
+
+  it('says how long each stage took', async () => {
+    let t = Date.parse('2026-10-09T10:00:00Z');
+    const { d } = deps({ now: () => new Date((t += 61_000)) });
+    const { events, emit } = collect();
+    await runSearch(profile({ sources: ['fotocasa'] }), d, emit);
+    expect(events.filter((e) => /took \d+ min/.test(e.message)).length).toBeGreaterThanOrEqual(5);
+    expect(events.every((e) => typeof e.data.elapsed === 'number')).toBe(true);
+  }, 30_000);
+
   it('reads the full listing of the best Idealista rooms once', async () => {
     const calls: string[] = [];
     const { d, mem } = deps({ fetchPage: extension({ calls }) });
@@ -174,5 +225,37 @@ describe('rescore', () => {
     expect(withAi.length).toBeGreaterThan(0);
     expect(withAi[0].reasons.some((r) => r.startsWith('AI: looks like a short'))).toBe(true);
     expect(ls).toEqual(copy);
+  });
+
+  const FACTS: ListingFacts = { household_gender: 'mixed', bills_included: null, bills_amount_eur: null, owner_lives_in: null,
+    couples_allowed: null, visitors_allowed: null, seasonal_or_short_let: null, min_stay_months: null, roommates: null,
+    roommates_age_range: null, roommates_occupation: null, available_from: null, summary: 'read', pros: [], cons: [], red_flags: [] };
+  const noCache: AICache = { get: async () => undefined, put: async () => {} };
+  function fakeAI(answer: (n: number) => Promise<ListingFacts>): AIProvider {
+    let n = 0;
+    return { name: 'fake', model: 'm', usage: { calls: 0, inputTokens: 0, outputTokens: 0 }, text: async () => '',
+      json: (async () => answer(n++)) as AIProvider['json'] };
+  }
+  it('asks the AI about several listings at once, but not all of them', async () => {
+    let inFlight = 0, most = 0;
+    const ai = fakeAI(async () => {
+      most = Math.max(most, ++inFlight);
+      await new Promise((r) => setTimeout(r, 5));
+      inFlight--;
+      return FACTS;
+    });
+    const ds = await rescore(await stored(), profile({ crawl: { ai_listings: 12 } }), { travel: null, ai, aiCache: noCache,
+      now: () => new Date() }, new Set());
+    expect(ds.filter((x) => x.summary === 'read').length).toBeGreaterThan(4);
+    expect(most).toBeGreaterThan(1);
+    expect(most).toBeLessThanOrEqual(4);
+  });
+  it('waits and retries when the AI says it is getting too many requests', async () => {
+    const waits: number[] = [];
+    const ai = fakeAI(async (n) => { if (n === 0) throw new AIError('HTTP 429', 429); return FACTS; });
+    const ds = await rescore(await stored(), profile({ crawl: { ai_listings: 3 } }), { travel: null, ai, aiCache: noCache,
+      now: () => new Date(), sleep: async (ms) => { waits.push(ms); } }, new Set());
+    expect(waits.length).toBeGreaterThan(0);
+    expect(ds.filter((x) => x.summary === 'read')).toHaveLength(3);
   });
 });

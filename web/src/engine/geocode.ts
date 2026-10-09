@@ -53,13 +53,27 @@ export class Geocoder {
   /** De lo concreto a lo general. La posicion solo es exacta si se acierta
    * la calle: el ranking necesita saber si el trayecto es fiable. */
   async place(l: RawListing): Promise<void> {
-    const tries: [string, boolean][] = [];
-    if (l.address && l.municipality) tries.push([`${l.address}, ${l.municipality}, España`, false]);
-    if (l.neighbourhood && l.municipality) tries.push([`${l.neighbourhood}, ${l.municipality}, España`, true]);
-    if (l.municipality) tries.push([`${l.municipality}, España`, true]);
-    for (const [q, approximate] of tries) {
+    if (!(await this.pinpoint(l))) await this.placeRoughly(l);
+  }
+
+  /** La calle exacta, si Nominatim la encuentra. Una peticion por anuncio:
+   * solo para los que merecen un trayecto fiable. */
+  async pinpoint(l: RawListing): Promise<boolean> {
+    if (!l.address || !l.municipality) return false;
+    const r = await this.geocode(`${l.address}, ${l.municipality}, España`);
+    if (r) { [l.lat, l.lon] = r; l.approximateLocation = false; }
+    return !!r;
+  }
+
+  /** El barrio, o el municipio. Hay pocos distintos y la cache los recuerda:
+   * sirve para todos los anuncios sin apenas peticiones. */
+  async placeRoughly(l: RawListing): Promise<void> {
+    const tries: string[] = [];
+    if (l.neighbourhood && l.municipality) tries.push(`${l.neighbourhood}, ${l.municipality}, España`);
+    if (l.municipality) tries.push(`${l.municipality}, España`);
+    for (const q of tries) {
       const r = await this.geocode(q);
-      if (r) { [l.lat, l.lon] = r; l.approximateLocation = approximate; return; }
+      if (r) { [l.lat, l.lon] = r; l.approximateLocation = true; return; }
     }
   }
 

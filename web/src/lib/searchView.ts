@@ -19,3 +19,10 @@ export function summarize(events: SearchEvent[]) {
   }
   return { step, total, captcha, done, error, warnings };
 }
+
+/** "m:ss" desde el inicio de la busqueda, o '' si el evento no lo trae. */
+export function clock(e: SearchEvent): string {
+  const s = e.data.elapsed;
+  if (typeof s !== 'number') return '';
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}

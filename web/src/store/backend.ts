@@ -56,7 +56,8 @@ export function createBackend(deps: BackendDeps) {
     get: (q: string) => db.get<{ lat: number | null; lon: number | null }>('geoCache', q),
     put: (q: string, v: { lat: number | null; lon: number | null }) => db.put('geoCache', v, q),
   };
-  const geocoder = new Geocoder(geoCache, deps.geoGet);
+  const sleep = deps.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
+  const geocoder = new Geocoder(geoCache, deps.geoGet, sleep);
   const aiCache = { get: (k: string) => db.get<never>('aiCache', k), put: (k: string, f: unknown) => db.put('aiCache', f, k) };
   const travelCache = { get: (k: string) => db.get<never>('travelCache', k), put: (k: string, v: unknown) => db.put('travelCache', v, k) };
 
@@ -177,7 +178,7 @@ export function createBackend(deps: BackendDeps) {
     return {
       fetchPage: deps.fetchPage(), fetchDirect: deps.fetchDirect ?? defaultFetchDirect, store,
       travel: await travel(), geocoder, ai: await ai().catch(() => null), aiCache, now,
-      sleep: deps.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms))), random: deps.random ?? Math.random, signal,
+      sleep, random: deps.random ?? Math.random, signal,
       notify: n.topic ? (items, kind) => notifyNew({ server: n.server, topic: n.topic, minScore: n.min_score },
         items.map(({ listing, derived }) => ({ score: derived.score, totalCost: totalCost(listing), title: listing.title,
           place: listing.neighbourhood || listing.municipality,

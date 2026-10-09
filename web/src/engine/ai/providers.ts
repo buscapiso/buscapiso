@@ -7,7 +7,10 @@ import type { ZodType, ZodTypeDef } from 'zod';
 
 type Schema<T> = ZodType<T, ZodTypeDef, unknown>;
 
-export class AIError extends Error {}
+export class AIError extends Error {
+  /** El codigo HTTP, si lo hubo: 429 es "espera y reintenta". */
+  constructor(message: string, public status?: number) { super(message); }
+}
 export interface Usage { calls: number; inputTokens: number; outputTokens: number }
 
 export interface AIProvider {
@@ -65,7 +68,7 @@ export class ClaudeProvider implements AIProvider {
       'x-api-key': this.key, 'anthropic-version': '2023-06-01',
       'anthropic-dangerous-direct-browser-access': 'true',
     }, { model: this.model, max_tokens: maxTokens, system, messages: [{ role: 'user', content: user }] });
-    if (status !== 200) throw new AIError(`Claude answered HTTP ${status}`);
+    if (status !== 200) throw new AIError(`Claude answered HTTP ${status}`, status);
     this.usage.calls++;
     this.usage.inputTokens += data.usage?.input_tokens ?? 0;
     this.usage.outputTokens += data.usage?.output_tokens ?? 0;
@@ -94,7 +97,7 @@ export class OpenAICompatProvider implements AIProvider {
       messages: [{ role: 'system', content: system }, { role: 'user', content: user }] };
     if (jsonMode) body.response_format = { type: 'json_object' };
     const { status, data } = await this.post(this.url, this.key ? { Authorization: `Bearer ${this.key}` } : {}, body);
-    if (status !== 200) throw new AIError(`The AI provider answered HTTP ${status}`);
+    if (status !== 200) throw new AIError(`The AI provider answered HTTP ${status}`, status);
     this.usage.calls++;
     this.usage.inputTokens += data.usage?.prompt_tokens ?? 0;
     this.usage.outputTokens += data.usage?.completion_tokens ?? 0;

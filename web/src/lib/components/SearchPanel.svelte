@@ -1,7 +1,7 @@
 <script lang="ts">
   import { ApiError, searchState, startSearch, stopSearch, streamSearch, type SearchEvent } from '../api';
   import { ext } from '../extensionState.svelte';
-  import { summarize } from '../searchView';
+  import { clock, summarize } from '../searchView';
   import { t } from '../i18n';
 
   let { onfinished }: { onfinished: () => void } = $props();
@@ -68,7 +68,7 @@
   {#if view.error && !running}<p class="error" role="alert">{t('search.error', { message: view.error.message })}</p>{/if}
   {#if events.length}
     <details><summary>{t('search.showLog')}</summary>
-      <ul class="log">{#each events as e}<li class={e.kind}>{e.message.trim()}</li>{/each}</ul>
+      <ul class="log">{#each events as e}<li class={e.kind}>{#if clock(e)}<span class="clock">{clock(e)}</span>{/if}{e.message.trim()}</li>{/each}</ul>
     </details>
   {/if}
 </section>
@@ -87,6 +87,7 @@
   .warn { color: var(--warn); }
   summary { font-size: 13px; color: var(--muted); cursor: pointer; }
   .log { font-size: 13px; color: var(--muted); list-style: none; padding: 0; max-height: 40vh; overflow: auto; }
+  .log .clock { display: inline-block; min-width: 3.2em; font-variant-numeric: tabular-nums; opacity: .7; }
   .log .warning { color: var(--warn); }
   .log .stage { color: var(--ink); font-weight: 600; }
   .log .error { color: var(--bad); }

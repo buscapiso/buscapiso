@@ -54,6 +54,12 @@ describe('OpenAI-compatible', () => {
     expect(calls[0].headers.Authorization).toBe('Bearer k');
     expect(calls[0].body.response_format).toEqual({ type: 'json_object' });
   });
+  it('marks a rate limit so the caller can wait and retry', async () => {
+    const { post } = recorder([{ status: 429, data: {} }]);
+    const err = await new OpenAICompatProvider('k', 'https://x/v1', 'gemini-x', post).text('s', 'u').catch((e) => e);
+    expect(err).toBeInstanceOf(AIError);
+    expect(err.status).toBe(429);
+  });
   it('explains an empty answer cut by length, and sends no key for Ollama', async () => {
     const { calls, post } = recorder([{ status: 200, data: { choices: [{ message: { content: '' }, finish_reason: 'length' }] } }]);
     await expect(new OpenAICompatProvider('', 'http://localhost:11434/v1', 'llama', post).text('s', 'u'))
