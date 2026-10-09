@@ -291,7 +291,7 @@
   "ai.keyLocal": "Keys are stored in this browser only and sent only to that provider.",
   "extension.add": "To search the portals from this browser, add the buscapiso extension. It reads only the rental portals, and only when you search.",
   "extension.addFirefox": "To search the portals from Firefox, add the buscapiso extension. It reads only the rental portals, and only when you search.",
-  "extension.get": "Add the extension",
+  "extension.get": "Download the extension",
   "extension.how": "How to install it",
   "extension.check": "I've installed it",
   "extension.orImport": "You can also use the list someone else made:",

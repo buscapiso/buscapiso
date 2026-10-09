@@ -18,9 +18,10 @@ export function platform(ua = navigator.userAgent, touchMac = navigator.maxTouch
   return 'desktop';
 }
 
-/** Enlaces de las tiendas. Vacios hasta publicar la extension. */
+/** Donde descargar la extension. No esta en las tiendas: Chrome la carga
+ * descomprimida y Firefox instala el .xpi firmado por Mozilla (oculto). */
 export const STORE = {
-  chrome: '',
+  chrome: 'https://github.com/buscapiso/buscapiso/releases/latest/download/buscapiso-chrome.zip',
   firefox: '',
   help: 'https://github.com/buscapiso/buscapiso#the-browser-extension',
 };

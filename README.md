@@ -6,13 +6,22 @@ It is a website: open **https://buscapiso.github.io/buscapiso/**. There is nothi
 
 ## The browser extension
 
-A website can't read other websites, so buscapiso uses a small extension to read the rental portals from your own browser, the same way you would browse them. It only reads Idealista, Fotocasa, Habitaclia, Roomgo and De Piso en Piso, and only when you press Search.
+A website can't read other websites, so buscapiso uses a small extension to read the rental portals from your own browser, the same way you would browse them. It only reads Idealista, Fotocasa, Habitaclia, Roomgo and De Piso en Piso, and only when you press Search. It isn't in the browser stores; you install it from this repository.
 
-- **Chrome, Edge, Brave, Vivaldi, Opera:** install it from the Chrome Web Store link shown on the site.
-- **Firefox, on a computer or on Android:** install it from the Firefox Add-ons link shown on the site.
-- **iPad, iPhone and Chrome on Android** can't run it. Everything else works there: ask someone to send you an export, or make one yourself on a computer, and import it (see below).
+**Chrome, Edge, Brave, Vivaldi or Opera**
 
-Until the store pages are up, you can load it by hand: download `buscapiso-chrome.zip` or `buscapiso-firefox.zip` from the [releases](https://github.com/buscapiso/buscapiso/releases), unzip it, and in Chrome open `chrome://extensions`, turn on Developer mode and choose "Load unpacked". In Firefox, open `about:debugging`, "This Firefox", "Load Temporary Add-on".
+1. Download [buscapiso-chrome.zip](https://github.com/buscapiso/buscapiso/releases/latest/download/buscapiso-chrome.zip) and unzip it into a folder you will keep (the browser loads it from there).
+2. Open `chrome://extensions` (in Edge, `edge://extensions`) and turn on **Developer mode**.
+3. Press **Load unpacked** and choose the unzipped folder.
+4. Go back to the buscapiso tab and press "I've installed it".
+
+The browser may sometimes warn about extensions in developer mode; you can dismiss it.
+
+**Firefox, on a computer or on Android**
+
+Install the signed `buscapiso-firefox.xpi` from the [latest release](https://github.com/buscapiso/buscapiso/releases/latest): open the link in Firefox and accept. Firefox only installs extensions signed by Mozilla, so the plain zip works only as a temporary add-on (`about:debugging` → This Firefox → Load Temporary Add-on) until you restart.
+
+**iPad, iPhone and Chrome on Android** can't run it. Everything else works there: ask someone to send you an export, or make one yourself on a computer, and import it (see below).
 
 ## First steps
 
