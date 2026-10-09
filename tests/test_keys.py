@@ -41,3 +41,11 @@ def test_the_key_round_trips_through_the_keyring(llavero):
 def test_the_environment_variable_is_a_fallback(llavero, monkeypatch):
     monkeypatch.setenv("BUSCAPISO_GOOGLE_KEY", "FROMENV")
     assert keys.get_google_key() == "FROMENV"
+
+
+def test_each_provider_has_its_own_key(llavero, monkeypatch):
+    keys.set_key("anthropic", "A1")
+    keys.set_key("openai_compat", "O1")
+    assert (keys.get_key("anthropic"), keys.get_key("openai_compat")) == ("A1", "O1")
+    monkeypatch.setenv("BUSCAPISO_OLLAMA_KEY", "E")
+    assert keys.get_key("ollama") == "E"

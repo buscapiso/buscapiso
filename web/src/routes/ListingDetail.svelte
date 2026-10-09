@@ -2,6 +2,7 @@
   import { getActiveProfile, getListing, setNote, setStatus, ApiError,
            type Destination, type ListingDetail, type Status } from '../lib/api';
   import MapView from '../lib/components/MapView.svelte';
+  import MessageDraft from '../lib/components/MessageDraft.svelte';
   import StatusPicker from '../lib/components/StatusPicker.svelte';
   import { costLine, directionsUrl, lineChips, lineColor } from '../lib/format';
   import { t } from '../lib/i18n';
@@ -90,6 +91,23 @@
       {#if saved}<span class="ok">{t('listing.noteSaved')}</span>{/if}
     </section>
 
+    {#if l.summary}
+      <section>
+        <h2>{t('listing.aiSummary')}</h2>
+        <p>{l.summary}</p>
+        {#if l.red_flags.length}
+          <div class="flags"><strong>{t('listing.redFlags')}</strong>
+            <ul>{#each l.red_flags as f}<li>{f}</li>{/each}</ul></div>
+        {/if}
+        <div class="proscons">
+          {#if l.pros.length}<div><strong>{t('listing.pros')}</strong><ul>{#each l.pros as x}<li>{x}</li>{/each}</ul></div>{/if}
+          {#if l.cons.length}<div><strong>{t('listing.cons')}</strong><ul>{#each l.cons as x}<li>{x}</li>{/each}</ul></div>{/if}
+        </div>
+      </section>
+    {/if}
+
+    <section><MessageDraft id={l.id} /></section>
+
     <section>
       <h2>{t('listing.why')} ({Math.round(l.score)})</h2>
       <ul>{#each l.reasons as r}<li>{r}</li>{/each}</ul>
@@ -109,6 +127,9 @@
 {/if}
 
 <style>
+  .flags { border-left: 3px solid var(--warn); padding: 2px 12px; margin: 8px 0; }
+  .flags ul, .proscons ul { margin: 4px 0; padding-left: 18px; }
+  .proscons { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; }
   .hero { width: 100%; max-height: 320px; object-fit: cover; border-radius: var(--radius); }
   h1 { margin: 16px 0 2px; }
   .cost strong { font-family: var(--display); font-size: 30px; letter-spacing: -0.02em; }

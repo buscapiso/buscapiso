@@ -40,6 +40,10 @@ class Listing(BaseModel):
     travel: dict[str, float]
     routes: dict[str, str]
     travel_source: str
+    summary: str
+    pros: list[str]
+    cons: list[str]
+    red_flags: list[str]
     score: float
     reasons: list[str]
     gender: str
@@ -100,6 +104,8 @@ def listing_from_row(row: dict) -> Listing:
         photo=d.get("foto", ""), description=d.get("descripcion", ""),
         travel=_trayectos(d), routes=_rutas(d),
         travel_source=d.get("trayectos_fuente", "graph"),
+        summary=d.get("ia_resumen", ""), pros=d.get("ia_pros", []),
+        cons=d.get("ia_contras", []), red_flags=d.get("ia_alertas", []),
         score=d.get("puntuacion", 0.0), reasons=d.get("motivos", []),
         gender=_GENERO.get(d.get("genero_piso", "desconocido"), "unknown"),
         gender_confirmed=d.get("genero_confirmado", False),

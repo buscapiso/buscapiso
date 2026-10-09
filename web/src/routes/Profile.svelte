@@ -1,10 +1,13 @@
 <script lang="ts">
   import {
     ApiError, activateProfile, deleteProfile, getActiveProfile, getMeta, listProfiles,
-    geocode, saveProfile, type Meta, type Place, type ProfileSummary, type SearchProfile,
+    geocode, saveProfile, type Meta, type Place, type ProfileSuggestion, type ProfileSummary,
+    type SearchProfile,
   } from '../lib/api';
   import MapView from '../lib/components/MapView.svelte';
   import TravelSettings from '../lib/components/TravelSettings.svelte';
+  import AISettings from '../lib/components/AISettings.svelte';
+  import DescribeProfile from '../lib/components/DescribeProfile.svelte';
   import { fieldErrors } from '../lib/profileErrors';
   import { t } from '../lib/i18n';
 
@@ -33,6 +36,24 @@
     if (d) {
       d.lat = Number(lat.toFixed(6));
       d.lon = Number(lon.toFixed(6));
+    }
+  }
+
+  async function applySuggestion(s: ProfileSuggestion) {
+    if (!p) return;
+    if (s.budget_ideal !== null) p.budget.ideal_total = s.budget_ideal;
+    if (s.budget_max !== null) p.budget.max_total = s.budget_max;
+    if (s.household_gender) p.household.gender = s.household_gender;
+    if (s.owner_must_not_live_in !== null) p.household.no_live_in_owner = s.owner_must_not_live_in;
+    if (s.visits) p.household.visits = s.visits;
+    for (const pl of s.places) {
+      const found = (await geocode(pl.address).catch(() => []))[0];
+      if (!found) {
+        errors = { ...errors, destinations: t('describe.notFound', { address: pl.address }) };
+        continue;
+      }
+      p.destinations.push({ name: pl.name, lat: found.lat, lon: found.lon, max_minutes: pl.max_minutes,
+                            minute_weight: 1, mode: pl.mode, depart_at: '08:30' });
     }
   }
 
@@ -106,6 +127,7 @@
 
 {#if p && meta}
   <h1>{t('profile.title')}</h1>
+  <DescribeProfile onapply={applySuggestion} />
 
   <div class="profiles">
     <label>{t('profile.active')}
@@ -230,6 +252,7 @@
   </div>
 
   <TravelSettings />
+  <AISettings />
 {/if}
 
 <style>

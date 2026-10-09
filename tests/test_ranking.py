@@ -257,3 +257,12 @@ def test_any_gender_never_sends_unknowns_to_the_ask_list(cfg, zonas):
     ok, posibles, _fuera = filtrar([anuncio(genero_piso=DESCONOCIDO)], cfg, zonas)
     assert len(ok) == 1
     assert posibles == []
+
+
+def test_an_ai_detected_seasonal_let_costs_points(cfg, zonas):
+    normal, temporal = anuncio(), anuncio(id_portal="2")
+    temporal.ia_temporal = True
+    temporal.ia_alertas = ["asks for payment before viewing"]
+    assert puntuar(temporal, cfg, zonas) < puntuar(normal, cfg, zonas)
+    assert any("seasonal" in m for m in temporal.motivos)
+    assert any("payment before viewing" in m for m in temporal.motivos)

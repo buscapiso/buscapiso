@@ -98,3 +98,55 @@ def test_a_failing_provider_falls_back_to_graph_times_with_a_warning(home, cfg):
     assert any(e.kind == "warning" and "transitous" in e.message for e in seen)
     assert [e.data["step"] for e in seen if e.kind == "stage"] == [1, 2, 3, 4, 5]
     assert r.crawled > 0
+
+
+class FakeAI:
+    name, model = "fake", "fake-1"
+
+    def __init__(self, falla=False):
+        from buscapiso.ai.providers import Usage
+        self.falla, self.usage, self.vistos = falla, Usage(), 0
+
+    def json(self, system, user, schema):
+        from buscapiso.ai.providers import AIError
+        if self.falla:
+            raise AIError("bad key")
+        self.vistos += 1
+        self.usage.calls += 1
+        return schema(household_gender="female_only", bills_included=None,
+                      bills_amount_eur=None, owner_lives_in=None, couples_allowed=None,
+                      visitors_allowed=None, seasonal_or_short_let=None, min_stay_months=None,
+                      roommates=None, roommates_age_range=None, roommates_occupation=None,
+                      available_from=None, summary="A room.")
+
+
+def _con_fotocasa(home):
+    shutil.copy(RAIZ / "tests" / "fixtures" / "fotocasa_listado.html",
+                home / "cache" / "fotocasa_listado.html")
+
+
+def test_ai_confirms_gender_and_moves_possibles_to_the_main_list(home, cfg):
+    _con_fotocasa(home)
+    cfg["requisitos"]["puntos_minimos_para_preguntar"] = -1000
+    sin = run_search(cfg, {}, SearchOptions(from_cache=True, offline=True),
+                     almacen.abrir(home / "a.db"))
+    ia = FakeAI()
+    con = run_search(cfg, {}, SearchOptions(from_cache=True, offline=True),
+                     almacen.abrir(home / "b.db"), ai=ia)
+    assert ia.vistos > 0
+    assert len(con.accepted) > len(sin.accepted)
+    assert all(a.ia_resumen == "A room." for a in con.accepted if a.portal == "fotocasa")
+
+
+def test_a_failing_ai_leaves_the_search_complete_with_a_warning(home, cfg):
+    _con_fotocasa(home)
+    seen = []
+    previous = events.set_sink(seen.append)
+    try:
+        r = run_search(cfg, {}, SearchOptions(from_cache=True, offline=True),
+                       almacen.abrir(home / "t.db"), ai=FakeAI(falla=True))
+    finally:
+        events.set_sink(previous)
+    assert any(e.kind == "warning" and "IA" in e.message for e in seen)
+    assert [e.data["step"] for e in seen if e.kind == "stage"] == [1, 2, 3, 4, 5]
+    assert r.crawled > 0

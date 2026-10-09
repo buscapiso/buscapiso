@@ -13,7 +13,7 @@ import sqlite3
 
 from buscapiso.profiles import SearchProfile
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 ESTADOS = ("new", "liked", "hidden", "contacted", "visit_scheduled", "visited",
            "applied", "got_it", "rejected", "discarded")
@@ -121,7 +121,14 @@ def _migrar_a_3(con: sqlite3.Connection) -> None:
     con.execute("PRAGMA user_version = 3")
 
 
-_MIGRACIONES = [_migrar_a_1, _migrar_a_2, _migrar_a_3]
+def _migrar_a_4(con: sqlite3.Connection) -> None:
+    """Cache de lo que la IA ha leido de cada anuncio."""
+    con.execute("CREATE TABLE IF NOT EXISTS ia_cache ("
+                "clave TEXT PRIMARY KEY, datos TEXT NOT NULL, cuando TEXT NOT NULL)")
+    con.execute("PRAGMA user_version = 4")
+
+
+_MIGRACIONES = [_migrar_a_1, _migrar_a_2, _migrar_a_3, _migrar_a_4]
 
 
 def leer_ajustes(con: sqlite3.Connection) -> dict[str, str]:

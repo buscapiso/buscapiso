@@ -106,6 +106,7 @@ class Crawl(BaseModel):
     max_pages: int = Field(default=3, ge=1, le=20)
     details_to_read: int = Field(default=12, ge=0, le=100)
     real_travel_times: int = Field(default=40, ge=0, le=200)
+    ai_listings: int = Field(default=30, ge=0, le=200)
 
 
 class SearchProfile(BaseModel):
@@ -171,6 +172,7 @@ def to_engine_cfg(p: SearchProfile) -> tuple[dict, dict]:
             "max_paginas_por_municipio": p.crawl.max_pages,
             "fichas_a_enriquecer": p.crawl.details_to_read,
             "trayectos_reales": p.crawl.real_travel_times,
+            "anuncios_ia": p.crawl.ai_listings,
         },
     }
     zonas = {"excluir": list(p.zones.exclude), "penalizar": list(p.zones.penalize),
@@ -215,6 +217,7 @@ def from_engine_cfg(cfg: dict, zonas: dict, name: str) -> SearchProfile:
                     fotocasa_sort=_invert(_SORT)[bus.get("orden_fotocasa", "baratos")],
                     max_pages=bus.get("max_paginas_por_municipio", 3),
                     details_to_read=bus.get("fichas_a_enriquecer", 12),
-                    real_travel_times=bus.get("trayectos_reales", 40)),
+                    real_travel_times=bus.get("trayectos_reales", 40),
+                    ai_listings=bus.get("anuncios_ia", 30)),
         weights=cfg.get("pesos", {}),
     )

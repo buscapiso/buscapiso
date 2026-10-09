@@ -21,6 +21,8 @@ from buscapiso.modelo import GENERO_CHICAS
 from buscapiso.ranking import filtrar, ordenar
 from buscapiso.transporte import Red
 from buscapiso.travel import TravelError, graph_trip
+from buscapiso.ai.extract import apply_facts, extract_facts
+from buscapiso.ai.providers import AIError, estimate_cost
 
 
 @dataclass
@@ -48,7 +50,7 @@ def _stage(step: int, message: str) -> None:
 
 
 def run_search(cfg: dict, zonas: dict, options: SearchOptions,
-               con: sqlite3.Connection, provider=None) -> SearchResult:
+               con: sqlite3.Connection, provider=None, ai=None) -> SearchResult:
     cfg = copy.deepcopy(cfg)
     cfg["filtros_idealista"] = idealista_filters(cfg)
     geo = Geocodificador(con, offline=options.offline)
@@ -75,7 +77,7 @@ def run_search(cfg: dict, zonas: dict, options: SearchOptions,
                             "peticiones seguidas.")
             idealista.cerrar()
             return SearchResult()
-    return _procesar(anuncios, cfg, zonas, con, geo, red, options, idealista, provider)
+    return _procesar(anuncios, cfg, zonas, con, geo, red, options, idealista, provider, ai)
 
 
 def idealista_filters(cfg: dict) -> dict:
@@ -157,6 +159,22 @@ def refine_routes(anuncios: list, destinos: list[dict], provider, limit: int) ->
     for a in elegidos:
         a.trayectos_fuente = provider.name if completos[a.id] else "graph"
     return len(elegidos)
+
+
+def enrich_with_ai(anuncios: list, ai, con, limit: int) -> int:
+    """La IA lee los `limit` primeros. Un fallo suelto se salta; si fallan todos,
+    AIError, para que la busqueda avise y siga sin IA."""
+    elegidos = anuncios[:limit]
+    leidos, ultimo = 0, None
+    for a in elegidos:
+        try:
+            apply_facts(a, extract_facts(ai, a, con))
+            leidos += 1
+        except AIError as e:
+            ultimo = e
+    if elegidos and not leidos:
+        raise ultimo
+    return leidos
 
 
 def _clasificar(anuncios, cfg, zonas, con):
@@ -245,7 +263,7 @@ def _rastrear(cfg: dict, idealista, paginas: int) -> list:
 
 
 def _procesar(anuncios, cfg, zonas, con, geo, red, options, idealista,
-              provider=None) -> SearchResult:
+              provider=None, ai=None) -> SearchResult:
     _stage(2, "Situando en el mapa (Nominatim, 1 consulta/segundo)...")
     ya_situados = sum(1 for a in anuncios if a.lat is not None)
     if ya_situados:
@@ -273,6 +291,19 @@ def _procesar(anuncios, cfg, zonas, con, geo, red, options, idealista,
         except TravelError as e:
             emit("warning", f"    {provider.name} no ha respondido ({e}); "
                             "uso los tiempos estimados", provider=provider.name)
+    limite_ia = cfg["busqueda"].get("anuncios_ia", 30)
+    if ai is not None and limite_ia:
+        candidatos = sorted(ok + posibles, key=lambda a: a.puntuacion, reverse=True)
+        try:
+            n = enrich_with_ai(candidatos, ai, con, limite_ia)
+            coste = estimate_cost(ai.model, ai.usage)
+            emit("info", f"    IA: {n} anuncios leidos, {ai.usage.input_tokens + ai.usage.output_tokens} "
+                         f"tokens" + (f", ~${coste:.2f}" if coste is not None else ""),
+                 calls=ai.usage.calls, cost=coste)
+            ok, posibles, fuera2 = _clasificar(ok + posibles, cfg, zonas, con)
+            fuera.extend(fuera2)
+        except AIError as e:
+            emit("warning", f"    La IA no ha respondido ({e}); sigo sin ella")
     emit("info", f"    {len(ok)} cumplen todos tus requisitos, "
                  f"{len(posibles)} posibles sin confirmar genero, "
                  f"{len(fuera)} descartados\n")
