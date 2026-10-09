@@ -4,7 +4,8 @@
   import { clock, summarize } from '../searchView';
   import { t } from '../i18n';
 
-  let { onfinished }: { onfinished: () => void } = $props();
+  /** Al terminar, y cada vez que la busqueda deja resultados a medias. */
+  let { onresults }: { onresults: () => void } = $props();
 
   let events = $state<SearchEvent[]>([]);
   let running = $state(false);
@@ -24,8 +25,8 @@
       events = [...events, e];
       if (e.kind === 'done' || e.kind === 'error') {
         running = false;
-        onfinished();
-      }
+        onresults();
+      } else if (e.data.results) onresults();
     });
   }
 

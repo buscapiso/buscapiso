@@ -313,6 +313,11 @@ export async function runSearch(p: SearchProfile, deps: Deps, rawEmit: Emit, opt
     lap = t;
   };
   const next = (step: number, message: string) => { took(); stage(emit, step, message); };
+  // Resultados a medias en la lista mientras sigue: no se espera al final.
+  const preview = async (ds: Derived[], message: string) => {
+    await deps.store.saveDerived(ds);
+    emit('info', `    ${message}`, { results: true });
+  };
   try {
     stage(emit, 1, 'Choosing areas and reading the portals...');
     const areas = await selectAreas(city.areas, p.destinations, tripsWithFallback(deps.travel, emit));
@@ -369,6 +374,7 @@ export async function runSearch(p: SearchProfile, deps: Deps, rawEmit: Emit, opt
     // La calle exacta solo para los mejores. Para elegirlos basta la
     // estimacion sobre el barrio, sin red.
     const guess = await rescore(all, p, { ...deps, travel: null, ai: null }, discarded);
+    await preview(guess, 'First results are in the list, with estimated times; refining them...');
     const byId = new Map(all.map((l) => [l.id, l]));
     const best = guess.filter((d) => d.group !== 'rejected').sort((a, b) => b.score - a.score)
       .slice(0, p.crawl.real_travel_times).map((d) => byId.get(d.id)!);
@@ -384,6 +390,7 @@ export async function runSearch(p: SearchProfile, deps: Deps, rawEmit: Emit, opt
       all = await deps.store.listings(p.city);
     }
     let derived = await rescore(all, p, deps, discarded, emit);
+    await preview(derived, 'Results updated with travel times');
 
     // 4. Fichas de los mejores de Idealista (dueño, visitas, parejas).
     const top = new Map(derived.filter((d) => d.group === 'accepted').map((d) => [d.id, d]));

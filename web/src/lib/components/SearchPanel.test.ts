@@ -25,35 +25,39 @@ beforeEach(() => {
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 test('search now browses the portals, skipping full listings only if asked', async () => {
-  render(SearchPanel, { onfinished: vi.fn() });
+  render(SearchPanel, { onresults: vi.fn() });
   await userEvent.click(await screen.findByLabelText('Skip full listings (faster)'));
   await userEvent.click(screen.getByRole('button', { name: 'Search now' }));
   expect(posts[0]).toEqual({ skip_details: true, from_cache: false });
 });
 
 test('re-score is its own action and never browses', async () => {
-  render(SearchPanel, { onfinished: vi.fn() });
+  render(SearchPanel, { onresults: vi.fn() });
   await userEvent.click(await screen.findByRole('button', { name: 'Re-score without browsing' }));
   expect(posts[0]).toEqual({ skip_details: false, from_cache: true });
 });
 
-test('progress shows inline and the list reloads when the search ends', async () => {
-  const onfinished = vi.fn();
-  render(SearchPanel, { onfinished });
+test('progress shows inline and the list reloads with partial results and at the end', async () => {
+  const onresults = vi.fn();
+  render(SearchPanel, { onresults });
   await userEvent.click(await screen.findByRole('button', { name: 'Search now' }));
   FakeSource.last.send('stage', { step: 3, total: 5 }, '3/5 Calculando trayectos...');
   expect((await screen.findAllByText('3/5 Calculando trayectos...')).length).toBeGreaterThan(0);
+  FakeSource.last.send('info', { step: 3 }, 'nothing new for the list');
+  expect(onresults).not.toHaveBeenCalled();
+  FakeSource.last.send('info', { results: true }, 'First results are in the list');
+  expect(onresults).toHaveBeenCalledTimes(1);
   FakeSource.last.send('captcha', { portal: 'idealista' }, 'captcha');
   expect(await screen.findByRole('alert')).toHaveTextContent("idealista wants you to confirm you're human");
   FakeSource.last.send('done', { new: 2, accepted: 66, possible: 40, crawled: 900 });
   expect(await screen.findByText(/2 new listings/)).toBeInTheDocument();
-  expect(onfinished).toHaveBeenCalled();
+  expect(onresults).toHaveBeenCalledTimes(2);
 });
 
 test('without the extension, Search now is off and says why', async () => {
   const { ext } = await import('../extensionState.svelte');
   ext.status = { installed: false, outdated: false, version: null, browser: null };
-  render(SearchPanel, { onfinished: () => {} });
+  render(SearchPanel, { onresults: () => {} });
   const b = screen.getByRole('button', { name: 'Search now' });
   expect(b).toBeDisabled();
   expect(b).toHaveAttribute('title', 'Searching needs the buscapiso extension in this browser.');

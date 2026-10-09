@@ -166,6 +166,18 @@ describe('runSearch', () => {
     expect(ls.some((l) => l.approximateLocation && l.address)).toBe(true);
   }, 30_000);
 
+  it('puts first results in the list before the search ends', async () => {
+    const { d, mem } = deps();
+    const seen: number[] = [];
+    await runSearch(profile(), d, (kind, message, data = {}) => {
+      if (data.results) seen.push(mem.derived.size);
+      if (kind === 'stage' && data.step === 4) seen.push(-1);
+    });
+    // Al menos una entrega antes de leer las fichas, y con anuncios dentro.
+    expect(seen.indexOf(-1)).toBeGreaterThan(0);
+    expect(seen[0]).toBeGreaterThan(0);
+  }, 30_000);
+
   it('says how long each stage took', async () => {
     let t = Date.parse('2026-10-09T10:00:00Z');
     const { d } = deps({ now: () => new Date((t += 61_000)) });

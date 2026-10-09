@@ -73,7 +73,7 @@
 </script>
 
 <ExtensionBanner />
-<SearchPanel bind:this={panel} onfinished={load} />
+<SearchPanel bind:this={panel} onresults={load} />
 
 {#if profile}<CriteriaBar {profile} onsave={saveCriteria} />{/if}
 {#if changed}
