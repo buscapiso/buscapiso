@@ -28,7 +28,8 @@ def ctx(tmp_path, monkeypatch):
 def test_defaults_use_the_graph(ctx):
     c, _ = ctx
     assert c.get("/api/settings").json() == {
-        "travel_provider": "graph", "transitous_contact": "", "has_google_key": False}
+        "travel_provider": "graph", "transitous_contact": "", "has_google_key": False,
+        "motis_url": "https://api.transitous.org"}
 
 
 def test_transitous_needs_a_contact(ctx):
@@ -68,3 +69,17 @@ def test_geocode_returns_places(ctx):
     assert c.get("/api/geocode?q=Fira").json() == [
         {"name": "Fira, Barcelona", "lat": 41.38, "lon": 2.17}]
     assert c.get("/api/geocode?q=").status_code == 422
+
+
+def test_a_local_motis_server_is_saved_without_contact(ctx):
+    c, _ = ctx
+    r = c.put("/api/settings", json={"travel_provider": "transitous",
+                                     "motis_url": "http://localhost:8080"})
+    assert r.status_code == 200
+    assert r.json()["motis_url"] == "http://localhost:8080"
+    assert c.get("/api/settings").json()["motis_url"] == "http://localhost:8080"
+
+
+def test_the_default_server_is_the_public_one(ctx):
+    c, _ = ctx
+    assert c.get("/api/settings").json()["motis_url"] == "https://api.transitous.org"

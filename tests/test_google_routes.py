@@ -24,7 +24,7 @@ def test_builds_a_transit_matrix_request_and_reads_durations():
     assert headers["X-Goog-Api-Key"] == "KEY123"
     assert headers["X-Goog-FieldMask"] == "originIndex,destinationIndex,duration,condition"
     assert body["travelMode"] == "TRANSIT"
-    assert body["departureTime"].endswith("Z")
+    assert body["arrivalTime"].endswith("Z")
     assert body["origins"][1]["waypoint"]["location"]["latLng"] == {"latitude": 41.38, "longitude": 2.15}
 
 
@@ -33,7 +33,7 @@ def test_walking_sends_no_departure_time():
     GoogleProvider("K", post=lambda u, h, b: cuerpos.append(b) or []).trips(
         [(41.37, 2.14)], {**FIRA, "modo": "a_pie"})
     assert cuerpos[0]["travelMode"] == "WALK"
-    assert "departureTime" not in cuerpos[0]
+    assert "departureTime" not in cuerpos[0] and "arrivalTime" not in cuerpos[0]
 
 
 def test_large_batches_are_split_at_100_origins():

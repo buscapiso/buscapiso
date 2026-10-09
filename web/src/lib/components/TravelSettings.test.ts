@@ -14,9 +14,11 @@ beforeEach(() => {
     if (init?.method === 'PUT') {
       body = JSON.parse(init.body as string);
       return new Response(JSON.stringify({ travel_provider: body!.travel_provider,
-        transitous_contact: body!.transitous_contact ?? '', has_google_key: false }));
+        transitous_contact: body!.transitous_contact ?? '', has_google_key: false,
+        motis_url: body!.motis_url ?? 'https://api.transitous.org' }));
     }
-    return new Response(JSON.stringify({ travel_provider: 'graph', transitous_contact: '', has_google_key: false }));
+    return new Response(JSON.stringify({ travel_provider: 'graph', transitous_contact: '', has_google_key: false,
+      motis_url: 'https://api.transitous.org' }));
   });
 });
 afterEach(() => vi.restoreAllMocks());
@@ -27,7 +29,8 @@ test('choosing Transitous asks for a contact and explains its terms', async () =
   expect(screen.getByText(/open-source, non-commercial/)).toBeInTheDocument();
   await userEvent.type(screen.getByLabelText('Your contact (email or website)'), 'ana@example.org');
   await userEvent.click(screen.getByRole('button', { name: 'Save travel settings' }));
-  expect(body).toEqual({ travel_provider: 'transitous', transitous_contact: 'ana@example.org' });
+  expect(body).toEqual({ travel_provider: 'transitous', transitous_contact: 'ana@example.org',
+                        motis_url: 'https://api.transitous.org' });
 });
 
 test('the test compares the estimate with real timetables', async () => {
@@ -43,4 +46,15 @@ test('the Google key field is write-only', async () => {
   const key = screen.getByLabelText('API key') as HTMLInputElement;
   expect(key.type).toBe('password');
   expect(key.value).toBe('');
+});
+
+test('your own MOTIS server can be used without a contact', async () => {
+  render(TravelSettings);
+  await userEvent.click(await screen.findByLabelText(/Transitous/));
+  const server = screen.getByLabelText('Timetable server');
+  await userEvent.clear(server);
+  await userEvent.type(server, 'http://localhost:8080');
+  await userEvent.click(screen.getByRole('button', { name: 'Save travel settings' }));
+  expect(body).toEqual({ travel_provider: 'transitous', transitous_contact: '',
+                        motis_url: 'http://localhost:8080' });
 });

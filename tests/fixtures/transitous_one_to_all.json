@@ -1,0 +1,6904 @@
+{
+ "one": {
+  "lat": 41.3519,
+  "lon": 2.1307
+ },
+ "all": [
+  {
+   "place": {
+    "name": "Barcelona Sants",
+    "lat": 41.378914,
+    "lon": 2.1403708000000004
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Barcelona Sants",
+    "lat": 41.378914,
+    "lon": 2.1403708000000004
+   },
+   "duration": 30
+  },
+  {
+   "place": {
+    "name": "Barcelona (Sants)",
+    "lat": 41.379839999999994,
+    "lon": 2.1393489999999997
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Estación de Autobuses de Barcelona/Sants",
+    "lat": 41.379715000000004,
+    "lon": 2.138935
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Estación de Autobuses de Barcelona/Sants",
+    "lat": 41.379715000000004,
+    "lon": 2.138935
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Estación de Autobuses de Barcelona/Sants",
+    "lat": 41.379715000000004,
+    "lon": 2.138935
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Estación de Autobuses de Barcelona/Sants",
+    "lat": 41.379715000000004,
+    "lon": 2.138935
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Palau Reial - Barcelona",
+    "lat": 41.385982999999996,
+    "lon": 2.1176388
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "(palau Reial) Avinguda Diagonal/palau Reial",
+    "lat": 41.386019999999995,
+    "lon": 2.11774
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Avinguda Diagonal Metro Zona Universitària",
+    "lat": 41.38483999999999,
+    "lon": 2.11317
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Ets D´arquitectura (zona Universitària)",
+    "lat": 41.384829999999994,
+    "lon": 2.1139900000000003
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Palau Reial",
+    "lat": 41.385859999999994,
+    "lon": 2.11796
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Av. Diagonal (Palau Reial - Fac. Biologia)",
+    "lat": 41.385853,
+    "lon": 2.1187146
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Av. Diagonal, 686 (Palau Reial - boca metro)",
+    "lat": 41.38648599999999,
+    "lon": 2.1180825
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Barcelona Sants (estació d'autobusos)",
+    "lat": 41.379574,
+    "lon": 2.1383147000000005
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Gran Via - Mn. Amadeu Oller (davant Campana)",
+    "lat": 41.368,
+    "lon": 2.1396375
+   },
+   "duration": 14
+  },
+  {
+   "place": {
+    "name": "Gran Via - c. Farell",
+    "lat": 41.37197,
+    "lon": 2.1449816000000004
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Gran Via - c. Moianès",
+    "lat": 41.37022399999999,
+    "lon": 2.142637
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Gran Via - c. Santa Dorotea",
+    "lat": 41.37168499999999,
+    "lon": 2.1448722
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Gran Via - c. Trajà",
+    "lat": 41.369537,
+    "lon": 2.1419658999999998
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Riera Blanca 1-3",
+    "lat": 41.37782699999999,
+    "lon": 2.1217308000000004
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "av. Diagonal (Facultat d'Econòmiques)",
+    "lat": 41.38563,
+    "lon": 2.1161673
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "av. Diagonal (Hotel Princesa Sofia)",
+    "lat": 41.386948,
+    "lon": 2.1228925999999997
+   },
+   "duration": 23
+  },
+  {
+   "place": {
+    "name": "av. Diagonal (Illa Diagonal)",
+    "lat": 41.389602999999994,
+    "lon": 2.133457
+   },
+   "duration": 26
+  },
+  {
+   "place": {
+    "name": "av. Diagonal (Parc de Cervantes)",
+    "lat": 41.383624999999995,
+    "lon": 2.1083822000000003
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "av. Diagonal (pl. Pius XII)",
+    "lat": 41.386955,
+    "lon": 2.1215703
+   },
+   "duration": 23
+  },
+  {
+   "place": {
+    "name": "av. Diagonal - Complex Esportiu (RACC)",
+    "lat": 41.383305,
+    "lon": 2.1079023
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "av. Diagonal - ETS Enginyeria (Zona Univ.)",
+    "lat": 41.385082,
+    "lon": 2.1156278
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "av. Diagonal - Fac. Arquitectura (Zona Univ.)",
+    "lat": 41.38485999999999,
+    "lon": 2.1140198999999997
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "av. Diagonal - Fac. Empresarials (Zona Univ.) PD",
+    "lat": 41.38484599999999,
+    "lon": 2.1131701
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "av. Diagonal - Palau Reial (Fac. Biologia)",
+    "lat": 41.38588299999999,
+    "lon": 2.1187894
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "av. Diagonal - av. Dr. Marañón (Zona Univ.)",
+    "lat": 41.38421999999999,
+    "lon": 2.1115367000000003
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "av. Diagonal - c. Entença",
+    "lat": 41.390377,
+    "lon": 2.1364380999999995
+   },
+   "duration": 29
+  },
+  {
+   "place": {
+    "name": "av. Diagonal,686 - Palau Reial (boca Metro) PD",
+    "lat": 41.386322,
+    "lon": 2.1189432
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "av. Paral·lel - pl. Espanya parada bus",
+    "lat": 41.37491,
+    "lon": 2.1509345000000004
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "c. Entença - av. Josep Tarradellas",
+    "lat": 41.386146999999994,
+    "lon": 2.1420572
+   },
+   "duration": 26
+  },
+  {
+   "place": {
+    "name": "c. Numància (Illa Diagonal)",
+    "lat": 41.38884699999999,
+    "lon": 2.1331773000000003
+   },
+   "duration": 26
+  },
+  {
+   "place": {
+    "name": "c. Numància - c. Berlín",
+    "lat": 41.38277,
+    "lon": 2.1394597999999996
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "c. Santa Eulàlia - av. Metro",
+    "lat": 41.367039999999996,
+    "lon": 2.1262502999999997
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "c. Santa Eulàlia - c. Can Pujadas",
+    "lat": 41.36544,
+    "lon": 2.1188466999999997
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "c. Santa Eulàlia - c. Cultura",
+    "lat": 41.365585,
+    "lon": 2.1187968
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "c. Santa Eulàlia - c. Jacint Verdaguer",
+    "lat": 41.367146,
+    "lon": 2.1280797000000002
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "c. Santa Eulàlia - c. Justa Goicoechea",
+    "lat": 41.3663,
+    "lon": 2.1223743
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "c. Santa Eulàlia - c. Àngel Guimerà",
+    "lat": 41.366530000000004,
+    "lon": 2.1236026
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "c. Tarragona, 129",
+    "lat": 41.37747999999999,
+    "lon": 2.1463687
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "ctra. Collblanc (Metro Ernest Lluch) (A)",
+    "lat": 41.37596,
+    "lon": 2.1107210000000003
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "ctra. Collblanc (Metro Ernest Lluch) (D)",
+    "lat": 41.3759,
+    "lon": 2.1104198
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "ctra. Collblanc - av. Tomàs Giménez",
+    "lat": 41.376183,
+    "lon": 2.1033986000000002
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "ctra. Collblanc - c. Albéniz",
+    "lat": 41.375957,
+    "lon": 2.1060703
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "ctra. Collblanc - c. Llobregat",
+    "lat": 41.37568699999999,
+    "lon": 2.1184146
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "ctra. Collblanc davant c. Albéniz",
+    "lat": 41.376175,
+    "lon": 2.105893
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "pl. Espanya (Gran Via)",
+    "lat": 41.37428699999999,
+    "lon": 2.1485193000000002
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "pl. Espanya (ctra. la Bordeta) PNL",
+    "lat": 41.374416,
+    "lon": 2.1480398000000003
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Albert Bastardas - Torre Melina",
+    "lat": 41.381587999999994,
+    "lon": 2.1077006000000003
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Amadeu Torner - Av. Carrilet",
+    "lat": 41.36508,
+    "lon": 2.1206782
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Amadeu Torner - Santa Eulàlia",
+    "lat": 41.36496399999999,
+    "lon": 2.120436
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Arizala - Av Madrid",
+    "lat": 41.376422999999996,
+    "lon": 2.1251040000000003
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Arizala - Les Corts",
+    "lat": 41.378574,
+    "lon": 2.1236870000000003
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Arístides Maillol - Trav. de les Corts",
+    "lat": 41.378353000000004,
+    "lon": 2.1212429999999998
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Av Doctor Marañón - Av de Xile",
+    "lat": 41.38143999999999,
+    "lon": 2.11435
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Av Doctor Marañón - Baldiri i Reixac",
+    "lat": 41.382053,
+    "lon": 2.113965
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Av Joan XXIII - Maternitat",
+    "lat": 41.382659999999994,
+    "lon": 2.1223140000000003
+   },
+   "duration": 28
+  },
+  {
+   "place": {
+    "name": "Av Joan XXIII - Pl Pius XII",
+    "lat": 41.385639999999995,
+    "lon": 2.122614
+   },
+   "duration": 23
+  },
+  {
+   "place": {
+    "name": "Av Madrid - Arizala",
+    "lat": 41.377039999999994,
+    "lon": 2.1251510000000002
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Av Madrid - Benavent",
+    "lat": 41.37739,
+    "lon": 2.125406
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Av Madrid - Carles III",
+    "lat": 41.378710000000005,
+    "lon": 2.1277060000000003
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Av Madrid - Carles III",
+    "lat": 41.378930000000004,
+    "lon": 2.128468
+   },
+   "duration": 23
+  },
+  {
+   "place": {
+    "name": "Av Madrid - Comte de Güell",
+    "lat": 41.376133,
+    "lon": 2.123659
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Av Madrid - Joan Güell",
+    "lat": 41.380813999999994,
+    "lon": 2.132811
+   },
+   "duration": 25
+  },
+  {
+   "place": {
+    "name": "Av Madrid - Joan Güell",
+    "lat": 41.380694999999996,
+    "lon": 2.131584
+   },
+   "duration": 27
+  },
+  {
+   "place": {
+    "name": "Av Paral·lel - Pl Espanya",
+    "lat": 41.374832,
+    "lon": 2.1522289999999997
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Av Roma - Tarragona",
+    "lat": 41.380469999999995,
+    "lon": 2.1436143000000003
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Av Sant Ramon Nonat - Cardenal Reig",
+    "lat": 41.377433999999994,
+    "lon": 2.1164459999999994
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Av de Roma - Entença",
+    "lat": 41.38201,
+    "lon": 2.146274
+   },
+   "duration": 25
+  },
+  {
+   "place": {
+    "name": "Av de Sarrià - Josep Tarradellas",
+    "lat": 41.390404,
+    "lon": 2.1448073
+   },
+   "duration": 29
+  },
+  {
+   "place": {
+    "name": "Av de l'Exèrcit - Trias i Giró",
+    "lat": 41.385673999999995,
+    "lon": 2.11118
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Av. Albert Bastardas - Av. Manuel Azaña",
+    "lat": 41.377179999999996,
+    "lon": 2.1089392000000005
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Av. Carrilet - Cooperativa",
+    "lat": 41.365,
+    "lon": 2.122414
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Av. Diagonal - Palau Reial de Pedralbes",
+    "lat": 41.38602399999999,
+    "lon": 2.117749
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Av. Diagonal - Palau Reial de Pedralbes",
+    "lat": 41.386078,
+    "lon": 2.118022
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Av. Diagonal - Torre Melina",
+    "lat": 41.383891999999996,
+    "lon": 2.110835
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Av. Diagonal - Zona Universitària",
+    "lat": 41.384969999999996,
+    "lon": 2.1136155
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Av. Josep Tarradellas - Estació Sants",
+    "lat": 41.381912,
+    "lon": 2.1421993
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Av. Manuel Azaña - Av. de Xile",
+    "lat": 41.37751,
+    "lon": 2.1109364
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Av. Masnou - Av. Primavera",
+    "lat": 41.369350000000004,
+    "lon": 2.1102877
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Av. Masnou - Florida",
+    "lat": 41.369205,
+    "lon": 2.1102678999999998
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Av. Masnou - Pedraforca",
+    "lat": 41.370625,
+    "lon": 2.1059904
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Av. Miraflores - Enginyer Moncunill",
+    "lat": 41.37106699999999,
+    "lon": 2.109567
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Av. Paral·lel - Pl. Espanya",
+    "lat": 41.37487999999999,
+    "lon": 2.1513875000000002
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Av. Paral·lel - Pl. Espanya",
+    "lat": 41.37487999999999,
+    "lon": 2.151906
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Av. Paral·lel - Pl. Espanya",
+    "lat": 41.37485999999999,
+    "lon": 2.1517117000000003
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Av. Ponent - Alegria",
+    "lat": 41.369347,
+    "lon": 2.113632
+   },
+   "duration": 12
+  },
+  {
+   "place": {
+    "name": "Av. Ponent - Bòbiles",
+    "lat": 41.369266999999994,
+    "lon": 2.1137910000000004
+   },
+   "duration": 12
+  },
+  {
+   "place": {
+    "name": "Av. Tomás Giménez - Pubilla Cases",
+    "lat": 41.375330000000005,
+    "lon": 2.1036632
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Berlín - Nicaragua",
+    "lat": 41.38413,
+    "lon": 2.1407930000000004
+   },
+   "duration": 23
+  },
+  {
+   "place": {
+    "name": "Berlín - Numància",
+    "lat": 41.382926999999995,
+    "lon": 2.1386079999999996
+   },
+   "duration": 23
+  },
+  {
+   "place": {
+    "name": "Biblioteca La Florida",
+    "lat": 41.369762,
+    "lon": 2.1073592000000003
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Biblioteca La Florida",
+    "lat": 41.36989,
+    "lon": 2.1075263000000004
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "CAP La Torrassa",
+    "lat": 41.36976,
+    "lon": 2.1229627
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Camí de la Torre Melina - Av. de Xile",
+    "lat": 41.376343,
+    "lon": 2.1122277
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Can Rigal",
+    "lat": 41.375965,
+    "lon": 2.105988
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Can Rigal",
+    "lat": 41.37621,
+    "lon": 2.105778
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Can Trinxet",
+    "lat": 41.366282999999996,
+    "lon": 2.122104
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Canigó - Enric Prat de la Riba",
+    "lat": 41.364825999999994,
+    "lon": 2.114087
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Cardenal Reig - Av St Ramon Nonat",
+    "lat": 41.378548,
+    "lon": 2.117486
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Cardenal Reig - Pisuerga",
+    "lat": 41.37717,
+    "lon": 2.114777
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Carles III - Av Madrid",
+    "lat": 41.37978699999999,
+    "lon": 2.1287290000000003
+   },
+   "duration": 24
+  },
+  {
+   "place": {
+    "name": "Carles III - Mejía Lequerica",
+    "lat": 41.384212,
+    "lon": 2.1272330000000004
+   },
+   "duration": 28
+  },
+  {
+   "place": {
+    "name": "Castell de Bellvís",
+    "lat": 41.36915200000001,
+    "lon": 2.124043
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Centre Cultural Tecla Sala",
+    "lat": 41.36695,
+    "lon": 2.1166715999999997
+   },
+   "duration": 12
+  },
+  {
+   "place": {
+    "name": "Centre Cultural Tecla Sala",
+    "lat": 41.367526999999995,
+    "lon": 2.116847999999999
+   },
+   "duration": 12
+  },
+  {
+   "place": {
+    "name": "Collblanc - Cardenal Reig",
+    "lat": 41.37592,
+    "lon": 2.114639
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Collblanc - Cardenal Reig",
+    "lat": 41.37576,
+    "lon": 2.1146479999999994
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Collblanc - Sant Ramon Nonat",
+    "lat": 41.375816,
+    "lon": 2.1175265000000003
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Constitució - Badal",
+    "lat": 41.36925,
+    "lon": 2.133513
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Creu Coberta - Pl Espanya",
+    "lat": 41.37522,
+    "lon": 2.1475370000000007
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Creu Coberta - Pl Espanya",
+    "lat": 41.37512,
+    "lon": 2.146854
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Creu Roja - Collblanc",
+    "lat": 41.37505,
+    "lon": 2.1159787
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Creu Roja - Collblanc",
+    "lat": 41.37543,
+    "lon": 2.1160748
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Creu Roja - Pujós",
+    "lat": 41.372825999999996,
+    "lon": 2.1164759999999996
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Ctra de Collblanc - Av Tomás Giménez",
+    "lat": 41.37615,
+    "lon": 2.10344
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Ctra de Collblanc - Metro Ernest Lluch",
+    "lat": 41.375973,
+    "lon": 2.11081
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Ctra de la Bordeta - Àliga",
+    "lat": 41.373183999999995,
+    "lon": 2.1439160000000004
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Diagonal - Av Doctor Marañón",
+    "lat": 41.38421999999999,
+    "lon": 2.1116119999999996
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Diagonal - Av Joan XXIII",
+    "lat": 41.386932,
+    "lon": 2.122985
+   },
+   "duration": 23
+  },
+  {
+   "place": {
+    "name": "Diagonal - Complex Esportiu Universitari",
+    "lat": 41.38326599999999,
+    "lon": 2.1078740000000002
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Diagonal - Complex Esportiu Universitari",
+    "lat": 41.38407999999999,
+    "lon": 2.111707
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Diagonal - Entença",
+    "lat": 41.39034,
+    "lon": 2.1364049999999994
+   },
+   "duration": 29
+  },
+  {
+   "place": {
+    "name": "Diagonal - L'Illa Diagonal",
+    "lat": 41.389599999999994,
+    "lon": 2.1334827
+   },
+   "duration": 26
+  },
+  {
+   "place": {
+    "name": "Diagonal - Manuel Ballbé",
+    "lat": 41.38407999999999,
+    "lon": 2.110076
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Diagonal - Metro Palau Reial",
+    "lat": 41.38585,
+    "lon": 2.118733
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Diagonal - Metro Zona Universitària",
+    "lat": 41.38485999999999,
+    "lon": 2.1131663
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Diagonal - Parc de Cervantes",
+    "lat": 41.383632999999996,
+    "lon": 2.1083860000000003
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "ETS d'Arquitectura",
+    "lat": 41.38483999999999,
+    "lon": 2.113992
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Entença - Av Josep Tarradellas",
+    "lat": 41.38616,
+    "lon": 2.142084
+   },
+   "duration": 26
+  },
+  {
+   "place": {
+    "name": "Entença - Av Mistral",
+    "lat": 41.37666699999999,
+    "lon": 2.15461
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Entença - Consell de Cent",
+    "lat": 41.38007999999999,
+    "lon": 2.1500879999999998
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Entença - Déu i Mata",
+    "lat": 41.390327,
+    "lon": 2.137758
+   },
+   "duration": 30
+  },
+  {
+   "place": {
+    "name": "Entença - Gran Via",
+    "lat": 41.378372000000006,
+    "lon": 2.1523499999999998
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Entença - Montnegre",
+    "lat": 41.388535000000005,
+    "lon": 2.1394629999999997
+   },
+   "duration": 30
+  },
+  {
+   "place": {
+    "name": "Entença - Rosselló",
+    "lat": 41.38425999999999,
+    "lon": 2.144559
+   },
+   "duration": 24
+  },
+  {
+   "place": {
+    "name": "Entença - València",
+    "lat": 41.38183999999999,
+    "lon": 2.1477690000000003
+   },
+   "duration": 24
+  },
+  {
+   "place": {
+    "name": "Ernest Lluch",
+    "lat": 41.376217,
+    "lon": 2.112157
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Estació d'Autobusos Barcelona Sants",
+    "lat": 41.379715000000004,
+    "lon": 2.1389365000000002
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Florida - Av. Primavera",
+    "lat": 41.36969,
+    "lon": 2.1108057
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Florida - Bòbiles",
+    "lat": 41.37069699999999,
+    "lon": 2.1126439999999995
+   },
+   "duration": 14
+  },
+  {
+   "place": {
+    "name": "Font - Av. Torrent Gornal",
+    "lat": 41.37225,
+    "lon": 2.1126329999999998
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "General Batet - Av. Manuel Azaña",
+    "lat": 41.378952000000005,
+    "lon": 2.1088347000000005
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Gran Via - Calàbria",
+    "lat": 41.38012,
+    "lon": 2.155512
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Gran Via - Entença",
+    "lat": 41.378384,
+    "lon": 2.153719
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Gran Via - Farell",
+    "lat": 41.371993999999994,
+    "lon": 2.14495
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Gran Via - Mandoni",
+    "lat": 41.369503,
+    "lon": 2.141953
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Gran Via - Moianès",
+    "lat": 41.37023,
+    "lon": 2.142617
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Gran Via - Pl Espanya",
+    "lat": 41.37569,
+    "lon": 2.1496210000000002
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Gran Via - Pl Espanya",
+    "lat": 41.375496,
+    "lon": 2.1501870000000003
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Gran Via - Santa Dorotea",
+    "lat": 41.371703999999994,
+    "lon": 2.14488
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Gran Via - Viladomat",
+    "lat": 41.380035,
+    "lon": 2.155913
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Gran Via - Vilamarí",
+    "lat": 41.377419999999994,
+    "lon": 2.151919
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Gran Via Corts Catalanes",
+    "lat": 41.373974,
+    "lon": 2.1480904
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Institut Eugeni d'Ors",
+    "lat": 41.373104,
+    "lon": 2.1154995
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Jardins Maria Montessori",
+    "lat": 41.374752,
+    "lon": 2.1101942000000005
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Jardins Maria Montessori",
+    "lat": 41.37463999999999,
+    "lon": 2.110225
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "La Campana",
+    "lat": 41.368027,
+    "lon": 2.139984
+   },
+   "duration": 14
+  },
+  {
+   "place": {
+    "name": "La Campana",
+    "lat": 41.368298,
+    "lon": 2.1400170000000003
+   },
+   "duration": 14
+  },
+  {
+   "place": {
+    "name": "Les Corts - Arizala",
+    "lat": 41.37935,
+    "lon": 2.1233835000000005
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Les Corts - Aurora Bertrana",
+    "lat": 41.377055999999996,
+    "lon": 2.119821
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Les Corts - Mejía Lequerica",
+    "lat": 41.381912,
+    "lon": 2.127255
+   },
+   "duration": 27
+  },
+  {
+   "place": {
+    "name": "Les Corts - Vallespir",
+    "lat": 41.385517,
+    "lon": 2.1327249999999998
+   },
+   "duration": 25
+  },
+  {
+   "place": {
+    "name": "Lleida - Av Paral·lel",
+    "lat": 41.374508,
+    "lon": 2.154201
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Llobregat - Montseny",
+    "lat": 41.37114699999999,
+    "lon": 2.1208465
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Llobregat - Occident",
+    "lat": 41.37445399999999,
+    "lon": 2.1188645
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Llobregat - Pujós",
+    "lat": 41.373659999999994,
+    "lon": 2.1192883999999994
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Londres - Calàbria",
+    "lat": 41.388473999999995,
+    "lon": 2.1440360000000003
+   },
+   "duration": 28
+  },
+  {
+   "place": {
+    "name": "Londres - Hospital del Sagrat Cor",
+    "lat": 41.389812,
+    "lon": 2.145813
+   },
+   "duration": 28
+  },
+  {
+   "place": {
+    "name": "Magòria",
+    "lat": 41.369643999999994,
+    "lon": 2.141705
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Mallorca - Viladomat",
+    "lat": 41.384499999999996,
+    "lon": 2.1500579999999996
+   },
+   "duration": 28
+  },
+  {
+   "place": {
+    "name": "Marquès de Sentmenat - Equador",
+    "lat": 41.385419999999996,
+    "lon": 2.1415610000000003
+   },
+   "duration": 25
+  },
+  {
+   "place": {
+    "name": "Marquès de Sentmenat - Numància",
+    "lat": 41.38496799999999,
+    "lon": 2.136713
+   },
+   "duration": 26
+  },
+  {
+   "place": {
+    "name": "Mas - Llançà",
+    "lat": 41.370728,
+    "lon": 2.1186817000000002
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Mas - Llobregat",
+    "lat": 41.371809999999996,
+    "lon": 2.1202638
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Mercat Collblanc",
+    "lat": 41.37524,
+    "lon": 2.1207447000000004
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Mercat Torrent Gornal",
+    "lat": 41.370438,
+    "lon": 2.1155818
+   },
+   "duration": 13
+  },
+  {
+   "place": {
+    "name": "Mercat Torrent Gornal",
+    "lat": 41.37054,
+    "lon": 2.115366
+   },
+   "duration": 13
+  },
+  {
+   "place": {
+    "name": "Mercat de Les Corts",
+    "lat": 41.383689999999994,
+    "lon": 2.129908
+   },
+   "duration": 25
+  },
+  {
+   "place": {
+    "name": "Mercat de la Florida",
+    "lat": 41.370605,
+    "lon": 2.1085942000000006
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Metro Badal",
+    "lat": 41.375603,
+    "lon": 2.1287970000000005
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Metro Badal",
+    "lat": 41.3755,
+    "lon": 2.127962
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Metro Collblanc",
+    "lat": 41.3757,
+    "lon": 2.11851
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Metro Ernest Lluch",
+    "lat": 41.375835,
+    "lon": 2.110329
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Metro Ernest Lluch",
+    "lat": 41.376614,
+    "lon": 2.1118729999999997
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Metro Hostafrancs",
+    "lat": 41.375282,
+    "lon": 2.144563
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Metro Hostafrancs",
+    "lat": 41.375153000000005,
+    "lon": 2.144895
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Metro Pl de Sants",
+    "lat": 41.37544,
+    "lon": 2.1366039999999997
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Metro Pl de Sants",
+    "lat": 41.375313000000006,
+    "lon": 2.1368099999999997
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Metro Pubilla Cases",
+    "lat": 41.374202999999994,
+    "lon": 2.1082465999999997
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Metro Pubilla Cases",
+    "lat": 41.373943,
+    "lon": 2.1072612000000004
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Metro Pubilla Cases",
+    "lat": 41.373936,
+    "lon": 2.1072505
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Metro Santa Eulàlia",
+    "lat": 41.36916,
+    "lon": 2.1307940000000003
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Metro Tarragona",
+    "lat": 41.378370000000004,
+    "lon": 2.145213
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Metro Tarragona",
+    "lat": 41.378468,
+    "lon": 2.1452549999999997
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Metro Torrassa",
+    "lat": 41.36867,
+    "lon": 2.1165214
+   },
+   "duration": 12
+  },
+  {
+   "place": {
+    "name": "Metro Torrassa",
+    "lat": 41.369,
+    "lon": 2.1167195
+   },
+   "duration": 12
+  },
+  {
+   "place": {
+    "name": "Metro Torrassa",
+    "lat": 41.368702000000006,
+    "lon": 2.1171513
+   },
+   "duration": 12
+  },
+  {
+   "place": {
+    "name": "Mini Estadi - Palau Blaugrana",
+    "lat": 41.380832999999996,
+    "lon": 2.119227
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Moianès - Cuyàs",
+    "lat": 41.37125399999999,
+    "lon": 2.142347
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Moianès - Vilardell",
+    "lat": 41.374267999999994,
+    "lon": 2.1424719999999997
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Montseny - Llançà",
+    "lat": 41.369983999999995,
+    "lon": 2.1194429999999995
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Mossèn Amadeu Oller - Gran Via",
+    "lat": 41.368053,
+    "lon": 2.13916
+   },
+   "duration": 14
+  },
+  {
+   "place": {
+    "name": "Nicaragua - Parc Les Corts",
+    "lat": 41.386252999999996,
+    "lon": 2.137775
+   },
+   "duration": 27
+  },
+  {
+   "place": {
+    "name": "Numància - Av Roma",
+    "lat": 41.381209999999996,
+    "lon": 2.141343
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Numància - Berlín",
+    "lat": 41.38276,
+    "lon": 2.1394509999999998
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Numància - Diagonal",
+    "lat": 41.389175,
+    "lon": 2.1328375
+   },
+   "duration": 26
+  },
+  {
+   "place": {
+    "name": "Numància - Marquès de Sentmenat",
+    "lat": 41.38460499999999,
+    "lon": 2.137456
+   },
+   "duration": 25
+  },
+  {
+   "place": {
+    "name": "Numància - Parc Les Corts",
+    "lat": 41.38614,
+    "lon": 2.1358689999999996
+   },
+   "duration": 27
+  },
+  {
+   "place": {
+    "name": "Palau Reial",
+    "lat": 41.386333,
+    "lon": 2.1189465999999997
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Palau Reial",
+    "lat": 41.385593,
+    "lon": 2.116137
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Palau Reial",
+    "lat": 41.385833999999996,
+    "lon": 2.1179360000000003
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Paral·lel - Av Mistral",
+    "lat": 41.375130000000006,
+    "lon": 2.1526289999999997
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Paral·lel - Floridablanca",
+    "lat": 41.37512,
+    "lon": 2.154936
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Paral·lel - Pl Espanya",
+    "lat": 41.374905,
+    "lon": 2.1509563999999997
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Parc de Bombers",
+    "lat": 41.370518000000004,
+    "lon": 2.1058885999999997
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "París - Comte d'Urgell",
+    "lat": 41.38945999999999,
+    "lon": 2.1477940000000006
+   },
+   "duration": 26
+  },
+  {
+   "place": {
+    "name": "París - Josep Tarradellas",
+    "lat": 41.38599,
+    "lon": 2.1431900000000006
+   },
+   "duration": 25
+  },
+  {
+   "place": {
+    "name": "París - Viladomat",
+    "lat": 41.387722,
+    "lon": 2.145493
+   },
+   "duration": 28
+  },
+  {
+   "place": {
+    "name": "Pau Romeva - Av. Diagonal",
+    "lat": 41.38972,
+    "lon": 2.1374412
+   },
+   "duration": 29
+  },
+  {
+   "place": {
+    "name": "Pg Sant Antoni - Parc de l'Espanya Industrial",
+    "lat": 41.378330000000005,
+    "lon": 2.1407669
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Pg. Sant Antoni, 106",
+    "lat": 41.37954,
+    "lon": 2.1421497
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Pg. Sant Antoni, 53-55",
+    "lat": 41.37915,
+    "lon": 2.1416326
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Piscines Municipals de l'Hospitalet",
+    "lat": 41.36601,
+    "lon": 2.116624
+   },
+   "duration": 13
+  },
+  {
+   "place": {
+    "name": "Pl Espanya - Av Reina Maria Cristina",
+    "lat": 41.374123,
+    "lon": 2.14957
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Pl Espanya - FGC",
+    "lat": 41.373763999999994,
+    "lon": 2.1471763000000004
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Pl Espanya - FGC",
+    "lat": 41.374289999999995,
+    "lon": 2.148575
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Pl Espanya - Paral·lel",
+    "lat": 41.374905,
+    "lon": 2.1505976
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Pl Joan Peiró - Estació de Sants",
+    "lat": 41.378117,
+    "lon": 2.1393325
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Pl Pius XII",
+    "lat": 41.386962999999994,
+    "lon": 2.121553
+   },
+   "duration": 23
+  },
+  {
+   "place": {
+    "name": "Pl de Joan Peiró",
+    "lat": 41.378550000000004,
+    "lon": 2.1388445
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Pl de Sants",
+    "lat": 41.37549,
+    "lon": 2.13427
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Pl de Sants",
+    "lat": 41.375366,
+    "lon": 2.1343170000000002
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Pl del Centre",
+    "lat": 41.38188599999999,
+    "lon": 2.1360629999999996
+   },
+   "duration": 24
+  },
+  {
+   "place": {
+    "name": "Pl. Espanya - Creu Coberta",
+    "lat": 41.374159999999996,
+    "lon": 2.147698
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Pl. Mare de Déu del Pilar",
+    "lat": 41.372536000000004,
+    "lon": 2.1070526
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Pl. Mare de Déu del Pilar",
+    "lat": 41.372530000000005,
+    "lon": 2.1058304
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Pl. Mare de Déu del Pilar",
+    "lat": 41.372524,
+    "lon": 2.1054542
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Pl. Mare de Déu del Pilar",
+    "lat": 41.37214,
+    "lon": 2.1061027
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Pl. Pius XII",
+    "lat": 41.386585,
+    "lon": 2.1208940000000003
+   },
+   "duration": 23
+  },
+  {
+   "place": {
+    "name": "Pl. del Vidre",
+    "lat": 41.36884,
+    "lon": 2.126144
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Plaça d'Espanya",
+    "lat": 41.374016,
+    "lon": 2.149995
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Rafael Campalans - Mas",
+    "lat": 41.373096,
+    "lon": 2.1219428
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Rambla Catalana - Rosselló",
+    "lat": 41.371539999999996,
+    "lon": 2.1255357000000004
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Rambla Catalana - Santiago Apòstol",
+    "lat": 41.370174,
+    "lon": 2.1235304000000004
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Rda. de la Torrassa - Riera Blanca",
+    "lat": 41.37053,
+    "lon": 2.1292732
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Riera Blanca - Congost",
+    "lat": 41.370906999999995,
+    "lon": 2.1287830000000003
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Riera Blanca - Les Corts",
+    "lat": 41.37748699999999,
+    "lon": 2.121418
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Riera Blanca - Onze de Setembre",
+    "lat": 41.377323,
+    "lon": 2.1214549999999996
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Riera Blanca - Pavia",
+    "lat": 41.371196999999995,
+    "lon": 2.1282270000000003
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Riera Blanca - Plaça Guernica",
+    "lat": 41.374995999999996,
+    "lon": 2.122801
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Riera Blanca - Rambla Catalana",
+    "lat": 41.37226,
+    "lon": 2.1262559999999997
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Riera Blanca - Regent Mendieta",
+    "lat": 41.376217,
+    "lon": 2.121807
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Riera Blanca - Sant Frederic",
+    "lat": 41.37258,
+    "lon": 2.126017
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Riera Blanca - Santiago Ramon y Cajal",
+    "lat": 41.369194,
+    "lon": 2.130913
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Riera Blanca - Trav de les Corts",
+    "lat": 41.37605,
+    "lon": 2.121489
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Riera Blanca - Trav. de les Corts",
+    "lat": 41.377815,
+    "lon": 2.121692
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Sants - Badal",
+    "lat": 41.37542,
+    "lon": 2.1318799999999998
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Sants - Gayarre",
+    "lat": 41.375256,
+    "lon": 2.1396619999999995
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Sants - Munné",
+    "lat": 41.375606999999995,
+    "lon": 2.122873
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Sants - Premià",
+    "lat": 41.375385,
+    "lon": 2.139312
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Sants - Rambla del Brasil",
+    "lat": 41.375553000000004,
+    "lon": 2.131029
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Sepúlveda - Av Mistral",
+    "lat": 41.375682999999995,
+    "lon": 2.1524089999999996
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Sepúlveda - Rocafort",
+    "lat": 41.377376999999996,
+    "lon": 2.15467
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Sta. Eulàlia - Av. Metro",
+    "lat": 41.36709,
+    "lon": 2.1263378000000004
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Sta. Eulàlia - Castelao",
+    "lat": 41.366479999999996,
+    "lon": 2.1233046000000004
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Sta. Eulàlia - Jacint Verdaguer",
+    "lat": 41.367138000000004,
+    "lon": 2.1280582
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Sta. Eulàlia de Provençana",
+    "lat": 41.3656,
+    "lon": 2.1196945
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Sta. Eulàlia de Provençana",
+    "lat": 41.3656,
+    "lon": 2.1188589999999996
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Tarragona - Consell de Cent",
+    "lat": 41.376433999999996,
+    "lon": 2.1477760000000004
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Tarragona - Mallorca",
+    "lat": 41.37974,
+    "lon": 2.1433895000000005
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Tarragona - Parc de Joan Miró",
+    "lat": 41.376705,
+    "lon": 2.147419
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Tarragona - Pl. Espanya",
+    "lat": 41.375988,
+    "lon": 2.148778
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Tarragona - Pl. Espanya",
+    "lat": 41.376006999999994,
+    "lon": 2.148407
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Tarragona, 129",
+    "lat": 41.377579999999995,
+    "lon": 2.146204
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Torre Melina - Albert Bastardas",
+    "lat": 41.381831999999996,
+    "lon": 2.1085167000000005
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Torrent Gornal - Enginyer Moncunill",
+    "lat": 41.37334,
+    "lon": 2.1124190999999994
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Torrent Gornal - Sort",
+    "lat": 41.373405,
+    "lon": 2.1124793999999993
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Vallespir - Jardí de Magalí",
+    "lat": 41.383906999999994,
+    "lon": 2.1339900000000003
+   },
+   "duration": 25
+  },
+  {
+   "place": {
+    "name": "Vallespir - Pl del Centre",
+    "lat": 41.38197699999999,
+    "lon": 2.135296
+   },
+   "duration": 24
+  },
+  {
+   "place": {
+    "name": "Vallparda - París",
+    "lat": 41.370895,
+    "lon": 2.1170738
+   },
+   "duration": 14
+  },
+  {
+   "place": {
+    "name": "València - Entença",
+    "lat": 41.38104599999999,
+    "lon": 2.147948
+   },
+   "duration": 23
+  },
+  {
+   "place": {
+    "name": "València - Viladomat",
+    "lat": 41.383575,
+    "lon": 2.151303
+   },
+   "duration": 27
+  },
+  {
+   "place": {
+    "name": "Zona Universitària",
+    "lat": 41.38514,
+    "lon": 2.1142843
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Zona Universitària - Escola T S d'Enginyeria",
+    "lat": 41.385079999999995,
+    "lon": 2.1156829999999998
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Zona Universitària - Facultat d'Economia i Empresa",
+    "lat": 41.38469299999999,
+    "lon": 2.111024
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Av Diagonal - Numància",
+    "lat": 41.38924399999999,
+    "lon": 2.1328359999999997
+   },
+   "duration": 26
+  },
+  {
+   "place": {
+    "name": "Av. Diagonal - Facultat d'Empresarials",
+    "lat": 41.38484999999999,
+    "lon": 2.113173
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Av. Diagonal - L'Illa Diagonal",
+    "lat": 41.389619999999994,
+    "lon": 2.133569
+   },
+   "duration": 26
+  },
+  {
+   "place": {
+    "name": "Zona Universitària",
+    "lat": 41.384235,
+    "lon": 2.1117019999999997
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Barcelona-Sants",
+    "lat": 41.37986399999999,
+    "lon": 2.141017
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Diagonal -  Complex Esportiu Universitari",
+    "lat": 41.38327399999999,
+    "lon": 2.107868
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Diagonal - Av. Doctor Marañón",
+    "lat": 41.38421999999999,
+    "lon": 2.1116119999999996
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Diagonal - Entença",
+    "lat": 41.39034,
+    "lon": 2.1364049999999994
+   },
+   "duration": 29
+  },
+  {
+   "place": {
+    "name": "Diagonal - Metro Palau Reial",
+    "lat": 41.38585,
+    "lon": 2.118733
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Diagonal - Zona Universitària",
+    "lat": 41.384969999999996,
+    "lon": 2.113611
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Diagonal -  Complex Esportiu Universitari",
+    "lat": 41.38327399999999,
+    "lon": 2.107868
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Diagonal - Av. Doctor Marañón",
+    "lat": 41.38421999999999,
+    "lon": 2.1116119999999996
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Diagonal - Entença",
+    "lat": 41.39034,
+    "lon": 2.1364049999999994
+   },
+   "duration": 29
+  },
+  {
+   "place": {
+    "name": "Diagonal - Metro Palau Reial",
+    "lat": 41.38585,
+    "lon": 2.118733
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Diagonal - Zona Universitària",
+    "lat": 41.384969999999996,
+    "lon": 2.113611
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Barcelona - Plaça Espanya",
+    "lat": 41.374719999999996,
+    "lon": 2.1484582
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Barcelona - Plaça Espanya",
+    "lat": 41.374719999999996,
+    "lon": 2.1484582
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Barcelona - Plaça Espanya",
+    "lat": 41.374719999999996,
+    "lon": 2.1484582
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Barcelona - Plaça Espanya",
+    "lat": 41.374719999999996,
+    "lon": 2.1484582
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Barcelona - Plaça Espanya",
+    "lat": 41.374719999999996,
+    "lon": 2.1484582
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Barcelona-Sants",
+    "lat": 41.37986399999999,
+    "lon": 2.141017
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Avinguda de Xile",
+    "lat": 41.380756,
+    "lon": 2.1147964
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Avinguda de Xile",
+    "lat": 41.380756,
+    "lon": 2.1147964
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Avinguda de Xile",
+    "lat": 41.38073,
+    "lon": 2.1148775
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Can Rigal",
+    "lat": 41.3761,
+    "lon": 2.1059375000000005
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Can Rigal",
+    "lat": 41.3761,
+    "lon": 2.1059375000000005
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Can Rigal",
+    "lat": 41.37606399999999,
+    "lon": 2.1059372000000005
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Ernest Lluch",
+    "lat": 41.376689999999996,
+    "lon": 2.1107688
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Ernest Lluch",
+    "lat": 41.376689999999996,
+    "lon": 2.1107688
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Ernest Lluch",
+    "lat": 41.37667,
+    "lon": 2.1108775
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "L'Illa",
+    "lat": 41.390495,
+    "lon": 2.1365323
+   },
+   "duration": 29
+  },
+  {
+   "place": {
+    "name": "Palau Reial",
+    "lat": 41.385943999999995,
+    "lon": 2.1184679999999996
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Palau Reial",
+    "lat": 41.385943999999995,
+    "lon": 2.1184679999999996
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Palau Reial",
+    "lat": 41.385918000000004,
+    "lon": 2.1184779999999996
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Pius XII",
+    "lat": 41.386739999999996,
+    "lon": 2.1216037
+   },
+   "duration": 23
+  },
+  {
+   "place": {
+    "name": "Pius XII",
+    "lat": 41.386739999999996,
+    "lon": 2.1216037
+   },
+   "duration": 23
+  },
+  {
+   "place": {
+    "name": "Pius XII",
+    "lat": 41.38671,
+    "lon": 2.121614
+   },
+   "duration": 23
+  },
+  {
+   "place": {
+    "name": "Z.Universitària",
+    "lat": 41.38426199999999,
+    "lon": 2.11441
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Z.Universitària",
+    "lat": 41.38426199999999,
+    "lon": 2.11441
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Z.Universitària",
+    "lat": 41.38427699999999,
+    "lon": 2.1144505
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Alternativa per Fires - Pl Espanya",
+    "lat": 41.373505,
+    "lon": 2.1499810000000004
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Arizala - Av Madrid",
+    "lat": 41.376422999999996,
+    "lon": 2.1251040000000003
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Arizala - Les Corts",
+    "lat": 41.378574,
+    "lon": 2.1236870000000003
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Arístides Maillol - Trav de les Corts",
+    "lat": 41.378353000000004,
+    "lon": 2.1212429999999998
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Av Carrilet - Cooperativa",
+    "lat": 41.365,
+    "lon": 2.122414
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Av Doctor Marañón - Av de Xile",
+    "lat": 41.38143999999999,
+    "lon": 2.11435
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Av Doctor Marañón - Baldiri i Reixac",
+    "lat": 41.382053,
+    "lon": 2.113965
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Av Ferrer i Guàrdia - Mèxic",
+    "lat": 41.371165999999995,
+    "lon": 2.1498749999999998
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Av Joan XXIII - Maternitat",
+    "lat": 41.38352,
+    "lon": 2.122464
+   },
+   "duration": 26
+  },
+  {
+   "place": {
+    "name": "Av Joan XXIII - Pl Pius XII",
+    "lat": 41.385639999999995,
+    "lon": 2.122614
+   },
+   "duration": 23
+  },
+  {
+   "place": {
+    "name": "Av Madrid - Arizala",
+    "lat": 41.377039999999994,
+    "lon": 2.1251510000000002
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Av Madrid - Benavent",
+    "lat": 41.37739,
+    "lon": 2.125406
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Av Madrid - Carles III",
+    "lat": 41.378710000000005,
+    "lon": 2.1277060000000003
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Av Madrid - Carles III",
+    "lat": 41.378930000000004,
+    "lon": 2.128468
+   },
+   "duration": 24
+  },
+  {
+   "place": {
+    "name": "Av Madrid - Comte de Güell",
+    "lat": 41.376133,
+    "lon": 2.123659
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Av Madrid - Joan Güell",
+    "lat": 41.380813999999994,
+    "lon": 2.132811
+   },
+   "duration": 27
+  },
+  {
+   "place": {
+    "name": "Av Madrid - Joan Güell",
+    "lat": 41.380694999999996,
+    "lon": 2.131584
+   },
+   "duration": 27
+  },
+  {
+   "place": {
+    "name": "Av Paral·lel - Final de trajecte",
+    "lat": 41.374824999999994,
+    "lon": 2.1528359999999997
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Av Paral·lel - Llançà - Final de trajecte",
+    "lat": 41.374832,
+    "lon": 2.1525619999999996
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Av Paral·lel - Lleida - Final de trajecte",
+    "lat": 41.374824999999994,
+    "lon": 2.153057
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Av Reina Maria Cristina - Pl Espanya",
+    "lat": 41.373819999999995,
+    "lon": 2.150107
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Av Roma - Tarragona",
+    "lat": 41.380469999999995,
+    "lon": 2.1436140000000004
+   },
+   "duration": 23
+  },
+  {
+   "place": {
+    "name": "Av Sant Ramon Nonat - Cardenal Reig",
+    "lat": 41.377433999999994,
+    "lon": 2.1164459999999994
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Av de Roma - Entença",
+    "lat": 41.38201,
+    "lon": 2.146274
+   },
+   "duration": 25
+  },
+  {
+   "place": {
+    "name": "Av de Sarrià - Josep Tarradellas",
+    "lat": 41.390404,
+    "lon": 2.144807
+   },
+   "duration": 29
+  },
+  {
+   "place": {
+    "name": "Av de l'Exèrcit - Trias i Giró",
+    "lat": 41.38606599999999,
+    "lon": 2.111525
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Av de l'Exèrcit - Trias i Giró - Final de trajecte",
+    "lat": 41.385673999999995,
+    "lon": 2.11118
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Badal",
+    "lat": 41.37558,
+    "lon": 2.127402
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Badal",
+    "lat": 41.37558,
+    "lon": 2.127402
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Badal - Canalejas - Final de trajecte",
+    "lat": 41.37349,
+    "lon": 2.131036
+   },
+   "duration": 23
+  },
+  {
+   "place": {
+    "name": "Badal - Casteràs",
+    "lat": 41.37505,
+    "lon": 2.1304559999999997
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Badal - Constitució",
+    "lat": 41.369377,
+    "lon": 2.133047
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Badal - Sants",
+    "lat": 41.37522,
+    "lon": 2.130779
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Berlín - Nicaragua",
+    "lat": 41.38413,
+    "lon": 2.1407930000000004
+   },
+   "duration": 24
+  },
+  {
+   "place": {
+    "name": "Berlín - Numància",
+    "lat": 41.382926999999995,
+    "lon": 2.1386079999999996
+   },
+   "duration": 24
+  },
+  {
+   "place": {
+    "name": "Brasil-Miquel Angel",
+    "lat": 41.379055,
+    "lon": 2.1331350000000002
+   },
+   "duration": 27
+  },
+  {
+   "place": {
+    "name": "Calàbria - Aragó",
+    "lat": 41.382545,
+    "lon": 2.1513519999999997
+   },
+   "duration": 24
+  },
+  {
+   "place": {
+    "name": "Calàbria - Gran Via",
+    "lat": 41.379979999999996,
+    "lon": 2.154744
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Calàbria - Provença",
+    "lat": 41.385098,
+    "lon": 2.1479540000000004
+   },
+   "duration": 27
+  },
+  {
+   "place": {
+    "name": "Camí de la Torre Melina - Av de Xile",
+    "lat": 41.376343,
+    "lon": 2.1122279999999996
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Can Bruixa - Comtes de Bell-lloc",
+    "lat": 41.384598,
+    "lon": 2.134156
+   },
+   "duration": 27
+  },
+  {
+   "place": {
+    "name": "Can Rigal",
+    "lat": 41.375965,
+    "lon": 2.105988
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Can Rigal",
+    "lat": 41.37621,
+    "lon": 2.105778
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Cardenal Reig - Av St Ramon Nonat",
+    "lat": 41.378548,
+    "lon": 2.117486
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Cardenal Reig - Pintor Tapiró - Final de trajecte",
+    "lat": 41.37839,
+    "lon": 2.117166
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Cardenal Reig - Pisuerga",
+    "lat": 41.37717,
+    "lon": 2.114777
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Carles III - Av Madrid",
+    "lat": 41.37978699999999,
+    "lon": 2.1287290000000003
+   },
+   "duration": 24
+  },
+  {
+   "place": {
+    "name": "Carles III - Les Corts",
+    "lat": 41.382145,
+    "lon": 2.128466
+   },
+   "duration": 27
+  },
+  {
+   "place": {
+    "name": "Carles III - Les Corts",
+    "lat": 41.381831999999996,
+    "lon": 2.128008
+   },
+   "duration": 27
+  },
+  {
+   "place": {
+    "name": "Carles III - Mejía Lequerica",
+    "lat": 41.384212,
+    "lon": 2.1272330000000004
+   },
+   "duration": 28
+  },
+  {
+   "place": {
+    "name": "Carles III - Mejía Lequerica",
+    "lat": 41.385239999999996,
+    "lon": 2.1275190000000004
+   },
+   "duration": 27
+  },
+  {
+   "place": {
+    "name": "Collblanc",
+    "lat": 41.376056999999996,
+    "lon": 2.1183970000000003
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Collblanc",
+    "lat": 41.375744,
+    "lon": 2.119195
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Collblanc",
+    "lat": 41.376056999999996,
+    "lon": 2.1183970000000003
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Collblanc - Cardenal Reig",
+    "lat": 41.37592,
+    "lon": 2.114639
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Collblanc - Rosich",
+    "lat": 41.37576,
+    "lon": 2.1146479999999994
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Comtes de Bell-lloc - Berlín",
+    "lat": 41.382317,
+    "lon": 2.13617
+   },
+   "duration": 24
+  },
+  {
+   "place": {
+    "name": "Comtes de Bell-lloc - Viriat",
+    "lat": 41.38044699999999,
+    "lon": 2.137426
+   },
+   "duration": 24
+  },
+  {
+   "place": {
+    "name": "Consell de Cent - Rector Triadó",
+    "lat": 41.376556,
+    "lon": 2.1457040000000003
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Constança",
+    "lat": 41.389281999999994,
+    "lon": 2.1348429999999996
+   },
+   "duration": 27
+  },
+  {
+   "place": {
+    "name": "Constitució - Badal",
+    "lat": 41.36925,
+    "lon": 2.133513
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Constitució - Jocs Florals",
+    "lat": 41.36987,
+    "lon": 2.1366009999999998
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Constitució - Mossèn Amadeu Oller",
+    "lat": 41.369926,
+    "lon": 2.13775
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Constitució - Riera de Tena",
+    "lat": 41.369522,
+    "lon": 2.1345870000000002
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Creu Coberta - Pl Espanya",
+    "lat": 41.37522,
+    "lon": 2.1475370000000007
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Creu Coberta - Pl Espanya",
+    "lat": 41.37512,
+    "lon": 2.146854
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Ctra Bordeta - Gran Via",
+    "lat": 41.37399,
+    "lon": 2.1470930000000004
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Ctra de Collblanc - Av Tomás Giménez",
+    "lat": 41.37615,
+    "lon": 2.10344
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Ctra de Collblanc - Metro Ernest Lluch",
+    "lat": 41.375973,
+    "lon": 2.11081
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Ctra de la Bordeta - Àliga",
+    "lat": 41.373183999999995,
+    "lon": 2.1439160000000004
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Diagonal - Av Doctor Marañón",
+    "lat": 41.38421999999999,
+    "lon": 2.1116119999999996
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Diagonal - Av Joan XXIII",
+    "lat": 41.386932,
+    "lon": 2.122985
+   },
+   "duration": 23
+  },
+  {
+   "place": {
+    "name": "Diagonal - Complex Esportiu Universitari",
+    "lat": 41.38326599999999,
+    "lon": 2.1078740000000002
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Diagonal - Complex Esportiu Universitari",
+    "lat": 41.38407999999999,
+    "lon": 2.111707
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Diagonal - Entença",
+    "lat": 41.39034,
+    "lon": 2.1364049999999994
+   },
+   "duration": 29
+  },
+  {
+   "place": {
+    "name": "Diagonal - L'Illa Diagonal",
+    "lat": 41.389619999999994,
+    "lon": 2.1335900000000003
+   },
+   "duration": 26
+  },
+  {
+   "place": {
+    "name": "Diagonal - Manuel Ballbé",
+    "lat": 41.38404499999999,
+    "lon": 2.110017
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Diagonal - Metro Palau Reial",
+    "lat": 41.38585,
+    "lon": 2.118733
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Diagonal - Metro Zona Universitària",
+    "lat": 41.38477999999999,
+    "lon": 2.11293
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Diagonal - Parc de Cervantes",
+    "lat": 41.383632999999996,
+    "lon": 2.1083860000000003
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Diputació - Vilamarí - Final de trajecte",
+    "lat": 41.377452999999996,
+    "lon": 2.149745
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Dolors Batlle i Sunyer - Numància",
+    "lat": 41.38157699999999,
+    "lon": 2.140207
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "ETS d'Arquitectura",
+    "lat": 41.38483999999999,
+    "lon": 2.113992
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Entença",
+    "lat": 41.38446799999999,
+    "lon": 2.145619
+   },
+   "duration": 24
+  },
+  {
+   "place": {
+    "name": "Entença",
+    "lat": 41.38446799999999,
+    "lon": 2.145619
+   },
+   "duration": 24
+  },
+  {
+   "place": {
+    "name": "Entença - Av Josep Tarradellas",
+    "lat": 41.38616,
+    "lon": 2.142084
+   },
+   "duration": 26
+  },
+  {
+   "place": {
+    "name": "Entença - Consell de Cent",
+    "lat": 41.38007999999999,
+    "lon": 2.1500879999999998
+   },
+   "duration": 23
+  },
+  {
+   "place": {
+    "name": "Entença - Déu i Mata",
+    "lat": 41.390327,
+    "lon": 2.137758
+   },
+   "duration": 30
+  },
+  {
+   "place": {
+    "name": "Entença - Gran Via",
+    "lat": 41.378372000000006,
+    "lon": 2.1523499999999998
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Entença - Montnegre",
+    "lat": 41.388535000000005,
+    "lon": 2.1394629999999997
+   },
+   "duration": 30
+  },
+  {
+   "place": {
+    "name": "Entença - Rosselló",
+    "lat": 41.38425999999999,
+    "lon": 2.144559
+   },
+   "duration": 24
+  },
+  {
+   "place": {
+    "name": "Entença - València",
+    "lat": 41.38183999999999,
+    "lon": 2.1477690000000003
+   },
+   "duration": 24
+  },
+  {
+   "place": {
+    "name": "Entença, 34",
+    "lat": 41.377292999999995,
+    "lon": 2.1537710000000003
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Ernest Lluch",
+    "lat": 41.375896,
+    "lon": 2.112027
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Ernest Lluch",
+    "lat": 41.375896,
+    "lon": 2.112027
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Ernest Lluch - Final de trajecte",
+    "lat": 41.376217,
+    "lon": 2.112157
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Espanya",
+    "lat": 41.37502,
+    "lon": 2.1515549999999997
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Espanya",
+    "lat": 41.375510000000006,
+    "lon": 2.149382
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Espanya",
+    "lat": 41.37502,
+    "lon": 2.1515549999999997
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Estadi del Futbol Club Barcelona",
+    "lat": 41.378998,
+    "lon": 2.122854
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Fira Barcelona",
+    "lat": 41.37361,
+    "lon": 2.1502479999999995
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Florida",
+    "lat": 41.368317000000005,
+    "lon": 2.110027
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Florida",
+    "lat": 41.368317000000005,
+    "lon": 2.110027
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Gavà - Ptge Solsona",
+    "lat": 41.371128,
+    "lon": 2.139994
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Gran Via - Calàbria",
+    "lat": 41.38012,
+    "lon": 2.155512
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Gran Via - Entença",
+    "lat": 41.378384,
+    "lon": 2.153719
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Gran Via - Farell",
+    "lat": 41.371993999999994,
+    "lon": 2.14495
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Gran Via - Mandoni",
+    "lat": 41.369503,
+    "lon": 2.141953
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Gran Via - Moianès",
+    "lat": 41.37023,
+    "lon": 2.142617
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Gran Via - Pl Espanya",
+    "lat": 41.37569,
+    "lon": 2.1496210000000002
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Gran Via - Santa Dorotea",
+    "lat": 41.371703999999994,
+    "lon": 2.14488
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Gran Via - Viladomat",
+    "lat": 41.380035,
+    "lon": 2.155913
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Gran Via - Vilamarí",
+    "lat": 41.377419999999994,
+    "lon": 2.151919
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Gran Via Carles III - Av Madrid",
+    "lat": 41.379979999999996,
+    "lon": 2.129228
+   },
+   "duration": 24
+  },
+  {
+   "place": {
+    "name": "Gran Via Corts Catalanes",
+    "lat": 41.373974,
+    "lon": 2.1480900000000003
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Hostafrancs",
+    "lat": 41.375256,
+    "lon": 2.1432910000000005
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Hostafrancs",
+    "lat": 41.375256,
+    "lon": 2.1432910000000005
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Joan Güell - Cerdanyola",
+    "lat": 41.37725399999999,
+    "lon": 2.133881
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Joan Güell - Travessera de les Corts",
+    "lat": 41.38366299999999,
+    "lon": 2.131024
+   },
+   "duration": 25
+  },
+  {
+   "place": {
+    "name": "John M. Keynes - Diagonal",
+    "lat": 41.386272,
+    "lon": 2.116581
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Josep Tarradellas - Av Sarrià",
+    "lat": 41.389506999999995,
+    "lon": 2.1431360000000006
+   },
+   "duration": 30
+  },
+  {
+   "place": {
+    "name": "Josep Tarradellas - Entença",
+    "lat": 41.386402,
+    "lon": 2.142477
+   },
+   "duration": 26
+  },
+  {
+   "place": {
+    "name": "Josep Tarradellas - Numància",
+    "lat": 41.381164999999996,
+    "lon": 2.142089
+   },
+   "duration": 23
+  },
+  {
+   "place": {
+    "name": "Josep Tarradellas - París",
+    "lat": 41.38641,
+    "lon": 2.142976
+   },
+   "duration": 27
+  },
+  {
+   "place": {
+    "name": "Josep Tarradellas - Rosselló",
+    "lat": 41.382889999999996,
+    "lon": 2.142701
+   },
+   "duration": 24
+  },
+  {
+   "place": {
+    "name": "Josep Tarradellas - Viladomat",
+    "lat": 41.389193999999996,
+    "lon": 2.1435600000000004
+   },
+   "duration": 30
+  },
+  {
+   "place": {
+    "name": "La Campana",
+    "lat": 41.367622,
+    "lon": 2.13902
+   },
+   "duration": 14
+  },
+  {
+   "place": {
+    "name": "La Campana",
+    "lat": 41.368027,
+    "lon": 2.139984
+   },
+   "duration": 14
+  },
+  {
+   "place": {
+    "name": "La Campana",
+    "lat": 41.368298,
+    "lon": 2.1400170000000003
+   },
+   "duration": 14
+  },
+  {
+   "place": {
+    "name": "Les Corts",
+    "lat": 41.384119999999996,
+    "lon": 2.130871
+   },
+   "duration": 25
+  },
+  {
+   "place": {
+    "name": "Les Corts",
+    "lat": 41.384119999999996,
+    "lon": 2.130871
+   },
+   "duration": 25
+  },
+  {
+   "place": {
+    "name": "Les Corts - Aurora Bertrana",
+    "lat": 41.377055999999996,
+    "lon": 2.119821
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Les Corts - Benavent",
+    "lat": 41.37993,
+    "lon": 2.12454
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Les Corts - Carles III",
+    "lat": 41.382732000000004,
+    "lon": 2.128836
+   },
+   "duration": 27
+  },
+  {
+   "place": {
+    "name": "Les Corts - Maternitat",
+    "lat": 41.38121399999999,
+    "lon": 2.1266479999999994
+   },
+   "duration": 26
+  },
+  {
+   "place": {
+    "name": "Les Corts - Mejía Lequerica",
+    "lat": 41.381912,
+    "lon": 2.127255
+   },
+   "duration": 27
+  },
+  {
+   "place": {
+    "name": "Les Corts - Numància",
+    "lat": 41.38731,
+    "lon": 2.135795
+   },
+   "duration": 29
+  },
+  {
+   "place": {
+    "name": "Les Corts - Pl Dr Ignasi Barraquer",
+    "lat": 41.390114000000004,
+    "lon": 2.1406340000000004
+   },
+   "duration": 32
+  },
+  {
+   "place": {
+    "name": "Les Corts - Prat d'En Rull",
+    "lat": 41.38874,
+    "lon": 2.1382459999999996
+   },
+   "duration": 30
+  },
+  {
+   "place": {
+    "name": "Les Corts - Vallespir",
+    "lat": 41.38528399999999,
+    "lon": 2.1326689999999995
+   },
+   "duration": 27
+  },
+  {
+   "place": {
+    "name": "Les Corts - Vallespir",
+    "lat": 41.385513,
+    "lon": 2.1327249999999998
+   },
+   "duration": 27
+  },
+  {
+   "place": {
+    "name": "Lleida - Av Paral·lel",
+    "lat": 41.374508,
+    "lon": 2.154201
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Londres - Calàbria",
+    "lat": 41.388473999999995,
+    "lon": 2.1440360000000003
+   },
+   "duration": 28
+  },
+  {
+   "place": {
+    "name": "Londres - Hospital del Sagrat Cor",
+    "lat": 41.389812,
+    "lon": 2.145813
+   },
+   "duration": 28
+  },
+  {
+   "place": {
+    "name": "Magòria",
+    "lat": 41.369643999999994,
+    "lon": 2.141705
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Mallorca - Viladomat",
+    "lat": 41.384499999999996,
+    "lon": 2.1500579999999996
+   },
+   "duration": 28
+  },
+  {
+   "place": {
+    "name": "Marquès de Sentmenat - Equador",
+    "lat": 41.385419999999996,
+    "lon": 2.1415610000000003
+   },
+   "duration": 25
+  },
+  {
+   "place": {
+    "name": "Marquès de Sentmenat - Numància",
+    "lat": 41.38496799999999,
+    "lon": 2.136713
+   },
+   "duration": 26
+  },
+  {
+   "place": {
+    "name": "Mercat Nou",
+    "lat": 41.373,
+    "lon": 2.1335360000000003
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Mercat Nou",
+    "lat": 41.373,
+    "lon": 2.1335360000000003
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Mercat de Les Corts",
+    "lat": 41.383689999999994,
+    "lon": 2.129908
+   },
+   "duration": 25
+  },
+  {
+   "place": {
+    "name": "Metro Badal",
+    "lat": 41.375603,
+    "lon": 2.1287970000000005
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Metro Badal",
+    "lat": 41.3755,
+    "lon": 2.127962
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Metro Collblanc",
+    "lat": 41.3757,
+    "lon": 2.11851
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Metro Ernest Lluch",
+    "lat": 41.375835,
+    "lon": 2.110329
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Metro Ernest Lluch - Final de trajecte",
+    "lat": 41.376614,
+    "lon": 2.1118729999999997
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Metro Hostafrancs",
+    "lat": 41.375282,
+    "lon": 2.144563
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Metro Hostafrancs",
+    "lat": 41.375153000000005,
+    "lon": 2.144895
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Metro Pl de Sants",
+    "lat": 41.37544,
+    "lon": 2.1366039999999997
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Metro Pl de Sants",
+    "lat": 41.375313000000006,
+    "lon": 2.1368099999999997
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Metro Santa Eulàlia",
+    "lat": 41.36916,
+    "lon": 2.1307940000000003
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Metro Tarragona",
+    "lat": 41.378370000000004,
+    "lon": 2.145213
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Metro Tarragona",
+    "lat": 41.378468,
+    "lon": 2.1452549999999997
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Metro Zona Universitària - Final de trajecte",
+    "lat": 41.38472699999999,
+    "lon": 2.1114429999999995
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Mini Estadi - Palau Blaugrana",
+    "lat": 41.380832999999996,
+    "lon": 2.119227
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Mini Estadi del F C Barcelona",
+    "lat": 41.380689999999994,
+    "lon": 2.117823
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Moianès - Cuyàs",
+    "lat": 41.37125399999999,
+    "lon": 2.142347
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Moianès - Vilardell",
+    "lat": 41.374267999999994,
+    "lon": 2.1424719999999997
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Mossèn Amadeu Oller - Gran Via",
+    "lat": 41.368053,
+    "lon": 2.13916
+   },
+   "duration": 14
+  },
+  {
+   "place": {
+    "name": "Nicaragua - Josep Tarradellas",
+    "lat": 41.3829,
+    "lon": 2.141836
+   },
+   "duration": 24
+  },
+  {
+   "place": {
+    "name": "Nicaragua - Parc Les Corts",
+    "lat": 41.386252999999996,
+    "lon": 2.137775
+   },
+   "duration": 27
+  },
+  {
+   "place": {
+    "name": "Numància - Av Roma",
+    "lat": 41.381209999999996,
+    "lon": 2.141343
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Numància - Berlín",
+    "lat": 41.38276,
+    "lon": 2.1394509999999998
+   },
+   "duration": 24
+  },
+  {
+   "place": {
+    "name": "Numància - Diagonal",
+    "lat": 41.389153,
+    "lon": 2.1328589999999994
+   },
+   "duration": 26
+  },
+  {
+   "place": {
+    "name": "Numància - Marquès de Sentmenat",
+    "lat": 41.38460499999999,
+    "lon": 2.137456
+   },
+   "duration": 25
+  },
+  {
+   "place": {
+    "name": "Numància - Parc Les Corts",
+    "lat": 41.38614,
+    "lon": 2.1358689999999996
+   },
+   "duration": 27
+  },
+  {
+   "place": {
+    "name": "Olzinelles - Constitució",
+    "lat": 41.370358,
+    "lon": 2.13771
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Olzinelles - Noguera Pallaresa",
+    "lat": 41.371936999999996,
+    "lon": 2.1370489999999998
+   },
+   "duration": 25
+  },
+  {
+   "place": {
+    "name": "Palau Reial",
+    "lat": 41.385593,
+    "lon": 2.116137
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Palau Reial",
+    "lat": 41.385833999999996,
+    "lon": 2.1179360000000003
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Palau Reial",
+    "lat": 41.385979999999996,
+    "lon": 2.118538
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Palau Reial",
+    "lat": 41.385979999999996,
+    "lon": 2.118538
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Paral·lel - Av Mistral",
+    "lat": 41.375130000000006,
+    "lon": 2.1526289999999997
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Paral·lel - Floridablanca",
+    "lat": 41.37512,
+    "lon": 2.154936
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Paral·lel - Pl Espanya",
+    "lat": 41.374905,
+    "lon": 2.150956
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "París - Comte d'Urgell",
+    "lat": 41.38945999999999,
+    "lon": 2.1477940000000006
+   },
+   "duration": 27
+  },
+  {
+   "place": {
+    "name": "París - Josep Tarradellas",
+    "lat": 41.38599,
+    "lon": 2.1431900000000006
+   },
+   "duration": 26
+  },
+  {
+   "place": {
+    "name": "París - Viladomat",
+    "lat": 41.387722,
+    "lon": 2.145493
+   },
+   "duration": 28
+  },
+  {
+   "place": {
+    "name": "Pg Sant Antoni - Parc de l'Espanya Industrial",
+    "lat": 41.378330000000005,
+    "lon": 2.1407670000000003
+   },
+   "duration": 23
+  },
+  {
+   "place": {
+    "name": "Pg Sant Antoni - Pl Sants - Final de trajecte",
+    "lat": 41.375546,
+    "lon": 2.135554
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Pg. Sant Antoni, 53-55",
+    "lat": 41.37915,
+    "lon": 2.141632
+   },
+   "duration": 23
+  },
+  {
+   "place": {
+    "name": "Pl Bonet i Muixí",
+    "lat": 41.37423,
+    "lon": 2.136371
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Pl Espanya - Av Reina Maria Cristina",
+    "lat": 41.374123,
+    "lon": 2.14957
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Pl Espanya - FGC",
+    "lat": 41.37376,
+    "lon": 2.1471760000000004
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Pl Espanya - Final de trajecte",
+    "lat": 41.373756,
+    "lon": 2.150147
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Pl Joan Peiró",
+    "lat": 41.378550000000004,
+    "lon": 2.1388439999999997
+   },
+   "duration": 24
+  },
+  {
+   "place": {
+    "name": "Pl Joan Peiró - Estació de Sants - Final trajecte",
+    "lat": 41.378117,
+    "lon": 2.139333
+   },
+   "duration": 24
+  },
+  {
+   "place": {
+    "name": "Pl Pius XII",
+    "lat": 41.386585,
+    "lon": 2.1208940000000003
+   },
+   "duration": 23
+  },
+  {
+   "place": {
+    "name": "Pl Pius XII",
+    "lat": 41.386962999999994,
+    "lon": 2.121553
+   },
+   "duration": 23
+  },
+  {
+   "place": {
+    "name": "Pl Sants",
+    "lat": 41.375710000000005,
+    "lon": 2.1361519999999996
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Pl de Carles Buïgas",
+    "lat": 41.37104399999999,
+    "lon": 2.150118
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Pl de Sants",
+    "lat": 41.37549,
+    "lon": 2.13427
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Pl de Sants",
+    "lat": 41.375366,
+    "lon": 2.1343170000000002
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Pl del Centre",
+    "lat": 41.38188599999999,
+    "lon": 2.1360629999999996
+   },
+   "duration": 24
+  },
+  {
+   "place": {
+    "name": "Plaça de Sants",
+    "lat": 41.375355000000006,
+    "lon": 2.138154
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Plaça de Sants",
+    "lat": 41.375355000000006,
+    "lon": 2.138154
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Plaça de Sants",
+    "lat": 41.375730000000004,
+    "lon": 2.135159
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Plaça del Centre",
+    "lat": 41.38192399999999,
+    "lon": 2.135884
+   },
+   "duration": 24
+  },
+  {
+   "place": {
+    "name": "Plaça del Centre",
+    "lat": 41.38192399999999,
+    "lon": 2.135884
+   },
+   "duration": 24
+  },
+  {
+   "place": {
+    "name": "Poble Espanyol",
+    "lat": 41.36941,
+    "lon": 2.146283
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Poble Espanyol",
+    "lat": 41.36942,
+    "lon": 2.1470000000000002
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Polvorí - Av Ferrer i Guàrdia",
+    "lat": 41.368073,
+    "lon": 2.144628
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Pubilla Cases",
+    "lat": 41.373836999999995,
+    "lon": 2.107209
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Pubilla Cases",
+    "lat": 41.373836999999995,
+    "lon": 2.107209
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Rambla del Brasil - Miquel Àngel",
+    "lat": 41.377323,
+    "lon": 2.130095
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Rambla del Brasil - Roger",
+    "lat": 41.37726599999999,
+    "lon": 2.1295870000000003
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Rambla del Brasil - Violant d'Hongria",
+    "lat": 41.378895,
+    "lon": 2.1289860000000003
+   },
+   "duration": 24
+  },
+  {
+   "place": {
+    "name": "Riera Blanca - Congost",
+    "lat": 41.370906999999995,
+    "lon": 2.1287830000000003
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Riera Blanca - Les Corts",
+    "lat": 41.37748699999999,
+    "lon": 2.121418
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Riera Blanca - Onze de Setembre",
+    "lat": 41.37732,
+    "lon": 2.1214549999999996
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Riera Blanca - Pavia",
+    "lat": 41.371196999999995,
+    "lon": 2.1282270000000003
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Riera Blanca - Plaça Guernica",
+    "lat": 41.374995999999996,
+    "lon": 2.122801
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Riera Blanca - Rambla Catalana",
+    "lat": 41.37226,
+    "lon": 2.1262559999999997
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Riera Blanca - Regent Mendieta",
+    "lat": 41.376217,
+    "lon": 2.121807
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Riera Blanca - Sant Frederic",
+    "lat": 41.37258,
+    "lon": 2.126017
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Riera Blanca - Santiago Ramón y Cajal",
+    "lat": 41.369194,
+    "lon": 2.130913
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Riera Blanca - Trav de Les Corts",
+    "lat": 41.376799999999996,
+    "lon": 2.12182
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Riera Blanca - Trav de les Corts - Final trajecte",
+    "lat": 41.37605,
+    "lon": 2.121489
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Rocafort",
+    "lat": 41.37923,
+    "lon": 2.154562
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Rocafort",
+    "lat": 41.37923,
+    "lon": 2.154562
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Sant Pere d'Abanto - Moianès",
+    "lat": 41.371722999999996,
+    "lon": 2.142975
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Sant antoni - Pl de Sants",
+    "lat": 41.37606399999999,
+    "lon": 2.136337
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Santa Eulàlia",
+    "lat": 41.368816,
+    "lon": 2.128617
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Santa Eulàlia",
+    "lat": 41.368816,
+    "lon": 2.128617
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Sants - Badal",
+    "lat": 41.37542,
+    "lon": 2.1318799999999998
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Sants - Gayarre",
+    "lat": 41.375256,
+    "lon": 2.1396619999999995
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Sants - Munné",
+    "lat": 41.375606999999995,
+    "lon": 2.122873
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Sants - Premià",
+    "lat": 41.375385,
+    "lon": 2.139312
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Sants - Rambla del Brasil",
+    "lat": 41.375553000000004,
+    "lon": 2.131029
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Sants Estació",
+    "lat": 41.38159999999999,
+    "lon": 2.1409920000000002
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Sants Estació",
+    "lat": 41.38159999999999,
+    "lon": 2.1409920000000002
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Sants Estació",
+    "lat": 41.379955,
+    "lon": 2.1403980000000002
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Sants Estació - Pl Joan Peiró - Final de trajecte",
+    "lat": 41.378384,
+    "lon": 2.1390249999999997
+   },
+   "duration": 24
+  },
+  {
+   "place": {
+    "name": "Sepúlveda - Av Mistral",
+    "lat": 41.375682999999995,
+    "lon": 2.1524089999999996
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Sepúlveda - Rocafort",
+    "lat": 41.377376999999996,
+    "lon": 2.15467
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Tarragona",
+    "lat": 41.378493999999996,
+    "lon": 2.1453360000000004
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Tarragona",
+    "lat": 41.378493999999996,
+    "lon": 2.1453360000000004
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Tarragona - Mallorca",
+    "lat": 41.37974,
+    "lon": 2.1433890000000004
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Tarragona - Parc de Joan Miró",
+    "lat": 41.376705,
+    "lon": 2.147419
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Tarragona - Pl Espanya",
+    "lat": 41.375988,
+    "lon": 2.148778
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Torrassa",
+    "lat": 41.36822,
+    "lon": 2.1157559999999997
+   },
+   "duration": 12
+  },
+  {
+   "place": {
+    "name": "Torrassa",
+    "lat": 41.368397,
+    "lon": 2.116594
+   },
+   "duration": 12
+  },
+  {
+   "place": {
+    "name": "Torrassa",
+    "lat": 41.36822,
+    "lon": 2.1157559999999997
+   },
+   "duration": 12
+  },
+  {
+   "place": {
+    "name": "Travessera de les Corts - Comte de Güell",
+    "lat": 41.378235000000004,
+    "lon": 2.121947
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Vallespir - Jardí de Magalí",
+    "lat": 41.383906999999994,
+    "lon": 2.1339900000000003
+   },
+   "duration": 27
+  },
+  {
+   "place": {
+    "name": "Vallespir - Pl del Centre",
+    "lat": 41.38197699999999,
+    "lon": 2.135296
+   },
+   "duration": 24
+  },
+  {
+   "place": {
+    "name": "València - Entença",
+    "lat": 41.38104599999999,
+    "lon": 2.147948
+   },
+   "duration": 23
+  },
+  {
+   "place": {
+    "name": "València - Tarragona",
+    "lat": 41.379253,
+    "lon": 2.145559
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "València - Viladomat",
+    "lat": 41.383575,
+    "lon": 2.151303
+   },
+   "duration": 29
+  },
+  {
+   "place": {
+    "name": "Viladomat - Aragó",
+    "lat": 41.38272,
+    "lon": 2.1531900000000004
+   },
+   "duration": 27
+  },
+  {
+   "place": {
+    "name": "Viladomat - Còrsega",
+    "lat": 41.38697,
+    "lon": 2.1475310000000007
+   },
+   "duration": 28
+  },
+  {
+   "place": {
+    "name": "Viladomat - Mallorca",
+    "lat": 41.385292,
+    "lon": 2.149749
+   },
+   "duration": 28
+  },
+  {
+   "place": {
+    "name": "Vilamarí - Av Mistral",
+    "lat": 41.375732000000006,
+    "lon": 2.153416
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Vilamarí - Diputació",
+    "lat": 41.378136000000005,
+    "lon": 2.150219
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Zona Universitària",
+    "lat": 41.383742999999996,
+    "lon": 2.111621
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Zona Universitària",
+    "lat": 41.384113,
+    "lon": 2.111179
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Zona Universitària",
+    "lat": 41.383742999999996,
+    "lon": 2.111621
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Zona Universitària - Escola T S d'Enginyeria",
+    "lat": 41.385079999999995,
+    "lon": 2.1156829999999998
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Zona Universitària - Facultat d'Economia i Empresa",
+    "lat": 41.38469299999999,
+    "lon": 2.111024
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Zona Universitària - Final de trajecte",
+    "lat": 41.38459399999999,
+    "lon": 2.110914
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Avinguda de Xile",
+    "lat": 41.380756,
+    "lon": 2.1147964
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Avinguda de Xile",
+    "lat": 41.380756,
+    "lon": 2.1147964
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Avinguda de Xile",
+    "lat": 41.38073,
+    "lon": 2.1148775
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Can Rigal",
+    "lat": 41.3761,
+    "lon": 2.1059375000000005
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Can Rigal",
+    "lat": 41.3761,
+    "lon": 2.1059375000000005
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Can Rigal",
+    "lat": 41.37606399999999,
+    "lon": 2.1059372000000005
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Ernest Lluch",
+    "lat": 41.376689999999996,
+    "lon": 2.1107688
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Ernest Lluch",
+    "lat": 41.376689999999996,
+    "lon": 2.1107688
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Ernest Lluch",
+    "lat": 41.37667,
+    "lon": 2.1108775
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "L'Illa",
+    "lat": 41.390495,
+    "lon": 2.1365323
+   },
+   "duration": 29
+  },
+  {
+   "place": {
+    "name": "Palau Reial",
+    "lat": 41.385943999999995,
+    "lon": 2.1184679999999996
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Palau Reial",
+    "lat": 41.385943999999995,
+    "lon": 2.1184679999999996
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Palau Reial",
+    "lat": 41.385918000000004,
+    "lon": 2.1184779999999996
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Pius XII",
+    "lat": 41.386739999999996,
+    "lon": 2.1216037
+   },
+   "duration": 23
+  },
+  {
+   "place": {
+    "name": "Pius XII",
+    "lat": 41.386739999999996,
+    "lon": 2.1216037
+   },
+   "duration": 23
+  },
+  {
+   "place": {
+    "name": "Pius XII",
+    "lat": 41.38671,
+    "lon": 2.121614
+   },
+   "duration": 23
+  },
+  {
+   "place": {
+    "name": "Z.Universitària",
+    "lat": 41.38426199999999,
+    "lon": 2.11441
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Z.Universitària",
+    "lat": 41.38426199999999,
+    "lon": 2.11441
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Z.Universitària",
+    "lat": 41.38427699999999,
+    "lon": 2.1144505
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Albert Bastardas - Torre Melina",
+    "lat": 41.381587999999994,
+    "lon": 2.1077006000000003
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Amadeu Torner - Av. Carrilet",
+    "lat": 41.36508,
+    "lon": 2.1206782
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Amadeu Torner - Santa Eulàlia",
+    "lat": 41.36496399999999,
+    "lon": 2.120436
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Arizala - Av Madrid",
+    "lat": 41.376422999999996,
+    "lon": 2.1251040000000003
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Arizala - Les Corts",
+    "lat": 41.378574,
+    "lon": 2.1236870000000003
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Arístides Maillol - Trav. de les Corts",
+    "lat": 41.378353000000004,
+    "lon": 2.1212429999999998
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Av Doctor Marañón - Av de Xile",
+    "lat": 41.38143999999999,
+    "lon": 2.11435
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Av Doctor Marañón - Baldiri i Reixac",
+    "lat": 41.382053,
+    "lon": 2.113965
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Av Joan XXIII - Maternitat",
+    "lat": 41.382659999999994,
+    "lon": 2.1223140000000003
+   },
+   "duration": 28
+  },
+  {
+   "place": {
+    "name": "Av Joan XXIII - Pl Pius XII",
+    "lat": 41.385639999999995,
+    "lon": 2.122614
+   },
+   "duration": 24
+  },
+  {
+   "place": {
+    "name": "Av Madrid - Arizala",
+    "lat": 41.377039999999994,
+    "lon": 2.1251510000000002
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Av Madrid - Benavent",
+    "lat": 41.37739,
+    "lon": 2.125406
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Av Madrid - Carles III",
+    "lat": 41.378710000000005,
+    "lon": 2.1277060000000003
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Av Madrid - Carles III",
+    "lat": 41.378930000000004,
+    "lon": 2.128468
+   },
+   "duration": 23
+  },
+  {
+   "place": {
+    "name": "Av Madrid - Comte de Güell",
+    "lat": 41.376133,
+    "lon": 2.123659
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Av Madrid - Joan Güell",
+    "lat": 41.380813999999994,
+    "lon": 2.132811
+   },
+   "duration": 25
+  },
+  {
+   "place": {
+    "name": "Av Madrid - Joan Güell",
+    "lat": 41.380694999999996,
+    "lon": 2.131584
+   },
+   "duration": 27
+  },
+  {
+   "place": {
+    "name": "Av Paral·lel - Pl Espanya",
+    "lat": 41.374832,
+    "lon": 2.1522289999999997
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Av Roma - Tarragona",
+    "lat": 41.380469999999995,
+    "lon": 2.1436143000000003
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Av Sant Ramon Nonat - Cardenal Reig",
+    "lat": 41.377433999999994,
+    "lon": 2.1164459999999994
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Av de Roma - Entença",
+    "lat": 41.38201,
+    "lon": 2.146274
+   },
+   "duration": 25
+  },
+  {
+   "place": {
+    "name": "Av de Sarrià - Josep Tarradellas",
+    "lat": 41.390404,
+    "lon": 2.1448073
+   },
+   "duration": 29
+  },
+  {
+   "place": {
+    "name": "Av de l'Exèrcit - Trias i Giró",
+    "lat": 41.385673999999995,
+    "lon": 2.11118
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Av. Albert Bastardas - Av. Manuel Azaña",
+    "lat": 41.377179999999996,
+    "lon": 2.1089392000000005
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Av. Carrilet - Cooperativa",
+    "lat": 41.365,
+    "lon": 2.122414
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Av. Diagonal - Palau Reial de Pedralbes",
+    "lat": 41.38602399999999,
+    "lon": 2.117749
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Av. Diagonal - Palau Reial de Pedralbes",
+    "lat": 41.386078,
+    "lon": 2.118022
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Av. Diagonal - Torre Melina",
+    "lat": 41.383891999999996,
+    "lon": 2.110835
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Av. Diagonal - Zona Universitària",
+    "lat": 41.384969999999996,
+    "lon": 2.1136155
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Av. Josep Tarradellas - Estació Sants",
+    "lat": 41.381912,
+    "lon": 2.1421993
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Av. Manuel Azaña - Av. de Xile",
+    "lat": 41.37751,
+    "lon": 2.1109364
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Av. Masnou - Av. Primavera",
+    "lat": 41.369350000000004,
+    "lon": 2.1102877
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Av. Masnou - Florida",
+    "lat": 41.369205,
+    "lon": 2.1102678999999998
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Av. Masnou - Pedraforca",
+    "lat": 41.370625,
+    "lon": 2.1059904
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Av. Miraflores - Enginyer Moncunill",
+    "lat": 41.37106699999999,
+    "lon": 2.109567
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Av. Paral·lel - Pl. Espanya",
+    "lat": 41.37487999999999,
+    "lon": 2.1513875000000002
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Av. Paral·lel - Pl. Espanya",
+    "lat": 41.37487999999999,
+    "lon": 2.151906
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Av. Paral·lel - Pl. Espanya",
+    "lat": 41.37485999999999,
+    "lon": 2.1517117000000003
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Av. Ponent - Alegria",
+    "lat": 41.369347,
+    "lon": 2.113632
+   },
+   "duration": 12
+  },
+  {
+   "place": {
+    "name": "Av. Ponent - Bòbiles",
+    "lat": 41.369266999999994,
+    "lon": 2.1137910000000004
+   },
+   "duration": 12
+  },
+  {
+   "place": {
+    "name": "Av. Tomás Giménez - Pubilla Cases",
+    "lat": 41.375330000000005,
+    "lon": 2.1036632
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Berlín - Nicaragua",
+    "lat": 41.38413,
+    "lon": 2.1407930000000004
+   },
+   "duration": 23
+  },
+  {
+   "place": {
+    "name": "Berlín - Numància",
+    "lat": 41.382926999999995,
+    "lon": 2.1386079999999996
+   },
+   "duration": 23
+  },
+  {
+   "place": {
+    "name": "Biblioteca La Florida",
+    "lat": 41.369762,
+    "lon": 2.1073592000000003
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Biblioteca La Florida",
+    "lat": 41.36989,
+    "lon": 2.1075263000000004
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "CAP La Torrassa",
+    "lat": 41.36976,
+    "lon": 2.1229627
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Camí de la Torre Melina - Av. de Xile",
+    "lat": 41.376343,
+    "lon": 2.1122277
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Can Rigal",
+    "lat": 41.375965,
+    "lon": 2.105988
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Can Rigal",
+    "lat": 41.37621,
+    "lon": 2.105778
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Can Trinxet",
+    "lat": 41.366282999999996,
+    "lon": 2.122104
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Canigó - Enric Prat de la Riba",
+    "lat": 41.364825999999994,
+    "lon": 2.114087
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Cardenal Reig - Av St Ramon Nonat",
+    "lat": 41.378548,
+    "lon": 2.117486
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Cardenal Reig - Pisuerga",
+    "lat": 41.37717,
+    "lon": 2.114777
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Carles III - Av Madrid",
+    "lat": 41.37978699999999,
+    "lon": 2.1287290000000003
+   },
+   "duration": 24
+  },
+  {
+   "place": {
+    "name": "Carles III - Mejía Lequerica",
+    "lat": 41.384212,
+    "lon": 2.1272330000000004
+   },
+   "duration": 28
+  },
+  {
+   "place": {
+    "name": "Castell de Bellvís",
+    "lat": 41.36915200000001,
+    "lon": 2.124043
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Centre Cultural Tecla Sala",
+    "lat": 41.36695,
+    "lon": 2.1166715999999997
+   },
+   "duration": 12
+  },
+  {
+   "place": {
+    "name": "Centre Cultural Tecla Sala",
+    "lat": 41.367526999999995,
+    "lon": 2.116847999999999
+   },
+   "duration": 12
+  },
+  {
+   "place": {
+    "name": "Collblanc - Cardenal Reig",
+    "lat": 41.37592,
+    "lon": 2.114639
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Collblanc - Cardenal Reig",
+    "lat": 41.37576,
+    "lon": 2.1146479999999994
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Collblanc - Sant Ramon Nonat",
+    "lat": 41.375816,
+    "lon": 2.1175265000000003
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Constitució - Badal",
+    "lat": 41.36925,
+    "lon": 2.133513
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Creu Coberta - Pl Espanya",
+    "lat": 41.37522,
+    "lon": 2.1475370000000007
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Creu Coberta - Pl Espanya",
+    "lat": 41.37512,
+    "lon": 2.146854
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Creu Roja - Collblanc",
+    "lat": 41.37505,
+    "lon": 2.1159787
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Creu Roja - Collblanc",
+    "lat": 41.37543,
+    "lon": 2.1160748
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Creu Roja - Pujós",
+    "lat": 41.372825999999996,
+    "lon": 2.1164759999999996
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Ctra de Collblanc - Av Tomás Giménez",
+    "lat": 41.37615,
+    "lon": 2.10344
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Ctra de Collblanc - Metro Ernest Lluch",
+    "lat": 41.375973,
+    "lon": 2.11081
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Ctra de la Bordeta - Àliga",
+    "lat": 41.373183999999995,
+    "lon": 2.1439160000000004
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Diagonal - Av Doctor Marañón",
+    "lat": 41.38421999999999,
+    "lon": 2.1116119999999996
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Diagonal - Av Joan XXIII",
+    "lat": 41.386932,
+    "lon": 2.122985
+   },
+   "duration": 23
+  },
+  {
+   "place": {
+    "name": "Diagonal - Complex Esportiu Universitari",
+    "lat": 41.38326599999999,
+    "lon": 2.1078740000000002
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Diagonal - Complex Esportiu Universitari",
+    "lat": 41.38407999999999,
+    "lon": 2.111707
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Diagonal - Entença",
+    "lat": 41.39034,
+    "lon": 2.1364049999999994
+   },
+   "duration": 29
+  },
+  {
+   "place": {
+    "name": "Diagonal - L'Illa Diagonal",
+    "lat": 41.389599999999994,
+    "lon": 2.1334827
+   },
+   "duration": 28
+  },
+  {
+   "place": {
+    "name": "Diagonal - Manuel Ballbé",
+    "lat": 41.38407999999999,
+    "lon": 2.110076
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Diagonal - Metro Palau Reial",
+    "lat": 41.38585,
+    "lon": 2.118733
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Diagonal - Metro Zona Universitària",
+    "lat": 41.38485999999999,
+    "lon": 2.1131663
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Diagonal - Parc de Cervantes",
+    "lat": 41.383632999999996,
+    "lon": 2.1083860000000003
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "ETS d'Arquitectura",
+    "lat": 41.38483999999999,
+    "lon": 2.113992
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Entença - Av Josep Tarradellas",
+    "lat": 41.38616,
+    "lon": 2.142084
+   },
+   "duration": 26
+  },
+  {
+   "place": {
+    "name": "Entença - Av Mistral",
+    "lat": 41.37666699999999,
+    "lon": 2.15461
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Entença - Consell de Cent",
+    "lat": 41.38007999999999,
+    "lon": 2.1500879999999998
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Entença - Déu i Mata",
+    "lat": 41.390327,
+    "lon": 2.137758
+   },
+   "duration": 30
+  },
+  {
+   "place": {
+    "name": "Entença - Gran Via",
+    "lat": 41.378372000000006,
+    "lon": 2.1523499999999998
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Entença - Montnegre",
+    "lat": 41.388535000000005,
+    "lon": 2.1394629999999997
+   },
+   "duration": 30
+  },
+  {
+   "place": {
+    "name": "Entença - Rosselló",
+    "lat": 41.38425999999999,
+    "lon": 2.144559
+   },
+   "duration": 24
+  },
+  {
+   "place": {
+    "name": "Entença - València",
+    "lat": 41.38183999999999,
+    "lon": 2.1477690000000003
+   },
+   "duration": 24
+  },
+  {
+   "place": {
+    "name": "Ernest Lluch",
+    "lat": 41.376217,
+    "lon": 2.112157
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Estació d'Autobusos Barcelona Sants",
+    "lat": 41.379715000000004,
+    "lon": 2.1389365000000002
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Florida - Av. Primavera",
+    "lat": 41.36969,
+    "lon": 2.1108057
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Florida - Bòbiles",
+    "lat": 41.37069699999999,
+    "lon": 2.1126439999999995
+   },
+   "duration": 14
+  },
+  {
+   "place": {
+    "name": "Font - Av. Torrent Gornal",
+    "lat": 41.37225,
+    "lon": 2.1126329999999998
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "General Batet - Av. Manuel Azaña",
+    "lat": 41.378952000000005,
+    "lon": 2.1088347000000005
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Gran Via - Calàbria",
+    "lat": 41.38012,
+    "lon": 2.155512
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Gran Via - Entença",
+    "lat": 41.378384,
+    "lon": 2.153719
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Gran Via - Farell",
+    "lat": 41.371993999999994,
+    "lon": 2.14495
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Gran Via - Mandoni",
+    "lat": 41.369503,
+    "lon": 2.141953
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Gran Via - Moianès",
+    "lat": 41.37023,
+    "lon": 2.142617
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Gran Via - Pl Espanya",
+    "lat": 41.37569,
+    "lon": 2.1496210000000002
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Gran Via - Pl Espanya",
+    "lat": 41.375496,
+    "lon": 2.1501870000000003
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Gran Via - Santa Dorotea",
+    "lat": 41.371703999999994,
+    "lon": 2.14488
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Gran Via - Viladomat",
+    "lat": 41.380035,
+    "lon": 2.155913
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Gran Via - Vilamarí",
+    "lat": 41.377419999999994,
+    "lon": 2.151919
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Gran Via Corts Catalanes",
+    "lat": 41.373974,
+    "lon": 2.1480904
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Institut Eugeni d'Ors",
+    "lat": 41.373104,
+    "lon": 2.1154995
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Jardins Maria Montessori",
+    "lat": 41.374752,
+    "lon": 2.1101942000000005
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Jardins Maria Montessori",
+    "lat": 41.37463999999999,
+    "lon": 2.110225
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "La Campana",
+    "lat": 41.368027,
+    "lon": 2.139984
+   },
+   "duration": 14
+  },
+  {
+   "place": {
+    "name": "La Campana",
+    "lat": 41.368298,
+    "lon": 2.1400170000000003
+   },
+   "duration": 14
+  },
+  {
+   "place": {
+    "name": "Les Corts - Arizala",
+    "lat": 41.37935,
+    "lon": 2.1233835000000005
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Les Corts - Aurora Bertrana",
+    "lat": 41.377055999999996,
+    "lon": 2.119821
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Les Corts - Mejía Lequerica",
+    "lat": 41.381912,
+    "lon": 2.127255
+   },
+   "duration": 27
+  },
+  {
+   "place": {
+    "name": "Les Corts - Vallespir",
+    "lat": 41.385517,
+    "lon": 2.1327249999999998
+   },
+   "duration": 25
+  },
+  {
+   "place": {
+    "name": "Lleida - Av Paral·lel",
+    "lat": 41.374508,
+    "lon": 2.154201
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Llobregat - Montseny",
+    "lat": 41.37114699999999,
+    "lon": 2.1208465
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Llobregat - Occident",
+    "lat": 41.37445399999999,
+    "lon": 2.1188645
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Llobregat - Pujós",
+    "lat": 41.373659999999994,
+    "lon": 2.1192883999999994
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Londres - Calàbria",
+    "lat": 41.388473999999995,
+    "lon": 2.1440360000000003
+   },
+   "duration": 28
+  },
+  {
+   "place": {
+    "name": "Londres - Hospital del Sagrat Cor",
+    "lat": 41.389812,
+    "lon": 2.145813
+   },
+   "duration": 28
+  },
+  {
+   "place": {
+    "name": "Magòria",
+    "lat": 41.369643999999994,
+    "lon": 2.141705
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Mallorca - Viladomat",
+    "lat": 41.384499999999996,
+    "lon": 2.1500579999999996
+   },
+   "duration": 28
+  },
+  {
+   "place": {
+    "name": "Marquès de Sentmenat - Equador",
+    "lat": 41.385419999999996,
+    "lon": 2.1415610000000003
+   },
+   "duration": 25
+  },
+  {
+   "place": {
+    "name": "Marquès de Sentmenat - Numància",
+    "lat": 41.38496799999999,
+    "lon": 2.136713
+   },
+   "duration": 26
+  },
+  {
+   "place": {
+    "name": "Mas - Llançà",
+    "lat": 41.370728,
+    "lon": 2.1186817000000002
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Mas - Llobregat",
+    "lat": 41.371809999999996,
+    "lon": 2.1202638
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Mercat Collblanc",
+    "lat": 41.37524,
+    "lon": 2.1207447000000004
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Mercat Torrent Gornal",
+    "lat": 41.370438,
+    "lon": 2.1155818
+   },
+   "duration": 13
+  },
+  {
+   "place": {
+    "name": "Mercat Torrent Gornal",
+    "lat": 41.37054,
+    "lon": 2.115366
+   },
+   "duration": 13
+  },
+  {
+   "place": {
+    "name": "Mercat de Les Corts",
+    "lat": 41.383689999999994,
+    "lon": 2.129908
+   },
+   "duration": 25
+  },
+  {
+   "place": {
+    "name": "Mercat de la Florida",
+    "lat": 41.370605,
+    "lon": 2.1085942000000006
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Metro Badal",
+    "lat": 41.375603,
+    "lon": 2.1287970000000005
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Metro Badal",
+    "lat": 41.3755,
+    "lon": 2.127962
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Metro Collblanc",
+    "lat": 41.3757,
+    "lon": 2.11851
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Metro Ernest Lluch",
+    "lat": 41.375835,
+    "lon": 2.110329
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Metro Ernest Lluch",
+    "lat": 41.376614,
+    "lon": 2.1118729999999997
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Metro Hostafrancs",
+    "lat": 41.375282,
+    "lon": 2.144563
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Metro Hostafrancs",
+    "lat": 41.375153000000005,
+    "lon": 2.144895
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Metro Pl de Sants",
+    "lat": 41.37544,
+    "lon": 2.1366039999999997
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Metro Pl de Sants",
+    "lat": 41.375313000000006,
+    "lon": 2.1368099999999997
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Metro Pubilla Cases",
+    "lat": 41.374202999999994,
+    "lon": 2.1082465999999997
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Metro Pubilla Cases",
+    "lat": 41.373943,
+    "lon": 2.1072612000000004
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Metro Pubilla Cases",
+    "lat": 41.373936,
+    "lon": 2.1072505
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Metro Santa Eulàlia",
+    "lat": 41.36916,
+    "lon": 2.1307940000000003
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Metro Tarragona",
+    "lat": 41.378370000000004,
+    "lon": 2.145213
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Metro Tarragona",
+    "lat": 41.378468,
+    "lon": 2.1452549999999997
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Metro Torrassa",
+    "lat": 41.36867,
+    "lon": 2.1165214
+   },
+   "duration": 12
+  },
+  {
+   "place": {
+    "name": "Metro Torrassa",
+    "lat": 41.369,
+    "lon": 2.1167195
+   },
+   "duration": 12
+  },
+  {
+   "place": {
+    "name": "Metro Torrassa",
+    "lat": 41.368702000000006,
+    "lon": 2.1171513
+   },
+   "duration": 12
+  },
+  {
+   "place": {
+    "name": "Mini Estadi - Palau Blaugrana",
+    "lat": 41.380832999999996,
+    "lon": 2.119227
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Moianès - Cuyàs",
+    "lat": 41.37125399999999,
+    "lon": 2.142347
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Moianès - Vilardell",
+    "lat": 41.374267999999994,
+    "lon": 2.1424719999999997
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Montseny - Llançà",
+    "lat": 41.369983999999995,
+    "lon": 2.1194429999999995
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Mossèn Amadeu Oller - Gran Via",
+    "lat": 41.368053,
+    "lon": 2.13916
+   },
+   "duration": 14
+  },
+  {
+   "place": {
+    "name": "Nicaragua - Parc Les Corts",
+    "lat": 41.386252999999996,
+    "lon": 2.137775
+   },
+   "duration": 27
+  },
+  {
+   "place": {
+    "name": "Numància - Av Roma",
+    "lat": 41.381209999999996,
+    "lon": 2.141343
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Numància - Berlín",
+    "lat": 41.38276,
+    "lon": 2.1394509999999998
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Numància - Diagonal",
+    "lat": 41.389175,
+    "lon": 2.1328375
+   },
+   "duration": 28
+  },
+  {
+   "place": {
+    "name": "Numància - Marquès de Sentmenat",
+    "lat": 41.38460499999999,
+    "lon": 2.137456
+   },
+   "duration": 25
+  },
+  {
+   "place": {
+    "name": "Numància - Parc Les Corts",
+    "lat": 41.38614,
+    "lon": 2.1358689999999996
+   },
+   "duration": 27
+  },
+  {
+   "place": {
+    "name": "Palau Reial",
+    "lat": 41.386333,
+    "lon": 2.1189465999999997
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Palau Reial",
+    "lat": 41.385593,
+    "lon": 2.116137
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Palau Reial",
+    "lat": 41.385833999999996,
+    "lon": 2.1179360000000003
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Paral·lel - Av Mistral",
+    "lat": 41.375130000000006,
+    "lon": 2.1526289999999997
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Paral·lel - Floridablanca",
+    "lat": 41.37512,
+    "lon": 2.154936
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Paral·lel - Pl Espanya",
+    "lat": 41.374905,
+    "lon": 2.1509563999999997
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Parc de Bombers",
+    "lat": 41.370518000000004,
+    "lon": 2.1058885999999997
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "París - Comte d'Urgell",
+    "lat": 41.38945999999999,
+    "lon": 2.1477940000000006
+   },
+   "duration": 26
+  },
+  {
+   "place": {
+    "name": "París - Josep Tarradellas",
+    "lat": 41.38599,
+    "lon": 2.1431900000000006
+   },
+   "duration": 25
+  },
+  {
+   "place": {
+    "name": "París - Viladomat",
+    "lat": 41.387722,
+    "lon": 2.145493
+   },
+   "duration": 28
+  },
+  {
+   "place": {
+    "name": "Pau Romeva - Av. Diagonal",
+    "lat": 41.38972,
+    "lon": 2.1374412
+   },
+   "duration": 29
+  },
+  {
+   "place": {
+    "name": "Pg Sant Antoni - Parc de l'Espanya Industrial",
+    "lat": 41.378330000000005,
+    "lon": 2.1407669
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Pg. Sant Antoni, 106",
+    "lat": 41.37954,
+    "lon": 2.1421497
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Pg. Sant Antoni, 53-55",
+    "lat": 41.37915,
+    "lon": 2.1416326
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Piscines Municipals de l'Hospitalet",
+    "lat": 41.36601,
+    "lon": 2.116624
+   },
+   "duration": 13
+  },
+  {
+   "place": {
+    "name": "Pl Espanya - Av Reina Maria Cristina",
+    "lat": 41.374123,
+    "lon": 2.14957
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Pl Espanya - FGC",
+    "lat": 41.373763999999994,
+    "lon": 2.1471763000000004
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Pl Espanya - FGC",
+    "lat": 41.374289999999995,
+    "lon": 2.148575
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Pl Espanya - Paral·lel",
+    "lat": 41.374905,
+    "lon": 2.1505976
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Pl Joan Peiró - Estació de Sants",
+    "lat": 41.378117,
+    "lon": 2.1393325
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Pl Pius XII",
+    "lat": 41.386962999999994,
+    "lon": 2.121553
+   },
+   "duration": 23
+  },
+  {
+   "place": {
+    "name": "Pl de Joan Peiró",
+    "lat": 41.378550000000004,
+    "lon": 2.1388445
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Pl de Sants",
+    "lat": 41.37549,
+    "lon": 2.13427
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Pl de Sants",
+    "lat": 41.375366,
+    "lon": 2.1343170000000002
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Pl del Centre",
+    "lat": 41.38188599999999,
+    "lon": 2.1360629999999996
+   },
+   "duration": 24
+  },
+  {
+   "place": {
+    "name": "Pl. Espanya - Creu Coberta",
+    "lat": 41.374159999999996,
+    "lon": 2.147698
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Pl. Mare de Déu del Pilar",
+    "lat": 41.372536000000004,
+    "lon": 2.1070526
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Pl. Mare de Déu del Pilar",
+    "lat": 41.372530000000005,
+    "lon": 2.1058304
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Pl. Mare de Déu del Pilar",
+    "lat": 41.372524,
+    "lon": 2.1054542
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Pl. Mare de Déu del Pilar",
+    "lat": 41.37214,
+    "lon": 2.1061027
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Pl. Pius XII",
+    "lat": 41.386585,
+    "lon": 2.1208940000000003
+   },
+   "duration": 23
+  },
+  {
+   "place": {
+    "name": "Pl. del Vidre",
+    "lat": 41.36884,
+    "lon": 2.126144
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Plaça d'Espanya",
+    "lat": 41.374016,
+    "lon": 2.149995
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Rafael Campalans - Mas",
+    "lat": 41.373096,
+    "lon": 2.1219428
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Rambla Catalana - Rosselló",
+    "lat": 41.371539999999996,
+    "lon": 2.1255357000000004
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Rambla Catalana - Santiago Apòstol",
+    "lat": 41.370174,
+    "lon": 2.1235304000000004
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Rda. de la Torrassa - Riera Blanca",
+    "lat": 41.37053,
+    "lon": 2.1292732
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Riera Blanca - Congost",
+    "lat": 41.370906999999995,
+    "lon": 2.1287830000000003
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Riera Blanca - Les Corts",
+    "lat": 41.37748699999999,
+    "lon": 2.121418
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Riera Blanca - Onze de Setembre",
+    "lat": 41.377323,
+    "lon": 2.1214549999999996
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Riera Blanca - Pavia",
+    "lat": 41.371196999999995,
+    "lon": 2.1282270000000003
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Riera Blanca - Plaça Guernica",
+    "lat": 41.374995999999996,
+    "lon": 2.122801
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Riera Blanca - Rambla Catalana",
+    "lat": 41.37226,
+    "lon": 2.1262559999999997
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Riera Blanca - Regent Mendieta",
+    "lat": 41.376217,
+    "lon": 2.121807
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Riera Blanca - Sant Frederic",
+    "lat": 41.37258,
+    "lon": 2.126017
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Riera Blanca - Santiago Ramon y Cajal",
+    "lat": 41.369194,
+    "lon": 2.130913
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Riera Blanca - Trav de les Corts",
+    "lat": 41.37605,
+    "lon": 2.121489
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Riera Blanca - Trav. de les Corts",
+    "lat": 41.377815,
+    "lon": 2.121692
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Sants - Badal",
+    "lat": 41.37542,
+    "lon": 2.1318799999999998
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Sants - Gayarre",
+    "lat": 41.375256,
+    "lon": 2.1396619999999995
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Sants - Munné",
+    "lat": 41.375606999999995,
+    "lon": 2.122873
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Sants - Premià",
+    "lat": 41.375385,
+    "lon": 2.139312
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Sants - Rambla del Brasil",
+    "lat": 41.375553000000004,
+    "lon": 2.131029
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Sepúlveda - Av Mistral",
+    "lat": 41.375682999999995,
+    "lon": 2.1524089999999996
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Sepúlveda - Rocafort",
+    "lat": 41.377376999999996,
+    "lon": 2.15467
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Sta. Eulàlia - Av. Metro",
+    "lat": 41.36709,
+    "lon": 2.1263378000000004
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Sta. Eulàlia - Castelao",
+    "lat": 41.366479999999996,
+    "lon": 2.1233046000000004
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Sta. Eulàlia - Jacint Verdaguer",
+    "lat": 41.367138000000004,
+    "lon": 2.1280582
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Sta. Eulàlia de Provençana",
+    "lat": 41.3656,
+    "lon": 2.1196945
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Sta. Eulàlia de Provençana",
+    "lat": 41.3656,
+    "lon": 2.1188589999999996
+   },
+   "duration": 15
+  },
+  {
+   "place": {
+    "name": "Tarragona - Consell de Cent",
+    "lat": 41.376433999999996,
+    "lon": 2.1477760000000004
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Tarragona - Mallorca",
+    "lat": 41.37974,
+    "lon": 2.1433895000000005
+   },
+   "duration": 21
+  },
+  {
+   "place": {
+    "name": "Tarragona - Parc de Joan Miró",
+    "lat": 41.376705,
+    "lon": 2.147419
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Tarragona - Pl. Espanya",
+    "lat": 41.375988,
+    "lon": 2.148778
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Tarragona - Pl. Espanya",
+    "lat": 41.376006999999994,
+    "lon": 2.148407
+   },
+   "duration": 16
+  },
+  {
+   "place": {
+    "name": "Tarragona, 129",
+    "lat": 41.377579999999995,
+    "lon": 2.146204
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Torre Melina - Albert Bastardas",
+    "lat": 41.381831999999996,
+    "lon": 2.1085167000000005
+   },
+   "duration": 20
+  },
+  {
+   "place": {
+    "name": "Torrent Gornal - Enginyer Moncunill",
+    "lat": 41.37334,
+    "lon": 2.1124190999999994
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Torrent Gornal - Sort",
+    "lat": 41.373405,
+    "lon": 2.1124793999999993
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Vallespir - Jardí de Magalí",
+    "lat": 41.383906999999994,
+    "lon": 2.1339900000000003
+   },
+   "duration": 25
+  },
+  {
+   "place": {
+    "name": "Vallespir - Pl del Centre",
+    "lat": 41.38197699999999,
+    "lon": 2.135296
+   },
+   "duration": 24
+  },
+  {
+   "place": {
+    "name": "Vallparda - París",
+    "lat": 41.370895,
+    "lon": 2.1170738
+   },
+   "duration": 14
+  },
+  {
+   "place": {
+    "name": "València - Entença",
+    "lat": 41.38104599999999,
+    "lon": 2.147948
+   },
+   "duration": 23
+  },
+  {
+   "place": {
+    "name": "València - Viladomat",
+    "lat": 41.383575,
+    "lon": 2.151303
+   },
+   "duration": 27
+  },
+  {
+   "place": {
+    "name": "Zona Universitària",
+    "lat": 41.38514,
+    "lon": 2.1142843
+   },
+   "duration": 18
+  },
+  {
+   "place": {
+    "name": "Zona Universitària - Escola T S d'Enginyeria",
+    "lat": 41.385079999999995,
+    "lon": 2.1156829999999998
+   },
+   "duration": 19
+  },
+  {
+   "place": {
+    "name": "Zona Universitària - Facultat d'Economia i Empresa",
+    "lat": 41.38469299999999,
+    "lon": 2.111024
+   },
+   "duration": 17
+  },
+  {
+   "place": {
+    "name": "Barcelona - Sants Train station",
+    "lat": 41.379715000000004,
+    "lon": 2.138935
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Barcelona (Sants)",
+    "lat": 41.379839999999994,
+    "lon": 2.1393489999999997
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Estación de tren Barcelona-Sants",
+    "lat": 41.37986399999999,
+    "lon": 2.141017
+   },
+   "duration": 22
+  },
+  {
+   "place": {
+    "name": "Barcelone-Sants",
+    "lat": 41.378961,
+    "lon": 2.139834
+   },
+   "duration": 22
+  }
+ ]
+}

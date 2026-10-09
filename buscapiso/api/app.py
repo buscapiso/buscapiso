@@ -23,7 +23,8 @@ from buscapiso.pipeline import SearchOptions
 from buscapiso.profiles import SearchProfile, to_engine_cfg
 from buscapiso.seed import active_profile
 from buscapiso.transporte import Red
-from buscapiso.travel import GraphProvider, TravelError, provider_from_settings
+from buscapiso.travel import (TRANSITOUS_URL, GraphProvider, TravelError,
+                              provider_from_settings)
 
 WEB_DIST = pathlib.Path(__file__).resolve().parents[1] / "web_dist"
 SOURCES = ["idealista", "fotocasa", "roomgo", "depisoenpiso"]
@@ -39,6 +40,7 @@ class SearchRequest(BaseModel):
 class SettingsChange(BaseModel):
     travel_provider: Literal["graph", "transitous", "google"] | None = None
     transitous_contact: str | None = None
+    motis_url: str | None = None
     google_key: str | None = None
 
 
@@ -194,7 +196,8 @@ def create_app(db_path: pathlib.Path | None = None,
         a = almacen.leer_ajustes(con)
         return {"travel_provider": a.get("travel_provider", "graph"),
                 "transitous_contact": a.get("transitous_contact", ""),
-                "has_google_key": bool(get_key())}
+                "has_google_key": bool(get_key()),
+                "motis_url": a.get("motis_url", TRANSITOUS_URL)}
 
     @app.get("/api/settings")
     def settings() -> dict:
@@ -213,12 +216,17 @@ def create_app(db_path: pathlib.Path | None = None,
             proveedor = body.travel_provider or actual["travel_provider"]
             contacto = (body.transitous_contact if body.transitous_contact is not None
                         else actual["transitous_contact"]).strip()
-            if proveedor == "transitous" and not contacto:
+            url = (body.motis_url if body.motis_url is not None
+                   else actual["motis_url"]).strip().rstrip("/") or TRANSITOUS_URL
+            if not url.startswith(("http://", "https://")):
+                raise HTTPException(422, "The server address must start with http:// or https://")
+            if proveedor == "transitous" and url == TRANSITOUS_URL and not contacto:
                 raise HTTPException(422, "Transitous needs a contact (email or URL)")
             if proveedor == "google" and not get_key():
                 raise HTTPException(422, "Google Routes needs an API key")
             almacen.guardar_ajuste(con, "travel_provider", proveedor)
             almacen.guardar_ajuste(con, "transitous_contact", contacto)
+            almacen.guardar_ajuste(con, "motis_url", url)
             return _settings(con)
 
     @app.post("/api/settings/test-route")
