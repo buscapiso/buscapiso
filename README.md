@@ -19,7 +19,7 @@ The browser may sometimes warn about extensions in developer mode; you can dismi
 
 **Firefox, on a computer or on Android**
 
-Install the signed `buscapiso-firefox.xpi` from the [latest release](https://github.com/buscapiso/buscapiso/releases/latest): open the link in Firefox and accept. Firefox only installs extensions signed by Mozilla, so the plain zip works only as a temporary add-on (`about:debugging` → This Firefox → Load Temporary Add-on) until you restart.
+Open [buscapiso-firefox.xpi](https://github.com/buscapiso/buscapiso/releases/latest/download/buscapiso-firefox.xpi) in Firefox and accept: it is signed by Mozilla. Firefox only installs extensions signed by Mozilla, so the plain zip works only as a temporary add-on (`about:debugging` → This Firefox → Load Temporary Add-on) until you restart.
 
 **iPad, iPhone and Chrome on Android** can't run it. Everything else works there: ask someone to send you an export, or make one yourself on a computer, and import it (see below).
 

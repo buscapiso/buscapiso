@@ -93,17 +93,14 @@ arráncalo con `OLLAMA_ORIGINS=https://buscapiso.github.io`.
 
 ## Publicar
 
-### Una sola vez
+### Hecho el 2026-10-09
 
-1. Crear la organización de GitHub `buscapiso` (gratis, desde la cuenta
-   personal) y transferir el repositorio a `buscapiso/buscapiso`.
-2. En el repositorio, Settings → Pages → Source: GitHub Actions. Cada push a
-   `main` publica la web en `https://buscapiso.github.io/buscapiso/`.
-3. Chrome Web Store: cuenta de desarrollador (5 $ una vez), subir
-   `buscapiso-chrome.zip` y publicarla como oculta (unlisted).
-4. Firefox Add-ons: subir `buscapiso-firefox.zip` como oculta; Mozilla
-   devuelve un `.xpi` firmado.
-5. Poner los dos enlaces en `STORE` de `web/src/lib/extensionState.svelte.ts`.
+- Organización `buscapiso` y repositorio público `buscapiso/buscapiso`, con el
+  historial reescrito (email de autor cambiado por el noreply de GitHub, y
+  tokens de Mapbox y claves de Google de las páginas guardadas tachados).
+- GitHub Pages con GitHub Actions: cada push a `main` publica la web.
+- La extensión no está en las tiendas. Chrome carga el zip descomprimido;
+  Firefox instala el `.xpi` firmado por Mozilla como oculto (unlisted).
 
 El origen `https://buscapiso.github.io` está dentro de la extensión (el
 content script solo se inyecta ahí). Cambiar de dominio exige publicar otra
@@ -113,10 +110,20 @@ usuarios.
 
 ### Cada versión de la extensión
 
-Subir la versión en `extension/build.mjs` y en `extension/src/protocol.js`, y
-etiquetar `ext-vX.Y.Z`: el workflow adjunta los dos zip a la release. Si cambia
-el protocolo, subir `PROTOCOL` en los dos lados; la web pide actualizar a quien
-tenga una extensión más antigua.
+1. Subir la versión en `extension/build.mjs` y en `extension/src/protocol.js`.
+   Si cambia el protocolo, subir `PROTOCOL` también en la web; la web pide
+   actualizar a quien tenga una extensión más antigua.
+2. Etiquetar `ext-vX.Y.Z`: el workflow adjunta `buscapiso-chrome.zip` a la
+   release.
+3. Firmar la de Firefox (hace falta la clave de API de addons.mozilla.org, que
+   no se guarda en el repo) y subir el `.xpi` a la misma release:
+
+```bash
+node extension/build.mjs
+WEB_EXT_API_KEY=... WEB_EXT_API_SECRET=... npx web-ext sign \
+  --source-dir extension/dist/firefox --channel unlisted --artifacts-dir /tmp/xpi
+gh release upload ext-vX.Y.Z /tmp/xpi/*.xpi#buscapiso-firefox.xpi
+```
 
 ### Comprobación en vivo antes de publicar
 

@@ -22,6 +22,6 @@ export function platform(ua = navigator.userAgent, touchMac = navigator.maxTouch
  * descomprimida y Firefox instala el .xpi firmado por Mozilla (oculto). */
 export const STORE = {
   chrome: 'https://github.com/buscapiso/buscapiso/releases/latest/download/buscapiso-chrome.zip',
-  firefox: '',
+  firefox: 'https://github.com/buscapiso/buscapiso/releases/latest/download/buscapiso-firefox.xpi',
   help: 'https://github.com/buscapiso/buscapiso#the-browser-extension',
 };
