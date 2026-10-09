@@ -19,7 +19,7 @@ function manifest(target) {
     name: 'buscapiso',
     version: '1.0.0',
     description: 'Lets the buscapiso website read rental listings from Idealista, Fotocasa, Habitaclia, Roomgo and De Piso en Piso in your own browser.',
-    icons: { 128: 'icon-128.png', 512: 'icon-512.png' },
+    icons: { 192: 'icon-192.png', 512: 'icon-512.png' },
     permissions: ['tabs', 'scripting'],
     host_permissions: [...PORTALS, ...(dev ? DEV_SITE : [])],
     content_scripts: [{ matches: [...SITE, ...(dev ? DEV_SITE : [])], js: ['bridge.js'], run_at: 'document_start' }],
@@ -27,7 +27,9 @@ function manifest(target) {
   if (target === 'chrome') m.background = { service_worker: 'background.js', type: 'module' };
   else {
     m.background = { scripts: ['background.js'], type: 'module' };
-    m.browser_specific_settings = { gecko: { id: 'extension@buscapiso.github.io', strict_min_version: '128.0' } };
+    // Mozilla pide declarar que datos recoge la extension: ninguno.
+    m.browser_specific_settings = { gecko: { id: 'extension@buscapiso.github.io', strict_min_version: '128.0',
+      data_collection_permissions: { required: ['none'] } } };
   }
   return m;
 }
@@ -38,7 +40,7 @@ for (const target of ['chrome', 'firefox']) {
   mkdirSync(out, { recursive: true });
   for (const f of ['background.js', 'bridge.js', 'fetcher.js', 'protocol.js']) cpSync(join(HERE, 'src', f), join(out, f));
   writeFileSync(join(out, 'config.js'), `export const DEV_HOSTS = ${JSON.stringify(dev ? ['localhost', '127.0.0.1'].flatMap((h) => [h]) : [])};\n`);
-  cpSync(join(HERE, '..', 'web', 'public', 'icon-192.png'), join(out, 'icon-128.png'));
+  cpSync(join(HERE, '..', 'web', 'public', 'icon-192.png'), join(out, 'icon-192.png'));
   cpSync(join(HERE, '..', 'web', 'public', 'icon-512.png'), join(out, 'icon-512.png'));
   writeFileSync(join(out, 'manifest.json'), JSON.stringify(manifest(target), null, 2));
   if (!dev) {
