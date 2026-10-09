@@ -12,8 +12,24 @@ import pathlib
 _RAIZ = pathlib.Path(__file__).resolve().parents[1]
 
 
+def _desde_codigo_fuente() -> bool:
+    """Ejecutando desde el repositorio (hay pyproject.toml al lado del paquete),
+    no desde la app empaquetada."""
+    import sys
+    return not getattr(sys, "frozen", False) and (_RAIZ / "pyproject.toml").exists()
+
+
 def data_dir() -> pathlib.Path:
-    return pathlib.Path(os.environ.get("BUSCAPISO_HOME") or _RAIZ)
+    """BUSCAPISO_HOME; si no, la raiz del repo al ejecutar desde el codigo (donde
+    siempre han estado tus datos); si no, la carpeta de datos del usuario."""
+    if os.environ.get("BUSCAPISO_HOME"):
+        return pathlib.Path(os.environ["BUSCAPISO_HOME"])
+    if _desde_codigo_fuente():
+        return _RAIZ
+    import platformdirs
+    carpeta = pathlib.Path(platformdirs.user_data_dir("buscapiso", appauthor=False))
+    carpeta.mkdir(parents=True, exist_ok=True)
+    return carpeta
 
 
 def db_path() -> pathlib.Path:

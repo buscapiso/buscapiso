@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import threading
 import re
 import secrets
 import contextlib
@@ -20,6 +21,7 @@ from pydantic import BaseModel, Field
 from buscapiso import access, almacen, keys, notify, paths
 from buscapiso.ai import ai_from_settings
 from buscapiso.ai.providers import AIError
+from buscapiso.browser import PlaywrightBrowser
 from buscapiso.api.schemas import (Listing, ListingDetail, NoteChange, StatusChange,
                                    detail_from_row, listing_from_row)
 from buscapiso.api.searches import SearchRunner
@@ -127,6 +129,7 @@ def create_app(db_path: pathlib.Path | None = None,
                static_dir: pathlib.Path | None = None,
                runner=None, get_key=None, set_key=None, geocode=None, ai_factory=None,
                require_token: bool = False, port: int = 8770, models_fetch=None,
+               browser=None, on_quit=None,
                provider_factory=None) -> FastAPI:
     app = FastAPI(title="buscapiso")
     ruta_db = db_path
@@ -544,6 +547,43 @@ def create_app(db_path: pathlib.Path | None = None,
                 d = fila["datos"]
                 nombres.update(n.strip() for n in (d.get("barrio"), d.get("municipio")) if n)
         return {"names": sorted((n for n in nombres if n), key=str.casefold)}
+
+    navegador_app = browser or PlaywrightBrowser()
+    instalacion = {"installing": False, "log": [], "error": None}
+
+    @app.get("/api/browser")
+    def browser_state() -> dict:
+        return {"installed": navegador_app.installed(), **instalacion,
+                "log": list(instalacion["log"][-20:])}
+
+    @app.post("/api/browser/install", status_code=202)
+    def browser_install() -> dict:
+        if instalacion["installing"]:
+            raise HTTPException(409, "The browser is already being installed")
+        instalacion.update(installing=True, log=[], error=None)
+
+        def tarea():
+            try:
+                navegador_app.install(instalacion["log"].append)
+            except Exception as e:      # noqa: BLE001 - se ensena en la pantalla
+                instalacion["error"] = str(e)
+            finally:
+                instalacion["installing"] = False
+
+        threading.Thread(target=tarea, daemon=True).start()
+        return {"started": True}
+
+    def _salir_por_defecto() -> None:
+        # Con un pequeno retraso, para que la respuesta llegue antes de parar.
+        import signal
+        threading.Timer(0.5, lambda: signal.raise_signal(signal.SIGINT)).start()
+
+    @app.post("/api/quit")
+    def quit_app(request: Request) -> dict:
+        if not (request.client and request.client.host in access.LOOPBACK):
+            raise HTTPException(403, "Close buscapiso from the computer itself")
+        (on_quit or _salir_por_defecto)()
+        return {"bye": True}
 
     app.state.db = db
     estaticos = static_dir if static_dir is not None else WEB_DIST

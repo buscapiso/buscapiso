@@ -147,6 +147,17 @@ def cmd_profile(args) -> int:
     return 0
 
 
+def _es_buscapiso(port: int) -> bool:
+    """Lo que escucha en ese puerto es buscapiso (responde /api/meta)."""
+    import json
+    import urllib.request
+    try:
+        with urllib.request.urlopen(f"http://127.0.0.1:{port}/api/meta", timeout=2) as r:
+            return "statuses" in json.load(r)
+    except (OSError, ValueError):
+        return False
+
+
 def cmd_serve(args) -> int:
     import threading
     import uvicorn
@@ -159,6 +170,12 @@ def cmd_serve(args) -> int:
         try:
             prueba.bind((host, args.port))
         except OSError:
+            if _es_buscapiso(args.port):
+                # Doble clic con la app ya abierta: otra pestana, sin error.
+                print(f"buscapiso is already open at http://127.0.0.1:{args.port}/")
+                if not args.no_open:
+                    webbrowser.open(f"http://127.0.0.1:{args.port}/")
+                return 0
             print(f"El puerto {args.port} ya lo usa otro programa. "
                   f"Prueba con otro: buscapiso serve --port {args.port + 1}")
             return 2
@@ -252,7 +269,10 @@ def main(argv: list[str] | None = None) -> int:
                     help="abrir tambien a la red de casa (el movil entra con un QR)")
     sv.set_defaults(func=cmd_serve)
 
-    args = p.parse_args(argv)
+    lista = sys.argv[1:] if argv is None else list(argv)
+    if getattr(sys, "frozen", False) and not lista:
+        lista = ["serve"]           # la app empaquetada: doble clic = abrir la web
+    args = p.parse_args(lista)
     if getattr(args, "func", None):
         return args.func(args)
     return cmd_search(args)
