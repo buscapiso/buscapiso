@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { AICache, ListingFacts } from './ai/extract';
+import { listingFacts, type AICache, type ListingFacts } from './ai/extract';
 import { AIError, ClaudeProvider, type AIProvider } from './ai/providers';
 import { Geocoder } from './geocode';
 import { emptyListing, type Derived, type FetchPage, type StoredListing } from './model';
@@ -183,6 +183,29 @@ describe('runSearch', () => {
     expect(sample[0]).toMatchObject({ source: 'idealista', url: expect.stringContaining('idealista.com') });
     const finished = events.filter((e) => e.data.finished).map((e) => e.data.source).sort();
     expect(finished).toEqual(['depisoenpiso', 'fotocasa', 'idealista', 'roomgo']);
+  }, 30_000);
+
+  it('fills the list while placing listings, with cached AI facts and no AI calls', async () => {
+    let t = Date.parse('2026-10-09T10:00:00Z');
+    const geoStore = new Map();
+    // Cada consulta al geocodificador avanza el reloj 6 s: toca vista previa.
+    const geocoder = new Geocoder({ get: async (q) => geoStore.get(q), put: async (q, v) => { geoStore.set(q, v); } },
+      async () => { t += 6000; return [{ lat: '41.39', lon: '2.16' }]; }, async () => {}, () => 0);
+    let aiCalls = 0;
+    const cached = listingFacts.parse({ household_gender: 'mixed', summary: 'from before' });
+    const ai: AIProvider = { name: 'fake', model: 'm', usage: { calls: 0, inputTokens: 0, outputTokens: 0 }, text: async () => '',
+      json: (async () => { aiCalls++; throw new AIError('no'); }) as AIProvider['json'] };
+    const { d, mem } = deps({ geocoder, ai, aiCache: { get: async () => cached, put: async () => {} }, now: () => new Date(t) });
+    let stage = 0;
+    const previews: { summaries: number; calls: number }[] = [];
+    await runSearch(profile({ sources: ['idealista'], crawl: { max_pages: 1, details_to_read: 0 } }), d, (kind, _m, data = {}) => {
+      if (kind === 'stage') stage = Number(data.step);
+      if (data.results && stage === 2) {
+        previews.push({ summaries: [...mem.derived.values()].filter((x) => x.summary === 'from before').length, calls: aiCalls });
+      }
+    });
+    expect(previews.length).toBeGreaterThanOrEqual(2);
+    expect(previews.every((x) => x.summaries > 0 && x.calls === 0)).toBe(true);
   }, 30_000);
 
   it('puts first results in the list before the search ends', async () => {

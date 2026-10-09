@@ -47,6 +47,8 @@ export interface SearchOptions { pages?: number; skipDetails?: boolean }
 export interface SearchSummary { accepted: number; possible: number; new: number; crawled: number }
 
 const CAPTCHA_TIMEOUT_MS = 180_000;
+/** Cada cuanto se refresca la lista mientras se situan los anuncios. */
+const LIVE_PREVIEW_MS = 5_000;
 const localDate = (d: Date) => d.toLocaleDateString('sv-SE');
 function duration(ms: number): string {
   const s = Math.round(ms / 1000);
@@ -377,25 +379,39 @@ export async function runSearch(p: SearchProfile, deps: Deps, rawEmit: Emit, opt
     });
     // Guardado antes de situarlos: parar aqui no pierde lo rastreado.
     await deps.store.saveListings(stored);
+    const discarded = await deps.store.discarded();
+    // Vista previa sin red: estimaciones y solo la IA ya guardada. Los que
+    // tienen posicion aparecen en la lista y el mapa mientras se situan los demas.
+    const quick = async () => rescore(await deps.store.listings(p.city), p, { ...deps, travel: null }, discarded,
+      () => {}, { aiCacheOnly: true });
+    await preview(await quick(), 'Listings with a position are in the list; placing the rest...');
     // Solo se geocodifica lo que el portal no situa; una posicion difuminada
     // a proposito por el portal se respeta.
     const noCoords = new Set(stored.filter((_, k) => unique[k].lat === null).map((l) => l.id));
     const unplaced = stored.filter((l) => l.lat === null);
     let i = 0;
+    let shown = clock();
+    let pending: StoredListing[] = [];
     for (const l of unplaced) {
       if (deps.signal?.aborted) throw new Cancelled();
       await deps.geocoder.placeRoughly(l);
+      pending.push(l);
       if (++i % 25 === 0) emit('progress', `    ${i}/${unplaced.length}`, { done: i, total: unplaced.length });
+      if (clock() - shown >= LIVE_PREVIEW_MS) {
+        await deps.store.saveListings(pending);
+        pending = [];
+        await preview(await quick(), `${i} of ${unplaced.length} placed`);
+        shown = clock();
+      }
     }
-    if (unplaced.length) await deps.store.saveListings(unplaced);
+    if (pending.length) await deps.store.saveListings(pending);
 
     next(3, 'Calculating travel times and scores...');
-    const discarded = await deps.store.discarded();
     let all = await deps.store.listings(p.city);
     // La calle exacta solo para los mejores. Para elegirlos basta la
     // estimacion sobre el barrio, sin red.
-    const guess = await rescore(all, p, { ...deps, travel: null, ai: null }, discarded);
-    await preview(guess, 'First results are in the list, with estimated times; refining them...');
+    const guess = await quick();
+    await preview(guess, 'Everything is placed, with estimated times; refining them...');
     const byId = new Map(all.map((l) => [l.id, l]));
     const best = guess.filter((d) => d.group !== 'rejected').sort((a, b) => b.score - a.score)
       .slice(0, p.crawl.real_travel_times).map((d) => byId.get(d.id)!);
