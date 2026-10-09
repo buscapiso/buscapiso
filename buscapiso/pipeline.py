@@ -63,18 +63,18 @@ def run_search(cfg: dict, zonas: dict, options: SearchOptions,
     idealista = Idealista(cache_dir=paths.cache_dir())
 
     if options.from_cache:
-        _stage(1, "Releyendo el HTML ya descargado (sin tocar los portales)...")
+        _stage(1, "Re-reading the pages already downloaded (no browsing)...")
         anuncios = _leer_cache(paths.cache_dir())
         brutos = len(anuncios)
         anuncios, fusionados = deduplicar(anuncios)
-        emit("info", f"    {brutos} anuncios recuperados de cache"
-                     f"{f', {fusionados} duplicados fusionados' if fusionados else ''}\n")
+        emit("info", f"    {brutos} listings from the saved pages"
+                     f"{f', {fusionados} duplicates merged' if fusionados else ''}\n")
     else:
         anuncios = _rastrear(cfg, idealista, paginas)
         if not anuncios:
-            emit("warning", "No se ha podido rastrear nada. Prueba de nuevo en unos "
-                            "minutos: los portales bloquean temporalmente tras varias "
-                            "peticiones seguidas.")
+            emit("warning", "Nothing could be read from the portals. Try again in a few "
+                            "minutes: they block for a while after many requests "
+                            "in a row.")
             idealista.cerrar()
             return SearchResult()
     return _procesar(anuncios, cfg, zonas, con, geo, red, options, idealista, provider, ai)
@@ -104,9 +104,9 @@ def _avisar_inalcanzables(destinos: list[dict], red: Red) -> list[dict]:
         if d.get("modo", "transporte") != "transporte" or red.estaciones_cercanas(d["lat"], d["lon"]):
             salida.append(d)
             continue
-        emit("warning", f"{d['nombre']} no tiene ninguna estacion a distancia andable: "
-                        "solo contaran los pisos desde los que se llega andando, y no "
-                        "se usa para elegir zonas", destination=d["nombre"])
+        emit("warning", f"{d['nombre']} has no station within walking distance: only "
+                        "rooms within walking distance will count, and it is not "
+                        "used to choose areas", destination=d["nombre"])
         salida.append({**d, "fuera_de_red": True})
     return salida
 
@@ -121,7 +121,7 @@ def _elegir_zonas(cfg: dict, red: Red, options: SearchOptions) -> None:
         [d for d in cfg.get("destinos", []) if not d.get("fuera_de_red")], red)
     cfg["municipios"] = catalogo.slugs(seleccion, "idealista")
     cfg["zonas_fotocasa"] = catalogo.slugs(seleccion, "fotocasa")
-    emit("info", f"Zonas a rastrear: {len(seleccion)}",
+    emit("info", f"Areas to search: {len(seleccion)}",
          zones=[z["nombre"] for z in seleccion])
     emit("info", "   " + ", ".join(
         z["nombre"].split(",")[0]
@@ -229,15 +229,15 @@ def _crear_fuente(nombre: str):
 
 def _rastrear(cfg: dict, idealista, paginas: int) -> list:
     activas = cfg.get("fuentes", ["idealista"])
-    _stage(1, f"Rastreando {', '.join(activas)}...")
-    emit("info", "    Se abrira una ventana de Chromium: dejala visible, es lo que\n"
-                 "    evita el bloqueo anti-bot. Si sale un captcha, resuelvelo.\n")
+    _stage(1, f"Searching {', '.join(activas)}...")
+    emit("info", "    A Chromium window will open: leave it visible, that is what\n"
+                 "    keeps the portals from blocking. Solve any captcha it shows.\n")
     anuncios: list = []
     otras: list = []
     for nombre in activas:
         f = idealista if nombre == "idealista" else _crear_fuente(nombre)
         if f is None:
-            emit("warning", f"  {nombre}: fuente desconocida, la salto")
+            emit("warning", f"  {nombre}: unknown portal, skipping it")
             continue
         if f is not idealista:
             otras.append(f)
@@ -247,7 +247,7 @@ def _rastrear(cfg: dict, idealista, paginas: int) -> list:
             break
         except Exception as e:
             # Que un portal falle no debe tumbar la busqueda entera.
-            emit("warning", f"  {nombre} ha fallado ({str(e)[:70]}); sigo con el resto",
+            emit("warning", f"  {nombre} failed ({str(e)[:70]}); going on with the rest",
                  source=nombre)
     for f in otras:
         f.cerrar()
@@ -255,28 +255,28 @@ def _rastrear(cfg: dict, idealista, paginas: int) -> list:
     brutos = len(anuncios)
     anuncios, fusionados = deduplicar(anuncios)
     if fusionados:
-        emit("info", f"    {brutos} anuncios, {fusionados} eran el mismo piso en "
-                     f"dos portales -> {len(anuncios)}\n")
+        emit("info", f"    {brutos} listings, {fusionados} were the same room on "
+                     f"two portals -> {len(anuncios)}\n")
     else:
-        emit("info", f"    {len(anuncios)} anuncios rastreados\n")
+        emit("info", f"    {len(anuncios)} listings found\n")
     return anuncios
 
 
 def _procesar(anuncios, cfg, zonas, con, geo, red, options, idealista,
               provider=None, ai=None) -> SearchResult:
-    _stage(2, "Situando en el mapa (Nominatim, 1 consulta/segundo)...")
+    _stage(2, "Placing them on the map (Nominatim, 1 request a second)...")
     ya_situados = sum(1 for a in anuncios if a.lat is not None)
     if ya_situados:
-        emit("info", f"    {ya_situados} ya traen coordenadas del portal")
+        emit("info", f"    {ya_situados} already have coordinates from the portal")
     for i, a in enumerate(anuncios, 1):
         if a.lat is None:
             geo.situar(a)
         if i % 25 == 0:
             emit("progress", f"    {i}/{len(anuncios)}", done=i, total=len(anuncios))
     sin_sitio = sum(1 for a in anuncios if a.lat is None)
-    emit("info", f"    {len(anuncios) - sin_sitio} situados, {sin_sitio} sin ubicacion\n")
+    emit("info", f"    {len(anuncios) - sin_sitio} placed, {sin_sitio} without a location\n")
 
-    _stage(3, "Calculando trayectos...")
+    _stage(3, "Calculating travel times...")
     compute_routes(anuncios, cfg.get("destinos", []), red)
 
     ok, posibles, fuera = _clasificar(anuncios, cfg, zonas, con)
@@ -285,46 +285,46 @@ def _procesar(anuncios, cfg, zonas, con, geo, red, options, idealista,
         candidatos = sorted(ok + posibles, key=lambda a: a.puntuacion, reverse=True)
         try:
             n = refine_routes(candidatos, cfg.get("destinos", []), provider, limite)
-            emit("info", f"    Tiempos con horarios reales ({provider.name}) para {n} anuncios")
+            emit("info", f"    Real timetables ({provider.name}) for {n} listings")
             ok, posibles, fuera2 = _clasificar(ok + posibles, cfg, zonas, con)
             fuera.extend(fuera2)
         except TravelError as e:
-            emit("warning", f"    {provider.name} no ha respondido ({e}); "
-                            "uso los tiempos estimados", provider=provider.name)
+            emit("warning", f"    {provider.name} did not answer ({e}); "
+                            "using the estimated times", provider=provider.name)
     limite_ia = cfg["busqueda"].get("anuncios_ia", 30)
     if ai is not None and limite_ia:
         candidatos = sorted(ok + posibles, key=lambda a: a.puntuacion, reverse=True)
         try:
             n = enrich_with_ai(candidatos, ai, con, limite_ia)
             coste = estimate_cost(ai.model, ai.usage)
-            emit("info", f"    IA: {n} anuncios leidos, {ai.usage.input_tokens + ai.usage.output_tokens} "
+            emit("info", f"    AI: read {n} listings, {ai.usage.input_tokens + ai.usage.output_tokens} "
                          f"tokens" + (f", ~${coste:.2f}" if coste is not None else ""),
                  calls=ai.usage.calls, cost=coste)
             ok, posibles, fuera2 = _clasificar(ok + posibles, cfg, zonas, con)
             fuera.extend(fuera2)
         except AIError as e:
-            emit("warning", f"    La IA no ha respondido ({e}); sigo sin ella")
-    emit("info", f"    {len(ok)} cumplen todos tus requisitos, "
-                 f"{len(posibles)} posibles sin confirmar genero, "
-                 f"{len(fuera)} descartados\n")
+            emit("warning", f"    The AI did not answer ({e}); going on without it")
+    emit("info", f"    {len(ok)} fit all your criteria, "
+                 f"{len(posibles)} to ask about, "
+                 f"{len(fuera)} left out\n")
 
     fichas = 0
     if ok and not options.skip_details and not options.from_cache:
         de_idealista = [a for a in ok if a.portal == "idealista"]
         tope = min(cfg["busqueda"]["fichas_a_enriquecer"], len(de_idealista))
-        _stage(4, f"Leyendo las {tope} mejores fichas (visitas, propietario)...")
+        _stage(4, f"Reading the {tope} best full listings (guests, owner)...")
         idealista.enriquecer(de_idealista, maximo=tope)
         fichas = sum(1 for a in ok if a.ficha_leida)
         ok, _, fuera2 = filtrar(ok, cfg, zonas, almacen.descartados(con))
         fuera.extend(fuera2)
         ok = ordenar(ok, cfg, zonas)
-        emit("info", f"    {fichas} fichas leidas, quedan {len(ok)}\n")
+        emit("info", f"    {fichas} full listings read, {len(ok)} left\n")
     else:
-        _stage(4, "Fichas omitidas\n")
+        _stage(4, "Full listings skipped\n")
     idealista.cerrar()
     navegador.cerrar_todo()
 
-    _stage(5, "Guardando...")
+    _stage(5, "Saving...")
     nuevos = almacen.registrar(con, ok) + almacen.registrar(con, posibles,
                                                             grupo="possible")
     return SearchResult(accepted=ok, possible=posibles, rejected=fuera,

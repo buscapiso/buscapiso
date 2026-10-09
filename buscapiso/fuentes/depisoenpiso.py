@@ -163,7 +163,7 @@ class DePisoEnPiso(Fuente):
             self.cache_dir.mkdir(parents=True, exist_ok=True)
             (self.cache_dir / "dpp_barcelona.html").write_text(html, encoding="utf-8")
         anuncios = parsear_listado(html)
-        emit("info", f"  depisoenpiso: {len(anuncios)} anuncios, leyendo sus fichas...")
+        emit("info", f"  depisoenpiso: {len(anuncios)} listings, reading them in full...")
 
         # Sin la ficha, este portal no dice el genero y todo se descarta.
         for a in anuncios:
@@ -177,11 +177,11 @@ class DePisoEnPiso(Fuente):
                     a.genero_piso, a.genero_confirmado = genero, confirmado
             except Exception as e:
                 if navegador.esta_muerto(e):
-                    emit("warning", "  se ha cerrado el navegador; dejo de leer fichas")
+                    emit("warning", "  the browser was closed; stopping")
                     break
                 continue    # una ficha ilegible no tumba el resto
         con_genero = sum(1 for a in anuncios if a.genero_piso != "desconocido")
-        emit("info", f"  depisoenpiso: {con_genero} con genero identificado")
+        emit("info", f"  depisoenpiso: {con_genero} say who lives there")
         return anuncios
 
     def cerrar(self) -> None:

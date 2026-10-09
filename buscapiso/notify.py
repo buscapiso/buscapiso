@@ -65,6 +65,6 @@ def notify_new_listings(con, result, click: str | None = None, post=None) -> int
     try:
         send(con, titulo, "\n".join(lineas), click=click, post=post)
     except OSError as e:
-        emit("warning", f"No se pudo enviar el aviso por ntfy ({type(e).__name__})")
+        emit("warning", f"Could not send the ntfy notification ({type(e).__name__})")
         return 0
     return len(buenos)

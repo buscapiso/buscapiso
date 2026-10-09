@@ -35,7 +35,7 @@ def anuncio(**kw) -> Anuncio:
 def test_descarta_piso_mixto_aunque_idealista_lo_devuelva(cfg, zonas):
     ok, _posibles, fuera = filtrar([anuncio(genero_piso=GENERO_MIXTO)], cfg, zonas)
     assert ok == []
-    assert "no solo chicas" in fuera[0][1]
+    assert "not women only" in fuera[0][1]
 
 
 def test_descarta_por_coste_total_no_por_precio(cfg, zonas):
@@ -45,33 +45,33 @@ def test_descarta_por_coste_total_no_por_precio(cfg, zonas):
     caro_en_apariencia = anuncio(precio=550, gastos_extra=0)
     ok, _posibles, fuera = filtrar([barato_en_apariencia, caro_en_apariencia], cfg, zonas)
     assert [a.precio for a in ok] == [550]
-    assert "por encima del maximo" in fuera[0][1]
+    assert "above your maximum" in fuera[0][1]
 
 
 def test_descarta_por_tiempo_al_trabajo(cfg, zonas):
     ok, _posibles, fuera = filtrar([anuncio(minutos_fira=45.0)], cfg, zonas)
     assert ok == []
-    assert "45 min a Fira" in fuera[0][1]
+    assert "45 min to Fira" in fuera[0][1]
 
 
 def test_descarta_zona_excluida_por_el_usuario(cfg):
     zonas = {"excluir": ["La Mina"], "penalizar": [], "preferir": []}
     ok, _posibles, fuera = filtrar([anuncio(barrio="La Mina")], cfg, zonas)
     assert ok == []
-    assert "zona excluida" in fuera[0][1]
+    assert "neighbourhood you excluded" in fuera[0][1]
 
 
 def test_descarta_lo_que_ya_habias_descartado(cfg, zonas):
     a = anuncio()
     ok, _posibles, fuera = filtrar([a], cfg, zonas, descartados={a.id})
     assert ok == []
-    assert "descartaste" in fuera[0][1]
+    assert "you discarded" in fuera[0][1]
 
 
 def test_sin_ubicacion_no_pasa_el_filtro(cfg, zonas):
     ok, _posibles, fuera = filtrar([anuncio(minutos_fira=None)], cfg, zonas)
     assert ok == []
-    assert "ubicacion" in fuera[0][1]
+    assert "location" in fuera[0][1]
 
 
 # --- puntuacion --------------------------------------------------------
@@ -91,7 +91,7 @@ def test_anuncio_recien_publicado_adelanta(cfg, zonas):
     viejo = anuncio()
     nuevo = anuncio(publicado_texto="16 sep")
     assert puntuar(nuevo, cfg, zonas) > puntuar(viejo, cfg, zonas)
-    assert any("publicado" in m for m in nuevo.motivos)
+    assert any("posted" in m for m in nuevo.motivos)
 
 
 def test_ubicacion_estimada_penaliza(cfg, zonas):
@@ -112,8 +112,8 @@ def test_toda_puntuacion_viene_con_motivos(cfg, zonas):
     a = anuncio(publicado_texto="16 sep", descripcion="piso de estudiantes")
     puntuar(a, cfg, zonas)
     assert len(a.motivos) >= 4
-    assert any("min a Fira" in m for m in a.motivos)
-    assert any("€/mes" in m for m in a.motivos)
+    assert any("min to Fira" in m for m in a.motivos)
+    assert any("€ a month" in m for m in a.motivos)
 
 
 def test_ordenar_devuelve_de_mejor_a_peor(cfg, zonas):
@@ -130,7 +130,7 @@ def test_ocultar_los_gastos_no_da_ventaja(cfg, zonas):
     declara = anuncio(id_portal="b", precio=450, gastos_extra=60)
     # 450+60=510 real frente a 500+55=555 supuesto: gana el que declara.
     assert puntuar(declara, cfg, zonas) > puntuar(calla, cfg, zonas)
-    assert any("sin declarar" in m for m in calla.motivos)
+    assert any("bills not stated" in m for m in calla.motivos)
 
 
 def test_el_coste_total_sigue_siendo_el_dato_factual(cfg):
@@ -143,13 +143,13 @@ def test_el_filtro_duro_usa_el_coste_estimado(cfg, zonas):
     # 620 sin declarar gastos -> 675 estimados -> por encima del maximo de 650.
     ok, _posibles, fuera = filtrar([anuncio(precio=620, gastos_extra=None)], cfg, zonas)
     assert ok == []
-    assert "675 € totales" in fuera[0][1]
+    assert "675 € a month in total" in fuera[0][1]
 
 
 def test_gastos_incluidos_explicitos_se_dicen_asi(cfg, zonas):
     a = anuncio(precio=520, gastos_extra=0)
     puntuar(a, cfg, zonas)
-    assert any("todo incluido" in m for m in a.motivos)
+    assert any("bills included" in m for m in a.motivos)
 
 
 # --- alquileres temporales ---------------------------------------------
@@ -163,13 +163,13 @@ def test_detecta_alquileres_temporales(cfg, zonas, texto):
     temporal = anuncio(id_portal="t", descripcion=texto)
     normal = anuncio(id_portal="n", descripcion="Habitación amplia y luminosa")
     assert puntuar(temporal, cfg, zonas) < puntuar(normal, cfg, zonas)
-    assert any("temporal" in m for m in temporal.motivos)
+    assert any("short or seasonal let" in m for m in temporal.motivos)
 
 
 def test_no_confunde_una_fecha_de_entrada_con_temporalidad(cfg, zonas):
     a = anuncio(descripcion="Disponible a partir de octubre, contrato de un año")
     puntuar(a, cfg, zonas)
-    assert not any("temporal" in m for m in a.motivos)
+    assert not any("seasonal" in m for m in a.motivos)
 
 
 def test_el_descarte_distingue_mixto_de_genero_desconocido(cfg, zonas):
@@ -181,8 +181,8 @@ def test_el_descarte_distingue_mixto_de_genero_desconocido(cfg, zonas):
                                    anuncio(id_portal="b", genero_piso=DESCONOCIDO)],
                                   cfg, zonas)
     motivos = {a.id_portal: m for a, m in fuera}
-    assert "no solo chicas" in motivos["a"]
-    assert "no dice el genero" in motivos["b"]
+    assert "not women only" in motivos["a"]
+    assert "doesn't say who lives there" in motivos["b"]
 
 
 # --- posibles: genero sin confirmar ------------------------------------
@@ -219,7 +219,7 @@ def test_every_limited_destination_is_a_hard_filter(cfg, zonas):
     a.trayectos["Collblanc"] = 25.0
     ok, _posibles, fuera = filtrar([a], cfg, zonas)
     assert ok == []
-    assert fuera[0][1] == "25 min a Collblanc"
+    assert fuera[0][1] == "25 min to Collblanc"
 
 
 def test_without_destinations_nothing_is_dropped_for_distance(cfg, zonas):
@@ -232,8 +232,8 @@ def test_without_destinations_nothing_is_dropped_for_distance(cfg, zonas):
 def test_each_destination_scores_with_its_own_weight(cfg, zonas):
     cerca = anuncio()
     puntuar(cerca, cfg, zonas)
-    assert any("min a Fira" in m for m in cerca.motivos)
-    assert any("min a Collblanc" in m for m in cerca.motivos)
+    assert any("min to Fira" in m for m in cerca.motivos)
+    assert any("min to Collblanc" in m for m in cerca.motivos)
 
 
 @pytest.mark.parametrize("genero, piso, pasa", [
@@ -266,3 +266,17 @@ def test_an_ai_detected_seasonal_let_costs_points(cfg, zonas):
     assert puntuar(temporal, cfg, zonas) < puntuar(normal, cfg, zonas)
     assert any("seasonal" in m for m in temporal.motivos)
     assert any("payment before viewing" in m for m in temporal.motivos)
+
+
+def test_reasons_are_in_english(cfg, zonas):
+    a = anuncio(gastos_extra=None, antiguedad_dias=2, publicado_texto="hace 2 días",
+                companeros=5, admite_parejas=False, coords_aproximadas=True)
+    puntuar(a, cfg, zonas)
+    texto = " | ".join(a.motivos)
+    assert "posted 2 days ago" in texto
+    assert "bills not stated" in texto
+    assert "5 roommates" in texto
+    assert "no couples" in texto
+    assert "approximate location" in texto
+    for palabra in ("gastos", "publicado", "compañeros", "parejas", "ubicacion"):
+        assert palabra not in texto

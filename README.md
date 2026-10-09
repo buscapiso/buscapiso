@@ -90,8 +90,8 @@ Para trabajar en el frontend: `buscapiso serve --no-open` en un terminal y
 `npm --prefix web run dev` en otro, que recarga al guardar y reenvía `/api`
 al servidor.
 
-Los motivos de la puntuación y los mensajes de progreso de la búsqueda siguen
-en español, porque los genera el motor; traducirlos queda pendiente.
+Los motivos de la puntuación se guardan con cada anuncio: tras actualizar,
+pulsa una vez "Re-score without browsing" para verlos en el idioma nuevo.
 
 ### Tiempos de trayecto
 

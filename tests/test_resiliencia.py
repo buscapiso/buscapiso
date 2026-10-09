@@ -103,4 +103,4 @@ def test_a_closed_browser_is_reported_as_a_warning():
                          ).buscar(CFG, max_paginas=1)
     finally:
         events.set_sink(previous)
-    assert any(e.kind == "warning" and "navegador" in e.message for e in seen)
+    assert any(e.kind == "warning" and "browser" in e.message for e in seen)

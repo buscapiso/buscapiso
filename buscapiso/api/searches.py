@@ -82,7 +82,7 @@ class SearchRunner:
                     traceback.print_exc()
         except Exception as e:      # noqa: BLE001 - el motivo va al usuario
             traceback.print_exc()
-            events.emit("error", f"The search stopped: {e}")
+            events.emit("error", str(e))   # la interfaz pone "The search stopped:"
         finally:
             # Siempre, tambien si fallo: un Playwright vivo en este hilo, que
             # muere ahora, envenenaria la siguiente busqueda.

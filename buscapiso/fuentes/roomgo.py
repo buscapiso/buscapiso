@@ -167,15 +167,15 @@ class Roomgo(Fuente):
                 # Lo ya rastreado se devuelve igual: un fallo en la pagina N
                 # no invalida las anteriores.
                 if navegador.esta_muerto(e):
-                    emit("warning", f"  se ha cerrado el navegador; me quedo con "
-                          f"{len(resultados)} anuncios de roomgo")
+                    emit("warning", f"  the browser was closed; keeping "
+                          f"{len(resultados)} roomgo listings")
                 else:
-                    emit("warning", f"  roomgo p{pagina} ha fallado ({str(e)[:55]})")
+                    emit("warning", f"  roomgo page {pagina} failed ({str(e)[:55]})")
                 break
             lote = [a for a in parsear_listado(html) if a.id_portal not in vistos]
             vistos.update(a.id_portal for a in lote)
             resultados.extend(lote)
-            emit("info", f"  roomgo p{pagina}: {len(lote)} anuncios")
+            emit("info", f"  roomgo page {pagina}: {len(lote)} listings")
             if not lote:
                 break
             time.sleep(random.uniform(*self.pausa))
