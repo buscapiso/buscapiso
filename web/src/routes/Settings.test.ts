@@ -22,3 +22,12 @@ test('only the chosen section is shown', async () => {
   expect(await screen.findByText('AI (optional)')).toBeInTheDocument();
   expect(screen.queryByText('Travel times')).toBeNull();
 });
+
+test('buscapiso can be closed from settings', async () => {
+  const f = vi.mocked(globalThis.fetch);
+  render(Settings, { section: 'search' });
+  const { default: userEvent } = await import('@testing-library/user-event');
+  await userEvent.click(screen.getByRole('button', { name: 'Quit buscapiso' }));
+  expect(f.mock.calls.some(([u, i]) => String(u).endsWith('/api/quit') && i?.method === 'POST')).toBe(true);
+  expect(await screen.findByText('buscapiso is closed. You can close this tab.')).toBeInTheDocument();
+});

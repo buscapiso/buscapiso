@@ -2,6 +2,7 @@
   import { getActiveProfile, listListings, saveProfile, setStatus, ApiError,
            type Listing, type SearchProfile, type Status } from '../lib/api';
   import BoardView from '../lib/components/BoardView.svelte';
+  import BrowserBanner from '../lib/components/BrowserBanner.svelte';
   import CriteriaBar from '../lib/components/CriteriaBar.svelte';
   import ListingCard from '../lib/components/ListingCard.svelte';
   import MapView, { type MapPoint } from '../lib/components/MapView.svelte';
@@ -66,6 +67,7 @@
   $effect(() => { load(); });
 </script>
 
+<BrowserBanner />
 <SearchPanel bind:this={panel} onfinished={load} />
 
 {#if profile}<CriteriaBar {profile} onsave={saveCriteria} />{/if}
@@ -93,6 +95,17 @@
 
 {#if all === null}
   <p class="muted">…</p>
+{:else if all.length === 0 && profile && profile.destinations.length === 0}
+  <section class="welcome">
+    <h2>{t('welcome.title')}</h2>
+    <p>{t('welcome.intro')}</p>
+    <ol>
+      <li><a href={href({ name: 'settings', section: 'places' })}>{t('welcome.places')}</a>
+        <small>{t('welcome.placesHelp')}</small></li>
+      <li><a href={href({ name: 'settings', section: 'search' })}>{t('welcome.budget')}</a></li>
+      <li>{t('welcome.search')} <small>{t('welcome.searchHelp')}</small></li>
+    </ol>
+  </section>
 {:else if all.length === 0}
   <div class="empty"><p>{t('empty.firstRun')}</p>
     <button class="primary" onclick={() => panel?.start(false)}>{t('search.now')}</button></div>
@@ -121,6 +134,10 @@
   .views a[aria-current='page'] { background: var(--accent); color: var(--paper); font-weight: 700; }
   .changed { background: var(--surface); border-left: 3px solid var(--accent); padding: 8px 12px; margin: 0 0 10px;
     display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 14px; }
+  .welcome { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 20px; }
+  .welcome h2 { margin-top: 0; }
+  .welcome li { margin: 8px 0; }
+  .welcome small { display: block; color: var(--muted); }
   .empty { text-align: center; padding: 40px 16px; color: var(--muted); border: 1px dashed var(--line); border-radius: var(--radius); }
   .error { color: var(--bad); }
   .muted { color: var(--muted); }

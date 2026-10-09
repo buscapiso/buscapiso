@@ -54,3 +54,17 @@ test('search and criteria live on the same page', async () => {
   expect(await screen.findByRole('button', { name: 'Search now' })).toBeInTheDocument();
   expect(await screen.findByRole('button', { name: 'Up to 650 €' })).toBeInTheDocument();
 });
+
+test('the first time, it shows where to start', async () => {
+  vi.mocked(globalThis.fetch).mockImplementation(async (url) => {
+    const u = String(url);
+    if (u.includes('/api/listings')) return new Response(JSON.stringify([]));
+    if (u.includes('/api/profiles/active')) return new Response(JSON.stringify({ ...profile, destinations: [] }));
+    if (u.includes('/api/browser')) return new Response(JSON.stringify({ installed: true, installing: false, log: [], error: null }));
+    return new Response(JSON.stringify({ running: false, id: null, events: [], summary: null }));
+  });
+  render(Rooms, { filter: 'new', view: 'list' });
+  expect(await screen.findByRole('heading', { name: 'Welcome to buscapiso' })).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Add the places you go often' })).toHaveAttribute('href', '#/settings/places');
+  expect(screen.getByRole('link', { name: 'Set your budget and household' })).toHaveAttribute('href', '#/settings');
+});
