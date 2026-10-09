@@ -72,9 +72,17 @@ npm --prefix web ci && npm --prefix web run build   # una vez, y tras cada cambi
 .venv/bin/buscapiso serve
 ```
 
-Se abre en `http://127.0.0.1:8770`. Desde ahí ves los anuncios, los marcas
-(me gusta, ocultar, contactado, visita...), escribes notas, editas lo que
-buscas y lanzas la búsqueda viendo el progreso. La ventana de Chromium sigue
+Se abre en `http://127.0.0.1:8770` con dos páginas:
+
+- **Rooms**: arriba, "Search now" (busca en los portales; "Skip full
+  listings" la acorta) y "Re-score without browsing" (vuelve a puntuar lo ya
+  descargado, en segundos). Debajo, tus criterios como botones: pulsa uno para
+  cambiarlo ahí mismo y después "Re-score now" para ver el efecto. Los chips
+  New, Liked, In progress, Ask first y Hidden filtran, y List / Map / Board
+  cambian la vista sin perder el filtro.
+- **Settings**: lo que buscas, lugares y trayectos, barrios (desplegable con
+  buscador), búsquedas automáticas, móvil y avisos, e IA (el modelo se elige
+  de la lista que da el propio proveedor). La ventana de Chromium sigue
 abriéndose al buscar, igual que desde el terminal. La pestaña Map enseña los
 anuncios y tus destinos sobre un mapa de OpenStreetMap.
 
@@ -82,8 +90,8 @@ Para trabajar en el frontend: `buscapiso serve --no-open` en un terminal y
 `npm --prefix web run dev` en otro, que recarga al guardar y reenvía `/api`
 al servidor.
 
-Los motivos de la puntuación y los mensajes de progreso de la búsqueda siguen
-en español, porque los genera el motor; traducirlos queda pendiente.
+Los motivos de la puntuación se guardan con cada anuncio: tras actualizar,
+pulsa una vez "Re-score without browsing" para verlos en el idioma nuevo.
 
 ### Tiempos de trayecto
 

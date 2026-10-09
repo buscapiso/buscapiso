@@ -62,7 +62,7 @@ def test_an_off_network_destination_is_reported_before_crawling(home, cfg):
     avisos = [i for i, e in enumerate(seen)
               if e.kind == "warning" and "Montserrat" in e.message]
     assert len(avisos) == 1 and avisos[0] < primero
-    zonas = next(e for e in seen if e.message.startswith("Zonas a rastrear"))
+    zonas = next(e for e in seen if e.message.startswith("Areas to search"))
     assert len(zonas.data["zones"]) == len(Catalogo.cargar().zonas)
 
 
@@ -147,6 +147,20 @@ def test_a_failing_ai_leaves_the_search_complete_with_a_warning(home, cfg):
                        almacen.abrir(home / "t.db"), ai=FakeAI(falla=True))
     finally:
         events.set_sink(previous)
-    assert any(e.kind == "warning" and "IA" in e.message for e in seen)
+    assert any(e.kind == "warning" and "The AI" in e.message for e in seen)
     assert [e.data["step"] for e in seen if e.kind == "stage"] == [1, 2, 3, 4, 5]
     assert r.crawled > 0
+
+
+def test_progress_messages_are_in_english(home, cfg):
+    _con_fotocasa(home)
+    seen = []
+    previous = events.set_sink(seen.append)
+    try:
+        run_search(cfg, {}, SearchOptions(from_cache=True, offline=True), almacen.abrir(home / "t.db"))
+    finally:
+        events.set_sink(previous)
+    texto = " ".join(e.message for e in seen).lower()
+    assert "re-reading" in texto and "calculating" in texto and "saving" in texto
+    for palabra in ("anuncios", "situando", "calculando", "guardando", "zonas", "fichas"):
+        assert palabra not in texto, palabra

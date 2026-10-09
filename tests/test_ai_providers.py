@@ -123,3 +123,40 @@ def test_settings_choose_the_ai(tmp_path):
     almacen.guardar_ajuste(con, "ai_model", "")
     p, aviso = ai_from_settings(con, get_key=get)
     assert p is None and "model" in aviso
+
+
+def test_a_missing_model_is_explained_in_the_screen_words(tmp_path):
+    from buscapiso import almacen
+    from buscapiso.ai import ai_from_settings
+    con = almacen.abrir(tmp_path / "t.db")
+    almacen.guardar_ajuste(con, "ai_provider", "openai_compat")
+    almacen.guardar_ajuste(con, "ai_base_url", "https://generativelanguage.googleapis.com/v1beta/openai/")
+    p, aviso = ai_from_settings(con, get_key=lambda n: "K")
+    assert p is None and "Choose a model" in aviso and "server address" not in aviso
+
+
+def test_an_answer_without_content_is_not_unexpected():
+    """Los modelos que piensan pueden agotar max_tokens pensando y devolver un
+    mensaje sin 'content'. Antes eso salia como "unexpected answer"."""
+    post = lambda u, h, b: {"choices": [{"message": {"role": "assistant"}, "finish_reason": "length"}]}
+    p = OpenAICompatProvider("K", "http://x/v1", "m", post=post)
+    with pytest.raises(AIError) as e:
+        p.text("s", "u")
+    assert "unexpected" not in str(e.value) and "ran out of room" in str(e.value)
+
+
+def test_the_ai_test_leaves_room_for_thinking_models(tmp_path, monkeypatch):
+    from fastapi.testclient import TestClient
+    from buscapiso.api.app import create_app
+    pedidos = []
+
+    class AI:
+        name, model = "openai_compat", "m"
+        def text(self, system, user, max_tokens=1024):
+            pedidos.append(max_tokens)
+            return "ready"
+
+    c = TestClient(create_app(db_path=tmp_path / "p.db", static_dir=tmp_path / "x",
+                              ai_factory=lambda con: (AI(), None)))
+    c.post("/api/ai/test")
+    assert pedidos[0] >= 1000

@@ -86,7 +86,7 @@ def test_the_map_shows_listings_and_moves_a_destination_on_click(servidor):
         assert page.locator(".leaflet-interactive").count() >= 1
         assert page.get_by_text("OpenStreetMap").is_visible()
 
-        page.goto(f"{url}/#/profile")
+        page.goto(f"{url}/#/settings/places")
         page.get_by_role("button", name="Add a place").click()
         page.get_by_label("Name").last.fill("Gym")
         mapa = page.get_by_role("region", name="Your places on the map")

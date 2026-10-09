@@ -3,6 +3,7 @@
            type NotifySettings, type Schedule } from '../api';
   import { t } from '../i18n';
 
+  let { part = 'all' }: { part?: 'all' | 'schedule' | 'notify' } = $props();
   let sched = $state<Schedule | null>(null);
   let note = $state<NotifySettings | null>(null);
   let saved = $state(false);
@@ -44,6 +45,7 @@
 </script>
 
 {#if sched && note}
+  {#if part !== 'notify'}
   <fieldset>
     <legend>{t('auto.title')}</legend>
     <p class="help">{t('auto.help')}</p>
@@ -62,7 +64,9 @@
       {#if saved}<span class="ok">{t('auto.saved')}</span>{/if}
     </div>
   </fieldset>
+  {/if}
 
+  {#if part !== 'schedule'}
   <fieldset>
     <legend>{t('notify.title')}</legend>
     <label class="check"><input type="checkbox" checked={Boolean(note.topic)}
@@ -79,6 +83,7 @@
       </div>
     {/if}
   </fieldset>
+  {/if}
   {#if error}<p class="error" role="alert">{error}</p>{/if}
 {/if}
 

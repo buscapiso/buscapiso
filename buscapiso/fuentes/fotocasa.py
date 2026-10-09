@@ -222,16 +222,16 @@ class Fotocasa(Fuente):
                     break
                 except Exception as e:
                     if navegador.esta_muerto(e):
-                        emit("warning", f"  se ha cerrado el navegador; me quedo con "
-                              f"{len(resultados)} anuncios de fotocasa")
+                        emit("warning", f"  the browser was closed; keeping "
+                              f"{len(resultados)} fotocasa listings")
                         return resultados
-                    emit("warning", f"  fotocasa {zona} p{pagina} ha fallado "
-                          f"({str(e)[:55]}); sigo")
+                    emit("warning", f"  fotocasa {zona} page {pagina} failed "
+                          f"({str(e)[:55]}); going on")
                     break
                 lote = [a for a in parsear_listado(html) if a.id_portal not in vistos]
                 vistos.update(a.id_portal for a in lote)
                 resultados.extend(lote)
-                emit("info", f"  fotocasa {zona.split('/')[0]} p{pagina}: {len(lote)} anuncios")
+                emit("info", f"  fotocasa {zona.split('/')[0]} page {pagina}: {len(lote)} listings")
                 if not lote:
                     break
                 # Ordenado de barato a caro: en cuanto la pagina entera supera
@@ -239,7 +239,7 @@ class Fotocasa(Fuente):
                 if orden == "baratos":
                     precios = [a.precio for a in lote if a.precio]
                     if precios and min(precios) > techo:
-                        emit("info", f"     ya por encima de {techo} €, paso de zona")
+                        emit("info", f"     already above {techo} €, next area")
                         break
                 time.sleep(random.uniform(*self.pausa))
         return resultados

@@ -1,4 +1,4 @@
-import { costLine, directionsUrl, lineChips, lineColor, LISTS, scoreColor } from './format';
+import { costLine, directionsUrl, lineChips, lineColor, scoreColor } from './format';
 import type { Listing } from './api';
 
 const base = { price: 450, expenses: 50 } as Listing;
@@ -11,12 +11,6 @@ test.each([
   expect(costLine(l)).toBe(text);
 });
 
-test('each tab asks the API for what it shows', () => {
-  expect(LISTS.inbox).toEqual({ status: ['new'], group: 'accepted' });
-  expect(LISTS.ask).toEqual({ status: ['new'], group: 'possible' });
-  expect(LISTS.progress.status).toContain('visit_scheduled');
-  expect(LISTS.hidden.status).toEqual(['hidden', 'discarded']);
-});
 
 test('route chips are the lines of a route, in order', () => {
   expect(lineChips('4 min a Sants Estació + L5 > L9S (1 transbordo) = 22 min')).toEqual(['L5', 'L9S']);

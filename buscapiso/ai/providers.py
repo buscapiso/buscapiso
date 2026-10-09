@@ -126,9 +126,14 @@ class OpenAICompatProvider:
         self.usage.input_tokens += uso.get("prompt_tokens", 0)
         self.usage.output_tokens += uso.get("completion_tokens", 0)
         try:
-            return r["choices"][0]["message"]["content"] or ""
-        except (KeyError, IndexError, TypeError):
+            eleccion = r["choices"][0]
+            contenido = eleccion["message"].get("content") or ""
+        except (KeyError, IndexError, TypeError, AttributeError):
             raise AIError("The AI provider returned an unexpected answer") from None
+        if not contenido and eleccion.get("finish_reason") == "length":
+            raise AIError("The model ran out of room before answering (it spends tokens "
+                          "thinking). Try a lighter model.")
+        return contenido
 
     def json(self, system: str, user: str, schema):
         sistema = (f"{system}\n\nReply with a single JSON object that matches this JSON "

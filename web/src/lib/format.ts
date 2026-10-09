@@ -1,5 +1,4 @@
 import type { Listing, Status } from './api';
-import type { ListName } from './router.svelte';
 import { t } from './i18n';
 
 export function costLine(l: Listing): string {
@@ -8,13 +7,6 @@ export function costLine(l: Listing): string {
   return t('listing.plusExpenses', { price: l.price ?? '?', expenses: l.expenses });
 }
 
-export const LISTS: Record<ListName, { status?: Status[]; group?: 'accepted' | 'possible' }> = {
-  inbox: { status: ['new'], group: 'accepted' },
-  liked: { status: ['liked'] },
-  progress: { status: ['contacted', 'visit_scheduled', 'visited', 'applied'] },
-  ask: { status: ['new'], group: 'possible' },
-  hidden: { status: ['hidden', 'discarded'] },
-};
 
 export const STATUSES: Status[] = [
   'new', 'liked', 'contacted', 'visit_scheduled', 'visited', 'applied',

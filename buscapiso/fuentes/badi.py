@@ -127,22 +127,22 @@ class Badi(Fuente):
                         return {status: r.status, body: await r.text()};
                     }""", [url, token])
             except Exception as e:
-                emit("warning", f"  badi: fallo la llamada ({str(e)[:60]})")
+                emit("warning", f"  badi: the request failed ({str(e)[:60]})")
                 break
             if resp["status"] != 200:
-                emit("warning", f"  badi: la API respondio {resp['status']}; "
-                      "probablemente la sesion no es valida")
+                emit("warning", f"  badi: the API answered {resp['status']}; "
+                      "the session is probably not valid")
                 break
             try:
                 datos = json.loads(resp["body"])
             except json.JSONDecodeError:
-                emit("warning", "  badi: respuesta que no es JSON")
+                emit("warning", "  badi: the answer is not JSON")
                 break
             lote = datos.get("data") or datos.get("rooms") or datos.get("results") or []
             if not lote:
                 break
             resultados.extend(a for a in (_a_anuncio(x) for x in lote) if a)
-            emit("info", f"  badi p{pagina}: {len(lote)} anuncios")
+            emit("info", f"  badi page {pagina}: {len(lote)} listings")
             time.sleep(3)
         return resultados
 
