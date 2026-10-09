@@ -15,6 +15,11 @@ for paquete in ("playwright",):          # trae su propio driver (node + js)
     d, b, h = collect_all(paquete)
     datas += d; binaries += b; hidden += h
 datas += collect_data_files("certifi")
+try:                                     # Windows: zoneinfo carga tzdata dinámicamente
+    import tzdata  # noqa: F401
+    datas += collect_data_files("tzdata"); hidden += collect_submodules("tzdata")
+except ImportError:
+    pass
 hidden += (collect_submodules("uvicorn") + collect_submodules("keyring.backends")
            + ["anthropic", "segno", "platformdirs"])
 
