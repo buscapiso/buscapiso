@@ -47,3 +47,16 @@ describe('roommates who are not young', () => {
     expect(young(base({ description: 'Piso de estudiantes', roommateAges: '37-41' }))).toBe(false);
   });
 });
+
+describe('what the person asked for in their own words', () => {
+  const p = parseProfile({ name: 'T' });
+  const base = (o: Partial<Scorable>): Scorable => ({ ...golden('idealista_listado')[0] as RawListing, id: 'x', travel: {},
+    title: 'Habitación', description: '', ...o });
+  it('adds for each wish met and takes away more for each one missed', () => {
+    const plain = score(base({}), p, '2026-10-09');
+    const r = score(base({ wishesMet: ['has a balcony'], wishesMissed: ['no pets, and you have a cat'] }), p, '2026-10-09');
+    expect(r.score).toBeCloseTo(plain.score + 4 - 10, 1);
+    expect(r.reasons).toContain('AI: has a balcony (+4)');
+    expect(r.reasons).toContain('AI: no pets, and you have a cat (-10)');
+  });
+});

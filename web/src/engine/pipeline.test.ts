@@ -282,7 +282,8 @@ describe('rescore', () => {
     const ls = await stored();
     const facts: ListingFacts = { household_gender: 'mixed', bills_included: true, bills_eur_min: null, bills_eur_max: null, owner_lives_in: null, smoking_allowed: null, exterior: null,
       couples_allowed: null, visitors_allowed: null, seasonal_or_short_let: true, min_stay_months: null, roommates: null,
-      roommates_age_range: null, roommates_occupation: null, available_from: null, summary: 'ok', pros: [], cons: [], red_flags: ['check'] };
+      roommates_age_range: null, roommates_occupation: null, available_from: null, summary: 'ok', pros: [], cons: [], red_flags: ['check'],
+      wishes_met: [], wishes_missed: [] };
     const cache: AICache = { get: async () => facts, put: async () => {} };
     const copy = structuredClone(ls);
     const ds = await rescore(ls, profile({ crawl: { ai_listings: 5 } }), { travel: null, ai: new ClaudeProvider('k'), aiCache: cache,
@@ -295,7 +296,8 @@ describe('rescore', () => {
 
   const FACTS: ListingFacts = { household_gender: 'mixed', bills_included: null, bills_eur_min: null, bills_eur_max: null, owner_lives_in: null, smoking_allowed: null, exterior: null,
     couples_allowed: null, visitors_allowed: null, seasonal_or_short_let: null, min_stay_months: null, roommates: null,
-    roommates_age_range: null, roommates_occupation: null, available_from: null, summary: 'read', pros: [], cons: [], red_flags: [] };
+    roommates_age_range: null, roommates_occupation: null, available_from: null, summary: 'read', pros: [], cons: [], red_flags: [],
+    wishes_met: [], wishes_missed: [] };
   const noCache: AICache = { get: async () => undefined, put: async () => {} };
   /** Contesta a cada lote con los hechos que da `answer` para cada anuncio. */
   function fakeAI(answer: (n: number, title: string) => Promise<ListingFacts>, prompts: string[] = []): AIProvider {

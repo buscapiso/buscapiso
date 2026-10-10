@@ -3,7 +3,7 @@ import Settings from './Settings.svelte';
 
 beforeEach(() => {
   vi.spyOn(globalThis, 'fetch').mockImplementation(async () =>
-    new Response(JSON.stringify({ provider: 'none', model: '', base_url: '', has_key: false, about_me: '' })));
+    new Response(JSON.stringify({ provider: 'none', model: '', base_url: '', has_key: false })));
 });
 afterEach(() => vi.restoreAllMocks());
 

@@ -99,12 +99,24 @@ export function createBackend(deps: BackendDeps) {
   async function activeProfile(): Promise<SearchProfile> {
     const name = await get<string | null>('active_profile', null);
     const p = name ? await db.get<SearchProfile>('profiles', name) : undefined;
-    if (p) return parseProfile(p);
+    if (p) return withOldAboutMe(parseProfile(p));
     const all = await db.all<SearchProfile>('profiles');
     const chosen = all[0] ? parseProfile(all[0]) : defaultProfile('Default');
     if (!all[0]) await db.put('profiles', chosen);
     await set('active_profile', chosen.name);
-    return chosen;
+    return withOldAboutMe(chosen);
+  }
+  /** "About you" de Ajustes → IA era otro campo; ahora es la descripcion del
+   * perfil. Se pasa una vez y se borra. */
+  async function withOldAboutMe(p: SearchProfile): Promise<SearchProfile> {
+    const old = await get('ai_about_me', '');
+    if (!old) return p;
+    if (!p.description) {
+      p.description = old;
+      await db.put('profiles', p);
+    }
+    await db.delete('settings', 'ai_about_me');
+    return p;
   }
   async function profileList() {
     const active = (await activeProfile()).name;
@@ -255,7 +267,7 @@ export function createBackend(deps: BackendDeps) {
   async function aiSettings() {
     const c = await aiConfig();
     return { provider: c.provider, model: c.model, base_url: c.baseUrl,
-      has_key: c.provider !== 'none' && !!(await get(`ai_key:${c.provider}`, '')), about_me: await get('ai_about_me', '') };
+      has_key: c.provider !== 'none' && !!(await get(`ai_key:${c.provider}`, '')) };
   }
   const http = (u: string) => /^https?:\/\//.test(u);
 
@@ -315,7 +327,7 @@ export function createBackend(deps: BackendDeps) {
       const l = await db.get<StoredListing>('listings', id);
       if (!l) throw new HttpError(404, `no listing ${id}`);
       const p = (await ai(true))!;
-      try { return { text: await draftMessage(p, l, await get('ai_about_me', '')) }; } catch (e) { throw aiFail(e); }
+      try { return { text: await draftMessage(p, l, (await activeProfile()).description) }; } catch (e) { throw aiFail(e); }
     }],
     ['GET', /^\/api\/profiles$/, async () => profileList()],
     ['GET', /^\/api\/profiles\/active$/, async () => activeProfile()],
@@ -395,7 +407,7 @@ export function createBackend(deps: BackendDeps) {
     ['PUT', /^\/api\/ai$/, async (_m, b) => {
       const provider = b.provider ?? (await aiConfig()).provider;
       if (b.key !== undefined && provider !== 'none') await set(`ai_key:${provider}`, String(b.key).trim());
-      for (const [field, key] of [['provider', 'ai_provider'], ['model', 'ai_model'], ['base_url', 'ai_base_url'], ['about_me', 'ai_about_me']]) {
+      for (const [field, key] of [['provider', 'ai_provider'], ['model', 'ai_model'], ['base_url', 'ai_base_url']]) {
         if (b[field] !== undefined && b[field] !== null) await set(key, String(b[field]).trim());
       }
       return aiSettings();

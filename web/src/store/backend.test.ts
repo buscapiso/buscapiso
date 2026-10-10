@@ -182,6 +182,26 @@ describe('settings', () => {
     expect(ai).toMatchObject({ provider: 'anthropic', has_key: true, model: 'claude-haiku-5-5' });
     expect(JSON.stringify(ai)).not.toContain('sk"');
   });
+  it('moves the old "about you" text into the profile description, once', async () => {
+    const { b, db } = await setup();
+    await db.put('settings', 'Ana, 27, nurse', 'ai_about_me');
+    expect(await b.handle('GET', '/api/profiles/active')).toMatchObject({ description: 'Ana, 27, nurse' });
+    expect(await db.get('settings', 'ai_about_me')).toBeUndefined();
+    expect(await b.handle('GET', '/api/ai')).not.toHaveProperty('about_me');
+  });
+  it('writes drafts with the profile description', async () => {
+    const seen: string[] = [];
+    const ai = { name: 'fake', model: 'm', usage: { calls: 0, inputTokens: 0, outputTokens: 0 },
+      text: async (_s: string, user: string) => { seen.push(user); return 'Hola'; }, json: async () => ({}) };
+    const { b, db } = await setup({ aiFactory: () => ai as never });
+    await b.handle('PUT', '/api/ai', { provider: 'anthropic', key: 'k' });
+    await b.handle('PUT', '/api/profiles/Default', { name: 'Default', description: 'Quiet person with a cat' });
+    const l = { ...emptyListing('roomgo', '1', 'https://x/1'), id: listingId('roomgo', '1'), city: 'barcelona',
+      firstSeen: '2026-10-09', lastSeen: '2026-10-09' };
+    await db.put('listings', l);
+    expect(await b.handle('POST', `/api/listings/${l.id}/draft`)).toEqual({ text: 'Hola' });
+    expect(seen[0]).toContain('Quiet person with a cat');
+  });
   it('validates the schedule and turns notifications on with a random topic', async () => {
     const { b } = await setup();
     await expect(b.handle('PUT', '/api/schedule', { hours: 1, from: '08:00', to: '23:00' })).rejects.toMatchObject({ status: 422 });

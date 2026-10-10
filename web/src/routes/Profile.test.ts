@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import Profile from './Profile.svelte';
 
 const profile = {
-  name: 'default', listing_type: 'room', sources: ['idealista'], flat_sources: ['fotocasa', 'habitaclia'],
+  name: 'default', description: '', listing_type: 'room', sources: ['idealista'], flat_sources: ['fotocasa', 'habitaclia'],
   flat: { ideal_rent: 1100, max_rent: 1400, assumed_bills: 120, min_bedrooms: 1, min_surface_m2: null,
           elevator_required: false, furnished: 'any' },
   destinations: [
@@ -54,6 +54,14 @@ test('edits and saves the active profile', async () => {
   await userEvent.click(screen.getByRole('button', { name: 'Save' }));
   expect(await screen.findByText('Saved')).toBeInTheDocument();
   expect((saved as typeof profile).budget.max_total).toBe(700);
+});
+
+test('saves what the person wrote about themselves with the profile', async () => {
+  render(Profile);
+  await userEvent.type(await screen.findByLabelText("Describe what you're looking for"), 'Quiet, with a cat');
+  await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+  expect(await screen.findByText('Saved')).toBeInTheDocument();
+  expect((saved as typeof profile).description).toBe('Quiet, with a cat');
 });
 
 test('shows the server validation error next to the budget', async () => {

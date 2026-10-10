@@ -78,6 +78,9 @@ export interface Derived {
   cons: string[];
   redFlags: string[];
   aiTemporary: boolean | null;
+  /** Deseos de la descripcion del perfil que el anuncio cumple o descarta. */
+  wishesMet?: string[];
+  wishesMissed?: string[];
   /** Lo que la IA leyo en el texto, en palabras. */
   aiFacts?: { label: string; value: string; used: boolean }[];
   /** Por que la IA no lo leyo, o '' si lo leyo (o no habia IA). */
@@ -121,7 +124,7 @@ export function emptyListing(source: string, sourceId: string, url: string): Raw
 export function emptyDerived(id: string): Derived {
   return { id, group: 'rejected', rejectReason: '', score: 0, reasons: [], travel: {},
     routes: {}, travelSource: '', summary: '', pros: [], cons: [], redFlags: [],
-    aiTemporary: null, aiFacts: [], aiNote: '', alsoOn: [] };
+    aiTemporary: null, wishesMet: [], wishesMissed: [], aiFacts: [], aiNote: '', alsoOn: [] };
 }
 
 /** Identificador estable entre ejecuciones, dispositivos y la version Python. */

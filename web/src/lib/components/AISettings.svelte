@@ -77,7 +77,7 @@
     if (!s) return;
     error = '';
     const body: Partial<AISettings> & { key?: string } = {
-      provider: s.provider, model: s.model, base_url: s.base_url, about_me: s.about_me };
+      provider: s.provider, model: s.model, base_url: s.base_url };
     if (key.trim()) body.key = key.trim();
     try {
       s = await saveAI(body);
@@ -148,8 +148,6 @@
         {#if s.has_key}<p class="help">{t('ai.keySaved')}</p>{/if}
         <p class="help">{t('ai.keyLocal')}</p>
       {/if}
-      <label>{t('ai.aboutMe')}<textarea rows="2" bind:value={s.about_me}></textarea></label>
-      <p class="help">{t('ai.aboutMeHelp')}</p>
     {/if}
 
     {#if error}<p class="error" role="alert">{error}</p>{/if}
@@ -167,7 +165,7 @@
     margin: 24px 0 16px; padding: 12px 16px; display: grid; gap: 10px; }
   legend { font-weight: 600; padding: 0 4px; }
   label { display: grid; gap: 4px; font-size: 14px; }
-  label :is(input:not([type='radio']), select, textarea) { width: 100%; min-width: 0; }
+  label :is(input:not([type='radio']), select) { width: 100%; min-width: 0; }
   .presets { display: flex; flex-wrap: wrap; gap: 6px 16px; }
   .choice { display: flex; gap: 6px; align-items: center; }
   .help { color: var(--muted); font-size: 13px; margin: 0; }

@@ -45,6 +45,7 @@ export interface FlatPrefs {
 
 export interface SearchProfile {
   name: string;
+  description: string;
   listing_type: ListingType;
   sources: string[];
   flat_sources: string[];
@@ -191,7 +192,7 @@ export const geocode = (q: string) =>
 
 export interface AISettings {
   provider: 'none' | 'anthropic' | 'openai_compat';
-  model: string; base_url: string; has_key: boolean; about_me: string;
+  model: string; base_url: string; has_key: boolean;
 }
 export interface ProfileSuggestion {
   budget_ideal: number | null; budget_max: number | null;

@@ -12,6 +12,8 @@ export interface Scorable extends RawListing {
   travel: Record<string, number>;
   aiTemporary?: boolean | null;
   redFlags?: string[];
+  wishesMet?: string[];
+  wishesMissed?: string[];
   /** Los gastos no los dio el portal: salen del texto (regex o IA). */
   billsFromText?: boolean;
 }
@@ -192,6 +194,14 @@ export function score(l: Scorable, p: SearchProfile, today: string): Scored {
     reasons.push(`AI: looks like a short or seasonal let (-${fmt0(w.temporal)})`);
   }
   for (const flag of l.redFlags ?? []) reasons.push(`AI warning: ${flag}`);
+  for (const x of l.wishesMet ?? []) {
+    total += w.deseo_cumplido;
+    reasons.push(`AI: ${x} (+${fmt0(w.deseo_cumplido)})`);
+  }
+  for (const x of l.wishesMissed ?? []) {
+    total -= w.deseo_incumplido;
+    reasons.push(`AI: ${x} (-${fmt0(w.deseo_incumplido)})`);
+  }
 
   if (flat) total += flatScore(l, p, w, reasons);
   else if (l.roommates && l.roommates > w.companeros_comodos) {

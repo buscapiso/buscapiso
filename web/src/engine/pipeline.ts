@@ -290,12 +290,13 @@ export async function rescore(listings: StoredListing[], p: SearchProfile,
     }
     const byListing = new Map(candidates.map((w) => [w.stored, w]));
     const r = await extractMany(ai, candidates.map((w) => w.stored), deps.aiCache, { sleep: deps.sleep,
-      cacheOnly: opts.aiCacheOnly, breaker: opts.breaker,
+      cacheOnly: opts.aiCacheOnly, breaker: opts.breaker, seeker: p.description,
       onProgress: (done, total) => emit('progress', `    AI ${done}/${total}`, { done, total }) });
     for (const [l, facts] of r.facts) {
       const w = byListing.get(l)!;
       const { listing, ai: derived, filled } = applyFacts(w.effective, facts);
       w.effective = { ...listing, aiTemporary: derived.aiTemporary, redFlags: derived.redFlags,
+        wishesMet: derived.wishesMet, wishesMissed: derived.wishesMissed,
         billsFromText: w.effective.billsFromText || filled.includes('expenses') };
       Object.assign(w.derived, derived satisfies AIDerived, { aiFacts: describeFacts(facts, filled) });
     }

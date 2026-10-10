@@ -103,7 +103,8 @@ describe('facts', () => {
     expect(l.expenses).toBeNull();
     expect(listing).toMatchObject({ gender: 'mixed', expenses: 40, ownerLivesIn: false, couplesAllowed: false,
       visitsAllowed: true, roommates: 2, minStayMonths: 6, roommateAges: '24-28', availableFrom: '01-11-2026' });
-    expect(ai).toEqual({ summary: 'Bright room.', pros: ['light'], cons: [], redFlags: ['asks for a deposit before visiting'], aiTemporary: true });
+    expect(ai).toEqual({ summary: 'Bright room.', pros: ['light'], cons: [], redFlags: ['asks for a deposit before visiting'], aiTemporary: true,
+      wishesMet: [], wishesMissed: [] });
     expect(applyFacts(base(), FACTS).listing.gender).toBe('female_only');
     expect(applyFacts(base(), { ...FACTS, bills_included: true }).listing.expenses).toBe(0);
   });
@@ -136,6 +137,25 @@ describe('facts', () => {
     await extractFacts(p, base(), cache);
     expect(calls).toHaveLength(1);
     expect(calls[0].body.messages[0].content).toContain('<listing id="0">');
+  });
+  it('read the listings with what the person wants, and ask again when that text changes', async () => {
+    const store = new Map<string, ListingFacts>();
+    const cache = { get: async (k: string) => store.get(k), put: async (k: string, f: ListingFacts) => { store.set(k, f); } };
+    const answer = () => claudeText(JSON.stringify({ listings: [{ ...FACTS, id: '0' }] }));
+    const { calls, post } = recorder([answer(), answer()]);
+    const p = new ClaudeProvider('k', undefined, post);
+    await extractMany(p, [base()], cache, { seeker: 'I have a cat' });
+    await extractMany(p, [base()], cache, { seeker: 'I have a cat' });
+    expect(calls).toHaveLength(1);
+    expect(calls[0].body.messages[0].content).toMatch(/^<seeker>\nI have a cat\n<\/seeker>/);
+    await extractMany(p, [base()], cache, { seeker: 'I have a dog' });
+    expect(calls).toHaveLength(2);
+  });
+  it('pass on the wishes a listing meets and misses', () => {
+    const f = { ...FACTS, wishes_met: ['has a balcony'], wishes_missed: ['no pets, and you have a cat'] };
+    const { ai } = applyFacts(base(), f);
+    expect(ai).toMatchObject({ wishesMet: ['has a balcony'], wishesMissed: ['no pets, and you have a cat'] });
+    expect(listingFacts.parse({ household_gender: 'mixed', summary: 's' })).toMatchObject({ wishes_met: [], wishes_missed: [] });
   });
   it('turns a description into a profile suggestion', async () => {
     const { post } = recorder([claudeText(JSON.stringify({ budget_max: 700, places: [{ name: 'UPC', address: 'Campus Nord' }] }))]);

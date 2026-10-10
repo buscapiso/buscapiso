@@ -10,6 +10,7 @@ export const DEFAULT_WEIGHTS: Record<string, number> = {
   no_admite_parejas: 6, edad_afin: 27, margen_edad: 8, dias_de_espera_tolerables: 21,
   por_dia_de_espera: 0.8, espera_maxima: 30, zona_preferida: 12, zona_penalizada: 20,
   ubicacion_estimada: 6, por_m2_extra: 0.25, tope_m2_extra: 15,
+  deseo_cumplido: 4, deseo_incumplido: 10,
 };
 
 export const ROOM_SOURCES = ['idealista', 'fotocasa', 'roomgo', 'depisoenpiso'] as const;
@@ -73,6 +74,8 @@ const crawl = z.object({
 export const searchProfile = z.object({
   name: z.string().min(1).max(60),
   city: z.string().min(1).default('barcelona'),
+  /** Quien busca y que quiere, con sus palabras: lo lee la IA. */
+  description: z.string().max(2000).default(''),
   listing_type: z.enum(['room', 'flat']).default('room'),
   sources: z.array(z.enum(ROOM_SOURCES)).min(1).default([...ROOM_SOURCES]),
   flat_sources: z.array(z.enum(FLAT_SOURCES)).min(1).default([...FLAT_SOURCES]),

@@ -2,8 +2,8 @@
   import { ApiError, suggestProfile, type ProfileSuggestion } from '../api';
   import { t } from '../i18n';
 
-  let { onapply }: { onapply: (s: ProfileSuggestion) => void } = $props();
-  let text = $state('');
+  // El texto es la descripcion del perfil: se guarda con el y lo lee la IA.
+  let { text = $bindable(''), onapply }: { text?: string; onapply: (s: ProfileSuggestion) => void } = $props();
   let suggestion = $state<ProfileSuggestion | null>(null);
   let busy = $state(false);
   let error = $state('');
@@ -42,8 +42,9 @@
 
 <div class="describe">
   <label>{t('describe.label')}
-    <textarea rows="3" bind:value={text} placeholder={t('describe.placeholder')}></textarea>
+    <textarea rows="4" maxlength="2000" bind:value={text} placeholder={t('describe.placeholder')}></textarea>
   </label>
+  <p class="help">{t('describe.help')}</p>
   <button onclick={suggest} disabled={busy || !text.trim()}>{t('describe.suggest')}</button>
   {#if error}<p class="error" role="alert">{error}</p>{/if}
   {#if applied}<p class="help">{t('describe.review')}</p>{/if}

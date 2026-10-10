@@ -19,9 +19,9 @@ beforeEach(() => {
       body = JSON.parse(init.body as string);
       puts.push(body!);
       return new Response(JSON.stringify({ provider: body!.provider, model: body!.model ?? '',
-        base_url: body!.base_url ?? '', has_key: Boolean(body!.key), about_me: body!.about_me ?? '' }));
+        base_url: body!.base_url ?? '', has_key: Boolean(body!.key) }));
     }
-    return new Response(JSON.stringify({ provider: 'none', model: '', base_url: '', has_key: false, about_me: '' }));
+    return new Response(JSON.stringify({ provider: 'none', model: '', base_url: '', has_key: false }));
   });
 });
 afterEach(() => vi.restoreAllMocks());
@@ -74,9 +74,9 @@ test('the chosen model is saved without a separate Save, and Test saves first', 
     if (init?.method === 'PUT') {
       body = JSON.parse(init.body as string);
       return new Response(JSON.stringify({ provider: 'openai_compat', model: body!.model, base_url: body!.base_url,
-        has_key: true, about_me: '' }));
+        has_key: true }));
     }
-    return new Response(JSON.stringify({ provider: 'none', model: '', base_url: '', has_key: false, about_me: '' }));
+    return new Response(JSON.stringify({ provider: 'none', model: '', base_url: '', has_key: false }));
   });
   render(AISettings);
   await userEvent.click(await screen.findByLabelText(/Gemini/));

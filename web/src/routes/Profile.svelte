@@ -139,7 +139,7 @@
 {#if p && meta}
   {#if part === 'all'}<h1>{t('profile.title')}</h1>{/if}
   {#if show('basics')}
-  <DescribeProfile onapply={applySuggestion} />
+  <DescribeProfile bind:text={p.description} onapply={applySuggestion} />
   {/if}
 
   {#if show('basics')}
