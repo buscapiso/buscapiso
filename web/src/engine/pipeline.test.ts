@@ -139,7 +139,9 @@ describe('runSearch', () => {
     const queries: string[] = [];
     const geoStore = new Map();
     const geocoder = new Geocoder({ get: async (q) => geoStore.get(q), put: async (q, v) => { geoStore.set(q, v); } },
-      async (url) => { queries.push(new URL(url).searchParams.get('q')!); return [{ lat: '41.39', lon: '2.16' }]; },
+      // Como Nominatim con addressdetails: municipio y portal.
+      async (url) => { queries.push(new URL(url).searchParams.get('q')!);
+        return [{ lat: '41.39', lon: '2.16', address: { city: 'Barcelona', house_number: '1' } }]; },
       async () => {}, () => 0);
     const { d, mem } = deps({ geocoder });
     await runSearch(profile({ sources: ['idealista'], crawl: { max_pages: 1, details_to_read: 0, real_travel_times: 2 } }), d, collect().emit);

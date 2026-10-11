@@ -355,7 +355,7 @@ export async function rescore(listings: StoredListing[], p: SearchProfile,
 export async function runSearch(p: SearchProfile, deps: Deps, rawEmit: Emit, opts: SearchOptions = {}): Promise<SearchSummary> {
   const city = deps.city ?? CITIES[p.city];
   if (!city) throw new Error(`unknown city ${p.city}: choose it again in Settings`);
-  deps.geocoder.catalanStreets = city.catalanStreets;
+  deps.geocoder.useCity(city);
   const pages = opts.pages ?? p.crawl.max_pages;
   // Cada evento lleva los segundos desde el inicio, y cada etapa dice cuanto
   // tardo: si una busqueda es lenta, el registro dice donde.

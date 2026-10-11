@@ -3,15 +3,17 @@
 // una peticion por segundo, asi que la cache es lo que hace viable buscar
 // muchas veces. Nominatim no permite autocompletar: `search` se llama al
 // pulsar, no letra a letra.
-import { provinceOfAddress } from './cities/names';
+import { provinceOfAddress, sameName } from './cities/names';
 import type { RawListing } from './model';
 
 export const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
 const PAUSE_MS = 1100;
 
+/** `exact`: Nominatim dio el portal (con numero), no solo la calle. */
+export interface GeoValue { lat: number | null; lon: number | null; exact?: boolean }
 export interface GeoCache {
-  get(query: string): Promise<{ lat: number | null; lon: number | null } | undefined>;
-  put(query: string, value: { lat: number | null; lon: number | null }): Promise<void>;
+  get(query: string): Promise<GeoValue | undefined>;
+  put(query: string, value: GeoValue): Promise<void>;
 }
 export interface Place { name: string; lat: number; lon: number }
 export interface CityCandidate { name: string; province: string; lat: number; lon: number; box: [number, number, number, number] }
@@ -22,6 +24,8 @@ export class Geocoder {
   private last = -Infinity;
   /** Lo pone la busqueda segun la ciudad: en Cataluña, "Calle" se busca como "Carrer". */
   catalanStreets = true;
+  /** La caja de la ciudad: las calles se buscan dentro, no en toda la provincia. */
+  private box: [number, number, number, number] | null = null;
   constructor(private cache: GeoCache, private getJson: (url: string) => Promise<unknown> = defaultGet,
     private sleep: (ms: number) => Promise<void> = (ms) => new Promise((r) => setTimeout(r, ms)),
     private clock: () => number = () => Date.now(), private offline = false) {}
@@ -58,18 +62,53 @@ export class Geocoder {
     if (!(await this.pinpoint(l))) await this.placeRoughly(l);
   }
 
-  /** La calle exacta, si Nominatim la encuentra. Una peticion por anuncio:
-   * solo para los que merecen un trayecto fiable. */
+  useCity(c: { box: [number, number, number, number]; catalanStreets: boolean }) {
+    this.box = c.box;
+    this.catalanStreets = c.catalanStreets;
+  }
+
+  /** La calle exacta, si Nominatim la encuentra en ese municipio. Exacta solo
+   * con numero de portal; la calle sola es mejor que el barrio, pero sigue
+   * siendo aproximada. Un resultado de otro municipio (la calle Menorca de
+   * Alcala para un piso de Madrid) se descarta: un trayecto aproximado es
+   * mejor que uno exacto y falso. */
   async pinpoint(l: RawListing): Promise<boolean> {
     if (!l.address || !l.municipality) return false;
-    const street = streetName(l.address, this.catalanStreets);
-    const exact = await this.geocode(`${street}, ${l.municipality}, España`);
-    if (exact) { [l.lat, l.lon] = exact; l.approximateLocation = false; return true; }
-    // Sin el numero, la calle: mejor que el barrio, pero sigue siendo aproximado.
-    const bare = street.replace(/,\s*\d+\w?\s*$/, '');
-    const near = bare !== street ? await this.geocode(`${bare}, ${l.municipality}, España`) : null;
-    if (near) { [l.lat, l.lon] = near; l.approximateLocation = true; }
+    const street = streetName(cleanAddress(l.address), this.catalanStreets);
+    const bare = street.replace(/,?\s*\d+\w?\s*$/, '');
+    // Dentro de la caja Nominatim ya casa "Calle Menorca" con "Calle de Menorca";
+    // sin caja hace falta la variante. Cada intento es un segundo de espera.
+    const variants = (x: string) => (this.box ? [x] : [...new Set([x, withDe(x)])]);
+    const tries = [...variants(street), ...(bare !== street ? variants(bare) : [])];
+    for (const q of tries) {
+      const hit = await this.street(`${q}, ${l.municipality}`, l.municipality);
+      if (!hit) continue;
+      [l.lat, l.lon] = [hit.lat, hit.lon];
+      l.approximateLocation = !hit.exact;
+      return hit.exact;
+    }
     return false;
+  }
+
+  /** Busca en la caja de la ciudad y se queda con el primer resultado del municipio. */
+  private async street(query: string, town: string): Promise<{ lat: number; lon: number; exact: boolean } | null> {
+    const key = `street|${this.box?.join(',') ?? ''}|${query}`;
+    const hit = await this.cache.get(key);
+    if (hit) return hit.lat === null ? null : { lat: hit.lat, lon: hit.lon!, exact: !!hit.exact };
+    if (this.offline) return null;
+    let data: Json[];
+    try {
+      data = await this.ask({ q: query, limit: '5', addressdetails: '1',
+        ...(this.box ? { viewbox: this.box.join(','), bounded: '1' } : {}) });
+    } catch {
+      return null;
+    }
+    const found = data.find((d) => sameName(townOf(d.address ?? {}), town));
+    const value: GeoValue = found
+      ? { lat: parseFloat(found.lat), lon: parseFloat(found.lon), exact: !!found.address?.house_number }
+      : { lat: null, lon: null };
+    await this.cache.put(key, value);
+    return value.lat === null ? null : { lat: value.lat, lon: value.lon!, exact: !!value.exact };
   }
 
   /** El barrio, o el municipio. Hay pocos distintos y la cache los recuerda:
@@ -105,6 +144,33 @@ export class Geocoder {
     }
     return out;
   }
+}
+
+const townOf = (a: Json): string => a.city ?? a.town ?? a.village ?? a.municipality ?? a.hamlet ?? '';
+
+// Abreviaturas de los portales y de quien escribe el anuncio.
+const ABBREV: [RegExp, string][] = [
+  [/^(?:c\/|c\.|cl\.?|cll\.?)\s*/i, 'Calle '], [/^(?:avda\.?|avd\.?|av\.)\s*/i, 'Avenida '],
+  [/^(?:p\.?\s?[º°]|pso\.?)\s*/i, 'Paseo '], [/^(?:pza\.?|plza\.?|pl\.)\s*/i, 'Plaza '],
+  [/^ctra\.?\s*/i, 'Carretera '], [/^rda\.?\s*/i, 'Ronda '], [/^trav\.?\s*/i, 'Travesía '],
+  [/^cno\.?\s*/i, 'Camino '], [/^gta\.?\s*/i, 'Glorieta '], [/^urb\.?\s*/i, 'Urbanización '],
+];
+
+/** La direccion como la entiende el mapa: sin abreviaturas, sin "nº" ni
+ * "s/n", y sin piso, puerta ni escalera detras del numero. */
+export function cleanAddress(address: string): string {
+  let s = address.trim().replace(/\s+/g, ' ');
+  for (const [re, to] of ABBREV) if (re.test(s)) { s = s.replace(re, to); break; }
+  s = s.replace(/\b(?:n\.?\s?[º°]|num\.?|núm\.?|número)\s*(\d)/gi, '$1');
+  s = s.replace(/,?\s*\bs\/n\b/gi, '');
+  s = s.replace(/(\d+[a-z]?)\s*,?\s*(?:\d+\s*[º°ª]|bajos?|bj|[áa]tico|entresuelo|entlo|pral|principal|esc(?:alera)?|puerta|pta|piso|planta|local)\b.*$/i, '$1');
+  s = s.replace(/(\d+[a-z]?)\s*,?\s*\d+\s*[º°ª].*$/i, '$1');
+  return s.replace(/[\s,]+$/, '');
+}
+
+/** "Calle Menorca" en OpenStreetMap es "Calle de Menorca": la variante con "de". */
+function withDe(street: string): string {
+  return street.replace(/^(Calle|Avenida|Plaza|Paseo|Camino|Ronda|Carretera|Travesía|Carrer|Avinguda|Plaça|Passeig|Camí)\s+(?!(?:de|del|dels|d'|la|el|les|los|las)\b)/i, '$1 de ');
 }
 
 /** Idealista quita el tipo de via: "de Pons i Gallarza, 3" es "Carrer de
