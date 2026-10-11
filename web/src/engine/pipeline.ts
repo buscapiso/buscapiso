@@ -347,8 +347,11 @@ export async function rescore(listings: StoredListing[], p: SearchProfile,
         const got = trips.filter(Boolean).length;
         perPlace.push(`${d.name}: ${got} of ${who.length}`);
         if (!got && who.length >= 3) {
-          emit('warning', `    No ${d.mode === 'transit' ? 'public transport' : 'route'} reaches ${d.name} from any of these listings `
-            + `within 90 min. Check where ${d.name} is on the map in Settings → Places & travel.`, { place: d.name });
+          // O el sitio esta mal puesto, o el proveedor no tiene calles ahi
+          // (Transitous tiene huecos: el este del Retiro, en 2026-10).
+          emit('warning', `    ${deps.travel.name} found no way to ${d.name} from any of these listings, so its times are `
+            + `estimates. Either ${d.name} is in the wrong spot (check Settings → Places & travel), or ${deps.travel.name} `
+            + `has no map data around it.`, { place: d.name });
         }
       }
       for (const [w, ok] of complete) if (ok) w.derived.travelSource = deps.travel.name;
