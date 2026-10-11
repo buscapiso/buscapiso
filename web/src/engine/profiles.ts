@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { SOURCES, sourcesFor } from './sources';
 
 // Perfiles de busqueda: lo que quiere la usuaria, validado. Mismos valores
 // por defecto que profiles.py de la version de escritorio.
@@ -53,8 +54,15 @@ const prefs = z.object({
   amenities: z.record(z.enum(AMENITIES), z.enum(['required', 'preferred'])).default({}),
 }).refine((x) => x.age_min === null || x.age_max === null || x.age_min <= x.age_max, 'age_min cannot be above age_max');
 
-export const ROOM_SOURCES = ['idealista', 'fotocasa', 'roomgo', 'depisoenpiso'] as const;
-export const FLAT_SOURCES = ['idealista', 'fotocasa', 'habitaclia'] as const;
+/** Los portales de cada tipo salen del registro (se piden al validar: el
+ * registro importa este modulo). */
+export const roomSources = () => sourcesFor('room');
+export const flatSources = () => sourcesFor('flat');
+/** Los portales que habia antes de que los perfiles recordaran cuales conocian. */
+const FIRST_SOURCES = ['idealista', 'fotocasa', 'habitaclia', 'roomgo', 'depisoenpiso'];
+const sourceList = (type: 'room' | 'flat') => z.array(z.string()).min(1)
+  .refine((ids) => ids.every((id) => SOURCES[id]?.types.includes(type)),
+    (ids) => ({ message: `unknown portals: ${ids.filter((id) => !SOURCES[id]?.types.includes(type)).join(', ')}` }));
 const sort = z.enum(['newest', 'cheapest', 'relevance']);
 
 const destination = z.object({
@@ -117,8 +125,11 @@ export const searchProfile = z.object({
   /** Quien busca y que quiere, con sus palabras: lo lee la IA. */
   description: z.string().max(2000).default(''),
   listing_type: z.enum(['room', 'flat']).default('room'),
-  sources: z.array(z.enum(ROOM_SOURCES)).min(1).default([...ROOM_SOURCES]),
-  flat_sources: z.array(z.enum(FLAT_SOURCES)).min(1).default([...FLAT_SOURCES]),
+  sources: sourceList('room').default(roomSources),
+  flat_sources: sourceList('flat').default(flatSources),
+  /** Los portales que existian la ultima vez que se guardo: uno nuevo se
+   * añade encendido, y uno que la persona apago sigue apagado. */
+  known_sources: z.array(z.string()).default(FIRST_SOURCES),
   flat: flat.default({}),
   destinations: z.array(destination).default([])
     .refine((ds) => new Set(ds.map((d) => d.name)).size === ds.length,
@@ -137,6 +148,12 @@ export const searchProfile = z.object({
     .refine((w) => Object.keys(w).every((k) => k in DEFAULT_WEIGHTS),
       (w) => ({ message: `unknown weights: ${Object.keys(w).filter((k) => !(k in DEFAULT_WEIGHTS)).sort().join(', ')}` }))
     .transform((w) => ({ ...DEFAULT_WEIGHTS, ...w })),
+}).transform((p) => {
+  const known = new Set(p.known_sources);
+  const fresh = Object.keys(SOURCES).filter((id) => !known.has(id));
+  const add = (list: string[], type: 'room' | 'flat') =>
+    [...list, ...fresh.filter((id) => SOURCES[id].types.includes(type) && !list.includes(id))];
+  return { ...p, sources: add(p.sources, 'room'), flat_sources: add(p.flat_sources, 'flat'), known_sources: Object.keys(SOURCES) };
 });
 
 export type SearchProfile = z.output<typeof searchProfile>;
@@ -152,12 +169,7 @@ export function defaultProfile(name = 'Default'): SearchProfile {
   return parseProfile({ name });
 }
 
-/** Presupuesto del tipo que se busca: el motor solo ve ese. */
-export function activeBudget(p: SearchProfile): { ideal: number; max: number; assumed: number } {
-  return p.listing_type === 'flat'
-    ? { ideal: p.flat.ideal_rent, max: p.flat.max_rent, assumed: p.flat.assumed_bills }
-    : { ideal: p.budget.ideal_total, max: p.budget.max_total, assumed: p.budget.assumed_expenses };
-}
+export { activeBudget } from './budget';
 
 /** Fuentes que se recorren para el tipo de anuncio del perfil. */
 export function activeSources(p: SearchProfile): string[] {

@@ -8,7 +8,7 @@
 // El listado no dice quien vive en el piso: la señal esta en la descripcion
 // ("Busquem només 2 Noies"), por eso se leen todas las fichas.
 import { emptyListing, type RawListing } from '../model';
-import { inferGender, type Source } from './base';
+import { inferGender, pagedHtml } from './base';
 
 const BASE = 'https://www.depisoenpiso.com';
 const DEFAULT_PHOTO = 'default_room.png';
@@ -75,18 +75,21 @@ export function parseDetail(body: string): Partial<RawListing> {
   return { detailRead: true, ...(description.length > 20 ? { description } : {}) };
 }
 
-export const depisoenpiso: Source = {
+export const depisoenpiso = pagedHtml({
   name: 'depisoenpiso',
+  label: 'De Piso en Piso',
   types: ['room'],
-  pause: [1, 2],
-  blockedMarkers: [],
-  minLength: 10,
+  net: { pause: [1, 2], blockedMarkers: [], minLength: 10, direct: true },
   perArea: false,
   pageSize: Number.MAX_SAFE_INTEGER,   // una sola respuesta con todo
-  direct: true,
-  detailsForAll: true,
+  details: 'all',
   listUrl: (_area, _p, page, city) => (page === 1 && city.portals.depisoenpiso ? buildUrl(city.portals.depisoenpiso) : null),
   parseList: (body, type) => parseList(body).filter((l) => l.type === type),
   detailRequest: (l) => ({ url: `${BASE}/new-assets/php/alojamiento.php`, form: { id: l.sourceId } }),
   parseDetail,
-};
+  /** El nombre que espera su buscador; una lista vacia si no tiene la ciudad. */
+  async discover(ctx) {
+    const r = await ctx.page(buildUrl(ctx.city.name));
+    return r && parseList(r.html).length ? { ref: ctx.city.name } : null;
+  },
+});

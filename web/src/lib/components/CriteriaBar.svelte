@@ -2,6 +2,7 @@
   import type { SearchProfile } from '../api';
   import { href } from '../router.svelte';
   import { t } from '../i18n';
+  import { SOURCES as REGISTRY, sourcesFor } from '../../engine/sources';
 
   let { profile, onsave }: { profile: SearchProfile; onsave: (p: SearchProfile) => void } = $props();
 
@@ -9,8 +10,8 @@
     | { kind: 'minutes'; index: number } | { kind: 'sources' };
   let editing = $state<Editing | null>(null);
   let draft = $state<SearchProfile | null>(null);
-  const SOURCES = ['idealista', 'fotocasa', 'roomgo', 'depisoenpiso'];
-  const FLAT_SOURCES = ['fotocasa', 'habitaclia'];
+  const SOURCES = sourcesFor('room');
+  const FLAT_SOURCES = sourcesFor('flat');
 
   // Se edita una copia; al guardar se envia el perfil entero con un solo cambio.
   function open(e: Editing) {
@@ -94,7 +95,7 @@
         {#each key === 'flat_sources' ? FLAT_SOURCES : SOURCES as s}
           <label class="check"><input type="checkbox" checked={draft[key].includes(s)}
             onchange={(e) => { const on = (e.currentTarget as HTMLInputElement).checked;
-              draft![key] = on ? [...draft![key], s] : draft![key].filter((x) => x !== s); }} /> {s}</label>
+              draft![key] = on ? [...draft![key], s] : draft![key].filter((x) => x !== s); }} /> {REGISTRY[s].label}</label>
         {/each}
       </fieldset>
     {/if}

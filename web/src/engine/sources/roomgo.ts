@@ -2,7 +2,7 @@
 // del piso como dato ("2 compañeros de piso - mixto"). No usa filtros de URL:
 // se pagina con ?page=N y se filtra en local.
 import { emptyListing, type Gender, type RawListing } from '../model';
-import { getText, inferGender, parseHtml, type Source } from './base';
+import { getText, inferGender, pagedHtml, parseHtml } from './base';
 
 const BASE = 'https://www.roomgo.es';
 const GENDERS: [string, Gender][] = [
@@ -71,14 +71,25 @@ export function parseList(html: string, municipality: string): RawListing[] {
   return out;
 }
 
-export const roomgo: Source = {
+/** Roomgo manda a la portada cuando no tiene esa ciudad. */
+export const roomgoHasCity = (finalUrl: string) => /\/piso-compartido-[a-z0-9-]+\/?(\?|$)/.test(finalUrl);
+
+export const roomgo = pagedHtml({
   name: 'roomgo',
+  label: 'Roomgo',
   types: ['room'],
-  pause: [3, 7],
-  blockedMarkers: ['captcha-delivery'],
-  minLength: 5000,
+  net: { pause: [3, 7], blockedMarkers: ['captcha-delivery'], minLength: 5000 },
   perArea: false,
   pageSize: 1,
   listUrl: (_area, _p, page, city) => (city.portals.roomgo ? buildUrl(city.portals.roomgo, page) : null),
   parseList: (html, _type, city) => parseList(html, city.name),
-};
+  /** 'vizcaya/piso-compartido-bilbao'. */
+  async discover(ctx) {
+    const guesses = new Set(ctx.slugs.flatMap((s) => [`${ctx.province.roomgo}/piso-compartido-${s}`, `${s}/piso-compartido-${s}`]));
+    for (const g of guesses) {
+      const r = await ctx.page(`${BASE}/${g}`);
+      if (r && roomgoHasCity(r.finalUrl)) return { ref: g };
+    }
+    return null;
+  },
+});

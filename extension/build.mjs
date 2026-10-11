@@ -10,15 +10,16 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const dev = process.argv.includes('--dev');
 const SITE = ['https://buscapiso.github.io/*'];
 const DEV_SITE = ['http://localhost/*', 'http://127.0.0.1/*'];
-const PORTALS = ['idealista.com', 'fotocasa.es', 'habitaclia.com', 'roomgo.es', 'depisoenpiso.com']
+const PORTALS = ['idealista.com', 'fotocasa.es', 'habitaclia.com', 'roomgo.es', 'depisoenpiso.com',
+  'pisos.com', 'spotahome.com', 'housinganywhere.com', 'badi.com', 'badiapp.com']
   .flatMap((h) => [`https://${h}/*`, `https://*.${h}/*`]);
 
 function manifest(target) {
   const m = {
     manifest_version: 3,
     name: 'buscapiso',
-    version: '1.0.1',
-    description: 'Lets the buscapiso website read rental listings from Idealista, Fotocasa, Habitaclia, Roomgo and De Piso en Piso in your own browser.',
+    version: '1.1.0',
+    description: 'Lets the buscapiso website read rental listings from Idealista, Fotocasa, Habitaclia, Roomgo, De Piso en Piso, pisos.com, Spotahome, HousingAnywhere and Badi in your own browser.',
     icons: { 192: 'icon-192.png', 512: 'icon-512.png' },
     permissions: ['tabs', 'scripting'],
     host_permissions: [...PORTALS, ...(dev ? DEV_SITE : [])],

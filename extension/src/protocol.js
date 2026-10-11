@@ -1,10 +1,11 @@
 // Protocolo entre la web de buscapiso y la extension. La web manda la
 // peticion; la extension no sabe nada de los portales salvo sus dominios.
 export const PROTOCOL = 1;
-export const VERSION = '1.0.1';
+export const VERSION = '1.1.0';
 
 /** Dominios que la extension puede leer, y nada mas. */
-export const PORTAL_HOSTS = ['idealista.com', 'fotocasa.es', 'habitaclia.com', 'roomgo.es', 'depisoenpiso.com'];
+export const PORTAL_HOSTS = ['idealista.com', 'fotocasa.es', 'habitaclia.com', 'roomgo.es', 'depisoenpiso.com',
+  'pisos.com', 'spotahome.com', 'housinganywhere.com', 'badi.com', 'badiapp.com'];
 
 /** true si la URL es https de uno de los portales (o de un subdominio suyo). */
 export function allowedUrl(url, extraHosts = []) {

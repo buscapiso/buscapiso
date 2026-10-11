@@ -117,6 +117,8 @@ export interface FetchRequest {
   readyMarkers?: string[];
   allowTab: boolean;
   timeoutMs?: number;
+  /** Para APIs: metodo, cabeceras y cuerpo. Sin el, GET con las cookies de la persona. */
+  init?: { method?: string; headers?: Record<string, string>; body?: string };
 }
 export type FetchResult =
   | { ok: true; html: string; finalUrl: string; via: 'fetch' | 'tab' }

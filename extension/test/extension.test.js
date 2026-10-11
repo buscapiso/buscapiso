@@ -1,6 +1,6 @@
 // Pruebas de la extension con las APIs del navegador simuladas.
 import { describe, expect, it, vi } from 'vitest';
-import { createFetcher } from '../src/fetcher.js';
+import { createFetcher, pickInit } from '../src/fetcher.js';
 import { allowedUrl } from '../src/protocol.js';
 
 const CAPTCHA = '<html><iframe src="https://geo.captcha-delivery.com/x"></iframe></html>';
@@ -36,6 +36,31 @@ describe('allowedUrl', () => {
     expect(allowedUrl('https://mail.google.com/')).toBe(false);
     expect(allowedUrl('not a url')).toBe(false);
     expect(allowedUrl('http://localhost:4173/p', ['localhost'])).toBe(true);
+  });
+  it('allows the portals added in 1.1.0', () => {
+    for (const u of ['https://www.pisos.com/x', 'https://www.spotahome.com/api/x', 'https://housinganywhere.com/s/x',
+      'https://badi.com/api/auth', 'https://api.badiapp.com/v1/x']) expect(allowedUrl(u)).toBe(true);
+  });
+});
+
+describe('API requests', () => {
+  it('pass method, headers and body, without the person\'s cookies', async () => {
+    const { api } = browserApi({ fetchHtml: '{"ok":true}' });
+    const f = createFetcher(api);
+    const r = await f.fetchPage(req({ url: 'https://api.badiapp.com/v1/x', portal: 'badi', blockedMarkers: [], allowTab: false,
+      init: { method: 'GET', headers: { Authorization: 'Bearer t' } } }));
+    expect(r).toMatchObject({ ok: true, html: '{"ok":true}' });
+    expect(api.fetch).toHaveBeenCalledWith('https://api.badiapp.com/v1/x',
+      { credentials: 'omit', method: 'GET', headers: { Authorization: 'Bearer t' } });
+  });
+  it('keep cookies for plain pages', async () => {
+    const { api } = browserApi({ fetchHtml: PAGE });
+    await createFetcher(api).fetchPage(req());
+    expect(api.fetch.mock.calls[0][1]).toEqual({ credentials: 'include' });
+  });
+  it('drop anything but method, string headers and a string body', () => {
+    expect(pickInit({ method: 'DELETE', headers: { a: 'b', c: 1 }, body: {}, mode: 'no-cors', credentials: 'include' }))
+      .toEqual({ headers: { a: 'b' } });
   });
 });
 

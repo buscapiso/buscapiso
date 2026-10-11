@@ -11,7 +11,8 @@ import type { Geocoder } from './geocode';
 import { billsFromText, emptyDerived, listingId, type Derived, type FetchPage, type RawListing, type StoredListing } from './model';
 import { activeSources, type Destination, type SearchProfile } from './profiles';
 import { filter, score, type Scorable } from './ranking';
-import { inferGender, type Area, type Source } from './sources/base';
+import { makeNet, CAPTCHA_TIMEOUT_MS, type FetchDirect } from './net';
+import { FATAL, mergeDetail, NetError, type SearchQuery, type Source } from './sources/base';
 import { SOURCES } from './sources/index';
 import { estimateTrip, haversineM, TravelError, type Origin, type Trip, type TravelProvider } from './travel';
 
@@ -30,7 +31,7 @@ export interface Deps {
   /** La extension; null si no esta instalada. */
   fetchPage: FetchPage | null;
   /** Portales que admiten CORS: la web los pide sola. */
-  fetchDirect(url: string, form?: Record<string, string>): Promise<string>;
+  fetchDirect: FetchDirect;
   store: PipelineStore;
   travel: TravelProvider | null;
   geocoder: Geocoder;
@@ -48,7 +49,6 @@ export interface Deps {
 export interface SearchOptions { pages?: number; skipDetails?: boolean }
 export interface SearchSummary { accepted: number; possible: number; new: number; crawled: number }
 
-const CAPTCHA_TIMEOUT_MS = 180_000;
 /** Cada cuanto se refresca la lista mientras se situan los anuncios. */
 const LIVE_PREVIEW_MS = 5_000;
 const localDate = (d: Date) => d.toLocaleDateString('sv-SE');
@@ -60,66 +60,29 @@ const stage = (emit: Emit, step: number, message: string) => emit('stage', `${st
 
 class Cancelled extends Error {}
 
-// --- una pagina -----------------------------------------------------------
-type Fetched = { ok: true; body: string } | { ok: false; reason: string };
-
-async function fetchOne(src: Source, url: string, deps: Deps, emit: Emit, form?: Record<string, string>): Promise<Fetched> {
-  if (deps.signal?.aborted) return { ok: false, reason: 'cancelled' };
-  if (src.direct) {
-    try {
-      return { ok: true, body: await deps.fetchDirect(url, form) };
-    } catch (e) {
-      return { ok: false, reason: `network: ${(e as Error).message}` };
-    }
-  }
-  if (!deps.fetchPage) return { ok: false, reason: 'no-extension' };
-  const r = await deps.fetchPage({ url, portal: src.name, blockedMarkers: src.blockedMarkers,
-    fatalMarkers: src.fatalMarkers, readyMarkers: src.readyMarkers, allowTab: true, timeoutMs: CAPTCHA_TIMEOUT_MS },
-  () => emit('captcha', `${src.name} wants you to confirm you're human: solve it in the tab that just opened.`,
-    { portal: src.name, wait_seconds: CAPTCHA_TIMEOUT_MS / 1000 }));
-  if (!r.ok) return r;
-  // Una extension anterior no conoce fatalMarkers: se mira tambien aqui.
-  if ((src.fatalMarkers ?? []).some((m) => r.html.includes(m))) return { ok: false, reason: 'banned' };
-  if (r.html.length < src.minLength || src.blockedMarkers.some((m) => r.html.includes(m))) return { ok: false, reason: 'blocked' };
-  return { ok: true, body: r.html };
-}
-
-const pause = (src: Source, deps: Deps) => deps.sleep((src.pause[0] + deps.random() * (src.pause[1] - src.pause[0])) * 1000);
-
-/** Despues de leer la ficha, el genero inferido puede cambiar con la descripcion. */
-function mergeDetail(l: RawListing, d: Partial<RawListing>): void {
-  Object.assign(l, d);
-  if (!l.genderConfirmed) l.gender = inferGender(`${l.title} ${l.description}`);
+// --- la red de un portal ---------------------------------------------------
+function netFor(src: Source, deps: Deps, emit: Emit) {
+  return makeNet(src, { ...deps, onCaptcha: () => emit('captcha',
+    `${src.name} wants you to confirm you're human: solve it in the tab that just opened.`,
+    { portal: src.name, wait_seconds: CAPTCHA_TIMEOUT_MS / 1000 }) });
 }
 
 /** La ficha completa de un anuncio, al abrirlo: Idealista solo da 320
  * caracteres en el listado. Devuelve null si la leyo, o el motivo si no. */
 export async function readFullListing(l: RawListing, fetchPage: FetchPage): Promise<string | null> {
   const src = SOURCES[l.source];
-  if (!src?.detailRequest || !src.parseDetail) return 'this portal has no separate full listing';
-  const req = src.detailRequest(l);
-  const deps = { fetchPage, fetchDirect: async () => { throw new Error('not available here'); } } as unknown as Deps;
-  const r = await fetchOne(src, req.url, deps, () => {}, req.form);
-  if (!r.ok) return r.reason;
-  mergeDetail(l, src.parseDetail(r.body));
-  return null;
+  if (!src?.detail) return 'this portal has no separate full listing';
+  const net = makeNet(src, { fetchPage, fetchDirect: async () => { throw new Error('not available here'); },
+    sleep: async () => {}, random: () => 0 });
+  try {
+    mergeDetail(l, await src.detail(l, net));
+    return null;
+  } catch (e) {
+    return e instanceof NetError ? e.reason : (e as Error).message;
+  }
 }
 
 // --- un portal ------------------------------------------------------------
-/** Zonas con URL propia; varias zonas pueden compartir una (Fotocasa: toda la ciudad). */
-function startUrls(src: Source, areas: Area[], p: SearchProfile, city: City): Map<string, Area | null> {
-  const starts = new Map<string, Area | null>();
-  for (const a of src.perArea ? areas : []) {
-    const u = src.listUrl(a, p, 1, city);
-    if (u && !starts.has(u)) starts.set(u, a);
-  }
-  if (!starts.size) {
-    const u = src.listUrl(null, p, 1, city);
-    if (u) starts.set(u, null);
-  }
-  return starts;
-}
-
 /** Unos pocos anuncios de cada pagina, para enseñarlos mientras se rastrea. */
 function sampleOf(batch: RawListing[]) {
   return [...batch].sort((a, b) => Number(!!b.photo) - Number(!!a.photo)).slice(0, 3)
@@ -127,62 +90,32 @@ function sampleOf(batch: RawListing[]) {
       place: l.neighbourhood || l.municipality }));
 }
 
-/** Devuelve SIEMPRE lo recogido: un fallo en la zona N no invalida las anteriores. */
-async function crawlSource(src: Source, areas: Area[], p: SearchProfile, city: City, pages: number, deps: Deps,
-  emit: Emit): Promise<RawListing[]> {
+/** Devuelve SIEMPRE lo recogido: un fallo a medias no invalida lo anterior. */
+async function crawlSource(src: Source, q: SearchQuery, deps: Deps, emit: Emit): Promise<RawListing[]> {
   const out: RawListing[] = [];
   const seen = new Set<string>();
-  const starts = startUrls(src, areas, p, city);
-  let first = true;
-  for (const area of starts.values()) {
-    for (let page = 1; page <= pages; page++) {
-      const url = src.listUrl(area, p, page, city);
-      if (!url) break;
-      if (!first) await pause(src, deps);
-      first = false;
-      const r = await fetchOne(src, url, deps, emit);
-      if (!r.ok) {
-        if (r.reason === 'cancelled') throw new Cancelled();
-        if (r.reason === 'no-extension') {
-          emit('warning', `  ${src.name} needs the buscapiso extension; skipping it`, { source: src.name });
-          return out;
-        }
-        if (r.reason === 'banned') {
-          emit('warning', `  ${src.name} has blocked this connection for a while (it says it detected misuse). `
-            + `It usually lifts within hours; the other portals go on. Keeping ${out.length} listings from it.`, { source: src.name, banned: true });
-          return out;
-        }
-        if (r.reason === 'blocked' || r.reason === 'timeout') {
-          emit('warning', `  ${src.name} is blocking us (${r.reason}); keeping ${out.length} listings from it`, { source: src.name });
-          return out;
-        }
-        emit('warning', `  ${src.name} ${area?.name ?? ''} page ${page} failed (${r.reason.slice(0, 60)}); going on`, { source: src.name });
-        break;
-      }
-      const batch = src.parseList(r.body, p.listing_type, city).filter((l) => !seen.has(l.sourceId));
+  try {
+    for await (const { listings, label } of src.search(q, netFor(src, deps, emit))) {
+      const batch = listings.filter((l) => !seen.has(l.sourceId));
       batch.forEach((l) => seen.add(l.sourceId));
       out.push(...batch);
-      emit('info', `  ${src.name} ${area ? area.name.split(',')[0] + ' ' : ''}page ${page}: ${batch.length} listings`,
+      emit('info', `  ${src.name} ${label}: ${batch.length} listings`,
         { source: src.name, count: batch.length, page: true, found: out.length, sample: sampleOf(batch) });
-      if (batch.length < src.pageSize) break;
-      if (src.totalPages && page >= src.totalPages(r.body)) break;
-      if (src.shouldStop?.(batch, p)) break;
     }
-  }
-  // Sin la ficha, algunos portales no dicen quien vive en el piso.
-  if (src.detailsForAll && src.detailRequest && src.parseDetail) {
-    emit('info', `  ${src.name}: ${out.length} listings, reading them in full...`);
-    let i = 0;
-    for (const l of out) {
-      if (++i % 5 === 0) emit('progress', `    ${src.name} ${i}/${out.length}`, { source: src.name, done: i, total: out.length });
-      const req = src.detailRequest(l);
-      const r = await fetchOne(src, req.url, deps, emit, req.form);
-      if (!r.ok) {
-        if (r.reason === 'cancelled') throw new Cancelled();
-        continue;   // una ficha ilegible no tumba el resto
-      }
-      mergeDetail(l, src.parseDetail(r.body));
-      await pause(src, deps);
+  } catch (e) {
+    if (!(e instanceof NetError)) throw e;
+    if (e.reason === 'cancelled') throw new Cancelled();
+    if (e.reason === 'no-extension') {
+      emit('warning', `  ${src.name} needs the buscapiso extension; skipping it`, { source: src.name });
+    } else if (e.reason === 'not-allowed') {
+      emit('warning', `  ${src.label} needs a newer buscapiso extension: update it to read this portal`, { source: src.name });
+    } else if (e.reason === 'banned') {
+      emit('warning', `  ${src.name} has blocked this connection for a while (it says it detected misuse). `
+        + `It usually lifts within hours; the other portals go on. Keeping ${out.length} listings from it.`, { source: src.name, banned: true });
+    } else if (FATAL.has(e.reason)) {
+      emit('warning', `  ${src.name} is blocking us (${e.reason}); keeping ${out.length} listings from it`, { source: src.name });
+    } else {
+      emit('warning', `  ${src.name} failed (${e.reason.slice(0, 70)}); keeping ${out.length} listings from it`, { source: src.name });
     }
   }
   return out;
@@ -403,10 +336,12 @@ export async function runSearch(p: SearchProfile, deps: Deps, rawEmit: Emit, opt
     const areas = await selectAreas(city.areas, p.destinations, tripsWithFallback(deps.travel, emit));
     emit('info', `Areas to search: ${areas.length}`, { zones: areas.map((a) => a.name) });
     const names = activeSources(p).filter((n) => SOURCES[n]?.types.includes(p.listing_type));
+    const queryFor = (n: string): SearchQuery => ({ profile: p, type: p.listing_type, city, areas, pages,
+      emit: (kind, message, data = {}) => emit(kind, message, { ...data, source: n }) });
     // Paginas como mucho por portal: la barra de progreso del rastreo.
     emit('info', `Reading ${names.join(', ')}...`,
-      { plan: Object.fromEntries(names.map((n) => [n, startUrls(SOURCES[n], areas, p, city).size * pages])) });
-    const results = await Promise.all(names.map((n) => crawlSource(SOURCES[n], areas, p, city, pages, deps, emit)
+      { plan: Object.fromEntries(names.map((n) => [n, SOURCES[n].planned?.(queryFor(n)) ?? pages])) });
+    const results = await Promise.all(names.map((n) => crawlSource(SOURCES[n], queryFor(n), deps, emit)
       .catch((e) => {
         if (e instanceof Cancelled) throw e;
         // Que un portal falle no debe tumbar la busqueda entera.
@@ -493,26 +428,29 @@ export async function runSearch(p: SearchProfile, deps: Deps, rawEmit: Emit, opt
     let derived = await rescore(all, p, deps, discarded, emit, { breaker });
     await preview(derived, 'Results updated with travel times');
 
-    // 4. Fichas de los mejores de Idealista (dueño, visitas, parejas).
+    // 4. Fichas de los mejores, en los portales cuyo listado se queda corto
+    // (Idealista: dueño, visitas, parejas).
     const top = new Map(derived.filter((d) => d.group === 'accepted').map((d) => [d.id, d]));
     const fresh = new Map(stored.map((l) => [l.id, l]));
-    const idealista = SOURCES.idealista;
     const toRead = [...top.values()].sort((a, b) => b.score - a.score)
-      .map((d) => fresh.get(d.id)).filter((l): l is StoredListing => !!l && l.source === 'idealista' && !l.detailRead)
+      .map((d) => fresh.get(d.id))
+      .filter((l): l is StoredListing => !!l && SOURCES[l.source]?.details === 'best' && !l.detailRead)
       .slice(0, p.crawl.details_to_read);
     if (toRead.length && !opts.skipDetails && deps.fetchPage) {
       next(4, `Reading the ${toRead.length} best full listings (guests, owner)...`);
       let read = 0;
+      const nets = new Map<string, ReturnType<typeof netFor>>();
       for (const l of toRead) {
-        const r = await fetchOne(idealista, idealista.detailRequest!(l).url, deps, emit);
-        if (!r.ok) {
-          if (r.reason === 'cancelled') throw new Cancelled();
-          if (r.reason === 'blocked' || r.reason === 'timeout' || r.reason === 'banned') { emit('warning', '  blocked while reading full listings; keeping what we have'); break; }
-          continue;
+        const src = SOURCES[l.source];
+        if (!nets.has(src.name)) nets.set(src.name, netFor(src, deps, emit));
+        try {
+          mergeDetail(l, await src.detail!(l, nets.get(src.name)!));
+          read++;
+        } catch (e) {
+          if (!(e instanceof NetError)) throw e;
+          if (e.reason === 'cancelled') throw new Cancelled();
+          if (FATAL.has(e.reason)) { emit('warning', '  blocked while reading full listings; keeping what we have'); break; }
         }
-        mergeDetail(l, idealista.parseDetail!(r.body));
-        read++;
-        await pause(idealista, deps);
       }
       await deps.store.saveListings(toRead);
       derived = await rescore(await deps.store.listings(p.city), p, deps, discarded, emit, { breaker });

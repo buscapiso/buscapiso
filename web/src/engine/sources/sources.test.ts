@@ -8,7 +8,6 @@ import * as fotocasa from './fotocasa';
 import * as habitaclia from './habitaclia';
 import * as idealista from './idealista';
 import * as roomgo from './roomgo';
-import { SOURCES } from './index';
 import { defaultProfile } from '../profiles';
 import { CITIES } from '../coverage';
 
@@ -80,38 +79,38 @@ describe('fotocasa', () => {
       .toBe('https://www.fotocasa.es/es/alquiler/viviendas/barcelona-capital/todas-las-zonas/l/2');
   });
   it('idealista only lists what fits the budget, unless a price filter was set by hand', () => {
-    const area = { name: 'Gràcia', lat: 41.4, lon: 2.15, idealista: 'barcelona/gracia' } as never;
+    const area = { name: 'Gràcia', lat: 41.4, lon: 2.15, portals: { idealista: 'barcelona/gracia' } };
     const p = defaultProfile();
     p.budget.max_total = 520;
     // Escalones de 50, como los del propio buscador.
-    expect(SOURCES.idealista.listUrl(area, p, 1, BCN)).toContain('precio-hasta_550');
+    expect(idealista.idealista.listUrl(area, p, 1, BCN)).toContain('precio-hasta_550');
     p.idealista.max_price = 400;
-    expect(SOURCES.idealista.listUrl(area, p, 1, BCN)).toContain('precio-hasta_400');
+    expect(idealista.idealista.listUrl(area, p, 1, BCN)).toContain('precio-hasta_400');
     const flat = defaultProfile();
     flat.listing_type = 'flat';
     flat.flat.max_rent = 1200;
-    expect(SOURCES.idealista.listUrl(area, flat, 1, BCN)).toContain('precio-hasta_1200');
+    expect(idealista.idealista.listUrl(area, flat, 1, BCN)).toContain('precio-hasta_1200');
   });
   it('searches the whole city when an area has no fotocasa slug', () => {
     const p = defaultProfile();
-    expect(SOURCES.fotocasa.listUrl(null, p, 1, BCN)).toContain('barcelona-capital/todas-las-zonas');
+    expect(fotocasa.fotocasa.listUrl(null, p, 1, BCN)).toContain('barcelona-capital/todas-las-zonas');
   });
   it('take the whole-city slugs from the city, and skip a portal the city lacks', () => {
     const p = defaultProfile();
     const granada = { ...BCN, name: 'Granada', portals: { idealista: 'granada-granada', fotocasa: 'granada-capital/todas-las-zonas',
       habitaclia: 'granada-provincia/granada-capital', roomgo: 'granada/piso-compartido-granada', depisoenpiso: null } };
-    expect(SOURCES.idealista.listUrl(null, p, 1, granada)).toContain('/alquiler-habitacion/granada-granada/');
-    expect(SOURCES.habitaclia.listUrl(null, p, 1, granada)).toContain('/alquiler/viviendas/granada-provincia/granada-capital/s');
-    expect(SOURCES.roomgo.listUrl(null, p, 2, granada)).toBe('https://www.roomgo.es/granada/piso-compartido-granada?page=2');
-    expect(SOURCES.depisoenpiso.listUrl(null, p, 1, granada)).toBeNull();
-    expect(SOURCES.roomgo.parseList(fixture('roomgo_listado.html'), 'room', granada)[0].municipality).toBe('Granada');
+    expect(idealista.idealista.listUrl(null, p, 1, granada)).toContain('/alquiler-habitacion/granada-granada/');
+    expect(habitaclia.habitaclia.listUrl(null, p, 1, granada)).toContain('/alquiler/viviendas/granada-provincia/granada-capital/s');
+    expect(roomgo.roomgo.listUrl(null, p, 2, granada)).toBe('https://www.roomgo.es/granada/piso-compartido-granada?page=2');
+    expect(dpp.depisoenpiso.listUrl(null, p, 1, granada)).toBeNull();
+    expect(roomgo.roomgo.parseList(fixture('roomgo_listado.html'), 'room', granada)[0].municipality).toBe('Granada');
   });
   it('stops paging once a cheapest-first page is all above the ceiling', () => {
     const p = defaultProfile();
     const page = fotocasa.parseList(fixture('fotocasa_listado.html'));
     const over = page.map((l) => ({ ...l, price: 5000 }));
-    expect(SOURCES.fotocasa.shouldStop!(over, p)).toBe(true);
-    expect(SOURCES.fotocasa.shouldStop!(page.map((l) => ({ ...l, price: 300 })), p)).toBe(false);
+    expect(fotocasa.fotocasa.shouldStop!(over, p)).toBe(true);
+    expect(fotocasa.fotocasa.shouldStop!(page.map((l) => ({ ...l, price: 300 })), p)).toBe(false);
   });
   it('returns nothing for a page without the JSON', () => expect(fotocasa.parseList('<html></html>')).toEqual([]));
 });
@@ -156,9 +155,9 @@ describe('depisoenpiso', () => {
   });
   it('asks for the full listing by POST and needs no extension', () => {
     const l = dpp.parseList(fixture('depisoenpiso_places.json'), now)[0];
-    expect(SOURCES.depisoenpiso.detailRequest!(l)).toEqual({
+    expect(dpp.depisoenpiso.detailRequest!(l)).toEqual({
       url: 'https://www.depisoenpiso.com/new-assets/php/alojamiento.php', form: { id: l.sourceId } });
-    expect(SOURCES.depisoenpiso.direct).toBe(true);
+    expect(dpp.depisoenpiso.net.direct).toBe(true);
   });
   it('survives a broken response', () => {
     expect(dpp.parseList('<html>')).toEqual([]);

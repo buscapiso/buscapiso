@@ -217,7 +217,7 @@
     <legend>{t('profile.sources')}</legend>
     {#each flat ? meta.flat_sources : meta.sources as s}
       <label class="check"><input type="checkbox" checked={p[sourceKey].includes(s)}
-        onchange={(e) => toggleSource(s, (e.currentTarget as HTMLInputElement).checked)} /> {s}</label>
+        onchange={(e) => toggleSource(s, (e.currentTarget as HTMLInputElement).checked)} /> {meta.labels?.[s] ?? s}</label>
     {/each}
     {#if flat}<p class="help">{t('profile.flatSourcesHelp')}</p>{/if}
     {#if err(sourceKey)}<p class="error">{err(sourceKey)}</p>{/if}

@@ -14,7 +14,8 @@ Su código sigue en el historial de git.
 | Carpeta | Qué hay |
 |---|---|
 | `web/src/engine/` | El motor, sin DOM de página ni IndexedDB: modelo, fuentes, deduplicado, geocodificación, trayectos, cobertura, ranking, IA, avisos, pipeline, programador |
-| `web/src/engine/sources/` | Un fichero por portal: URLs, parser y marcadores de bloqueo. Ninguno pide nada por su cuenta |
+| `web/src/engine/sources/` | Un fichero por portal con todo lo suyo: cómo se pide, cómo se lee y cómo se descubre una ciudad. `index.ts` es el registro, la única lista de portales |
+| `web/src/engine/net.ts` | La red de cada fuente: por la extensión o directa (CORS), con la pausa y la detección de bloqueos del portal |
 | `web/src/store/` | IndexedDB (`db.ts`), el "servidor" local que atiende las rutas `/api/...` (`backend.ts`) y exportar/importar (`transfer.ts`) |
 | `web/src/lib/api.ts` | La única puerta de la interfaz. En la web usa el backend local; en los tests de componentes, `fetch` simulado |
 | `web/src/lib/extension.ts` | El cliente de la extensión: `hello`, `fetch`, `cancel` por `window.postMessage` |
@@ -30,6 +31,22 @@ Su código sigue en el historial de git.
 | Habitaclia (pisos) | `fetch` normal | no aplica | del portal, a veces exacta |
 | Roomgo | `fetch` normal | publicado en la tarjeta | calle, geocodificada |
 | De Piso en Piso | sin extensión: sus endpoints JSON admiten CORS | de la ficha (descripción) | exacta |
+| pisos.com | sin extensión: su HTML admite CORS | solo si la descripción lo dice | barrio, geocodificado |
+| Spotahome | su API pública (puntos del mapa y fichas), por la extensión | solo si la descripción lo dice | exacta |
+| HousingAnywhere | la página da la clave pública de Algolia (por la extensión); Algolia, directo | publicado si es solo chicas o solo chicos | exacta |
+| Badi | token de invitado de badi.com; su API, por la extensión, zona a zona (sin cuenta, dos páginas por búsqueda) | solo si el título lo dice | aproximada |
+
+Comprobado el 2026-10-11 desde Node para los cuatro últimos.
+
+### Añadir un portal
+
+Un archivo en `web/src/engine/sources/` que exporta un `Source` (ver `base.ts`):
+`search` entrega lotes de `RawListing` y decide cómo pedir y cuándo parar, y
+`discover` dice cómo llama el portal a una ciudad. Para páginas HTML numeradas,
+`pagedHtml` ya hace el bucle. Después, una línea en `sources/index.ts`, su
+fixture en `__fixtures__` y sus tests; los ajustes, la barra de criterios y los
+perfiles guardados lo recogen solos. Si el portal no admite CORS, su dominio va
+también a `PORTAL_HOSTS` de la extensión y a `build.mjs`, con una versión nueva.
 
 Comprobado el 2026-10-09 con Chromium y un perfil limpio. Si un portal empieza a
 bloquear `fetch`, la extensión pasa sola a modo pestaña; si cambia su HTML, se
@@ -132,8 +149,10 @@ Ningún test toca los portales reales. Antes de cada versión, en Chrome y en
 Firefox, con la extensión de la tienda:
 
 - [ ] Búsqueda de habitaciones: Idealista (resolver el captcha si sale),
-      Fotocasa, Roomgo y De Piso en Piso traen anuncios.
-- [ ] Búsqueda de pisos: Idealista, Fotocasa y Habitaclia traen anuncios.
+      Fotocasa, Roomgo, De Piso en Piso, pisos.com, Badi, HousingAnywhere y
+      Spotahome traen anuncios.
+- [ ] Búsqueda de pisos: Idealista, Fotocasa, Habitaclia, pisos.com,
+      HousingAnywhere y Spotahome traen anuncios.
 - [ ] Anotar en el log de la búsqueda qué portales fueron por fetch y cuáles
       por pestaña.
 - [ ] Parar a mitad cierra las pestañas de trabajo.

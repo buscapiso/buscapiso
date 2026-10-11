@@ -67,6 +67,7 @@ export interface SearchProfile {
   listing_type: ListingType;
   sources: string[];
   flat_sources: string[];
+  known_sources?: string[];
   flat: FlatPrefs;
   destinations: Destination[];
   budget: { ideal_total: number; max_total: number; assumed_expenses: number };
@@ -84,7 +85,7 @@ export interface SearchProfile {
 }
 
 export interface ProfileSummary { name: string; active: boolean }
-export interface Meta { statuses: Status[]; sources: string[]; flat_sources: string[]; genders: string[] }
+export interface Meta { statuses: Status[]; sources: string[]; flat_sources: string[]; labels: Record<string, string>; genders: string[] }
 
 export interface SearchEvent {
   kind: 'stage' | 'progress' | 'info' | 'warning' | 'captcha' | 'done' | 'error';

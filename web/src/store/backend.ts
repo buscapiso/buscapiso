@@ -3,15 +3,16 @@
 // que la interfaz no cambie de contrato.
 import { draftMessage, suggestProfile } from '../engine/ai/extract';
 import { AIError, ClaudeProvider, listModels, OpenAICompatProvider, type AIProvider } from '../engine/ai/providers';
-import { discoverCity, DiscoveryError, type Discovered } from '../engine/cities/discover';
+import { discoverCity, discoverMissing, DiscoveryError, type Discovered } from '../engine/cities/discover';
 import { sameName } from '../engine/cities/names';
-import { CITIES, type City } from '../engine/coverage';
+import { CITIES, upgradeCity, type City } from '../engine/coverage';
 import { Geocoder, type CityCandidate } from '../engine/geocode';
 import { emptyDerived, STATUSES, totalCost, type Derived, type FetchPage, type Status, type StoredListing,
   type UserState } from '../engine/model';
 import { DEFAULT_SERVER, randomTopic, send as ntfySend, notifyNew } from '../engine/notify';
 import { readFullListing, rescore, runSearch, type Deps, type SearchEvent } from '../engine/pipeline';
-import { defaultProfile, FLAT_SOURCES, parseProfile, ROOM_SOURCES, searchProfile, type SearchProfile } from '../engine/profiles';
+import { defaultProfile, flatSources, parseProfile, roomSources, searchProfile, type SearchProfile } from '../engine/profiles';
+import { SOURCES } from '../engine/sources';
 import { CachedProvider, estimateTrip, GoogleProvider, TRANSITOUS_URL, TransitousProvider, TravelError, type Route,
   type TravelProvider } from '../engine/travel';
 import { setting, type Db } from './db';
@@ -44,8 +45,13 @@ export interface BackendDeps {
 interface TravelConfig { provider: 'transitous' | 'google'; motisUrl: string; googleKey: string }
 interface AIConfig { provider: 'none' | 'anthropic' | 'openai_compat'; model: string; baseUrl: string }
 
-const defaultFetchDirect: Deps['fetchDirect'] = async (url, form) => {
-  const init: RequestInit = form ? { method: 'POST', body: new URLSearchParams(form) } : {};
+const defaultFetchDirect: Deps['fetchDirect'] = async (url, i) => {
+  const init: RequestInit = { method: i?.method ?? (i?.form || i?.json !== undefined ? 'POST' : 'GET'), headers: { ...i?.headers } };
+  if (i?.form) init.body = new URLSearchParams(i.form);
+  else if (i?.json !== undefined) {
+    init.body = JSON.stringify(i.json);
+    (init.headers as Record<string, string>)['Content-Type'] = 'application/json';
+  }
   const r = await fetch(url, init);
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   return r.text();
@@ -99,7 +105,9 @@ export function createBackend(deps: BackendDeps) {
 
   // --- ciudades ------------------------------------------------------------
   async function cityOf(key: string): Promise<City | null> {
-    return CITIES[key] ?? (await db.get<City>('cities', key)) ?? null;
+    if (CITIES[key]) return CITIES[key];
+    const saved = await db.get<City>('cities', key);
+    return saved ? upgradeCity(saved) : null;
   }
   async function activeCity(): Promise<City> {
     const p = await activeProfile();
@@ -129,7 +137,7 @@ export function createBackend(deps: BackendDeps) {
     Object.assign(discovery, { running: true, log: [], result: null, error: null, abort: new AbortController() });
     void (async () => {
       try {
-        const found = await discoverCity(c, { fetchPage: page, fetchDirect: (u) => (deps.fetchDirect ?? defaultFetchDirect)(u),
+        const found = await discoverCity(c, { fetchPage: page, fetchDirect: (u, i) => (deps.fetchDirect ?? defaultFetchDirect)(u, i),
           geocode: (q) => geocoder.geocode(q), log: (m) => discovery.log.push(m), signal: discovery.abort!.signal });
         await db.put('cities', found.city);
         discovery.result = { city: citySummary(found.city), notes: found.notes };
@@ -235,10 +243,21 @@ export function createBackend(deps: BackendDeps) {
     saveDerived: (ds: Derived[]) => db.putMany('derived', ds),
   };
 
+  /** Una ciudad descubierta antes de que existiera un portal: se le pregunta
+   * a ese portal una vez, antes de buscar. */
+  async function completeCity(c: City, page: FetchPage | null, signal: AbortSignal): Promise<City> {
+    if (CITIES[c.city] || !page || Object.keys(SOURCES).every((id) => id in c.portals)) return c;
+    const done = await discoverMissing(c, { fetchPage: page, fetchDirect: (u, i) => (deps.fetchDirect ?? defaultFetchDirect)(u, i),
+      geocode: async () => null, log: () => {}, signal }).catch(() => c);
+    if (done !== c) await db.put('cities', done);
+    return done;
+  }
+
   async function pipelineDeps(signal: AbortSignal): Promise<Deps> {
     const n = await notifySettings();
+    const fetchPage = deps.fetchPage();
     return {
-      fetchPage: deps.fetchPage(), fetchDirect: deps.fetchDirect ?? defaultFetchDirect, store, city: await activeCity(),
+      fetchPage, fetchDirect: deps.fetchDirect ?? defaultFetchDirect, store, city: await completeCity(await activeCity(), fetchPage, signal),
       travel: await travel(), geocoder, ai: await ai().catch(() => null), aiCache, now,
       sleep, random: deps.random ?? Math.random, signal,
       notify: n.topic ? (items, kind) => notifyNew({ server: n.server, topic: n.topic, minScore: n.min_score },
@@ -323,7 +342,8 @@ export function createBackend(deps: BackendDeps) {
   // --- rutas --------------------------------------------------------------------
   type B = Record<string, any>;  // eslint-disable-line @typescript-eslint/no-explicit-any
   const routes: [string, RegExp, (m: string[], body: B, q: URLSearchParams) => Promise<unknown>][] = [
-    ['GET', /^\/api\/meta$/, async () => ({ statuses: STATUSES, sources: ROOM_SOURCES, flat_sources: FLAT_SOURCES, genders: GENDERS })],
+    ['GET', /^\/api\/meta$/, async () => ({ statuses: STATUSES, sources: roomSources(), flat_sources: flatSources(),
+      labels: Object.fromEntries(Object.values(SOURCES).map((x) => [x.name, x.label])), genders: GENDERS })],
     ['GET', /^\/api\/listings$/, async (_m, _b, q) => listListings((q.get('status') ?? '').split(',').filter(Boolean), q.get('group'))],
     ['GET', /^\/api\/listings\/([^/]+)$/, async ([id]) => detail(id)],
     // La ficha completa al abrir el anuncio, y la IA lo vuelve a leer.

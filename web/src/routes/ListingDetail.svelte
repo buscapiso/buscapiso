@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { SOURCES } from '../engine/sources';
   import { getActiveProfile, getListing, getRoutes, loadFull, setNote, setStatus, ApiError,
            type Destination, type ListingDetail, type Route, type Status } from '../lib/api';
   import MapView, { type MapRoute } from '../lib/components/MapView.svelte';
@@ -30,9 +31,9 @@
       l = await getListing(id);
       places = (await getActiveProfile()).destinations;
       note = l.note;
-      // Idealista solo da 320 caracteres en el listado: la ficha entera se lee
-      // al abrirla, y la IA vuelve a leer este anuncio.
-      if (l.portal === 'idealista' && l.detail_read === false) {
+      // Algunos portales (Idealista: 320 caracteres) cortan el listado: la
+      // ficha entera se lee al abrirla, y la IA vuelve a leer este anuncio.
+      if (SOURCES[l.portal]?.details === 'best' && l.detail_read === false) {
         loadingFull = true;
         loadFull(id).then((full) => { l = full; }).catch(() => {}).finally(() => { loadingFull = false; });
       }

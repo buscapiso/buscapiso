@@ -9,8 +9,10 @@
 // 3. Los listados NO traen coordenadas: se geocodifica la direccion del titulo.
 import { emptyListing, type Gender, type ListingType, type RawListing } from '../model';
 import type { City } from '../coverage';
-import { activeBudget, type SearchProfile } from '../profiles';
-import { getText, parseHtml, type Area, type Source } from './base';
+import { activeBudget } from '../budget';
+import type { SearchProfile } from '../profiles';
+import { sameName, withoutArticle } from '../cities/names';
+import { getText, pagedHtml, parseHtml, zonesNote, type Area, type Coverage, type DiscoverCtx } from './base';
 
 const BASE = 'https://www.idealista.com';
 
@@ -202,20 +204,73 @@ export function parseDetail(html: string): Partial<RawListing> {
   return d;
 }
 
-export const idealista: Source = {
+// --- Descubrir una ciudad ----------------------------------------------------
+/** Una zona hija o hermana: su nombre, su trozo de URL y cuantos anuncios tiene. */
+export interface PortalZone { name: string; path: string; count: number }
+
+export interface IdealistaPage {
+  /** La zona de la pagina, como la nombra la barra de migas. */
+  current: string;
+  /** Todos los enlaces de la barra de migas: 'granada-granada', 'granada/centro'... */
+  links: PortalZone[];
+}
+
+export function idealistaPage(html: string): IdealistaPage | null {
+  const doc = parseHtml(html);
+  const current = getText(doc.querySelector('.breadcrumb-navigation-current-level'));
+  if (!current) return null;
+  const links: PortalZone[] = [];
+  const seen = new Set<string>();
+  for (const a of doc.querySelectorAll('[class*="breadcrumb"] a[href^="/alquiler-"]')) {
+    const path = (a.getAttribute('href') ?? '').match(/^\/alquiler-(?:viviendas|habitacion)\/(.+?)\/$/)?.[1];
+    if (!path || /(^|\/)con-/.test(path) || seen.has(path)) continue;
+    seen.add(path);
+    const note = getText(a.parentElement?.querySelector(':scope > .breadcrumb-navigation-sidenote, :scope > .breadcrumb-navigation-element-info'));
+    links.push({ name: getText(a), path, count: Number(note.replace(/\./g, '')) || 0 });
+  }
+  return { current, links };
+}
+
+/** Los distritos de un municipio: 'granada-granada' -> 'granada/centro'. */
+export function idealistaDistricts(links: PortalZone[], municipality: string): PortalZone[] {
+  return links.filter((z) => {
+    const parts = z.path.split('/');
+    return parts.length === 2 && municipality.startsWith(`${parts[0]}-`);
+  });
+}
+
+/** 'granada-granada', 'hospitalet-de-llobregat-barcelona'. Solo Idealista
+ * abre pestaña al descubrir: sin ella, DataDome no deja ver nada. */
+async function discover(ctx: DiscoverCtx): Promise<Coverage | null> {
+  const prov = ctx.province.idealista;
+  const guesses = [...new Set(ctx.slugs.flatMap((s) => [`${s}-${prov}`, `${withoutArticle(s)}-${prov}`]))].slice(0, 3);
+  for (const g of guesses) {
+    const r = await ctx.page(`${BASE}/alquiler-viviendas/${g}/`, { tab: true });
+    const page = r && idealistaPage(r.html);
+    if (!page || !sameName(page.current, ctx.city.name)) continue;
+    const ds = idealistaDistricts(page.links, g);
+    return { ref: g, zones: ds.map((z) => ({ label: z.name, town: false, ref: z.path, count: z.count })), note: zonesNote(ds.length) };
+  }
+  return null;
+}
+
+export const idealista = pagedHtml({
   name: 'idealista',
+  label: 'Idealista',
   types: ['room', 'flat'],
-  pause: [3, 8],
-  blockedMarkers: ['geo.captcha-delivery.com', 'captcha-delivery'],
-  // Visto el 2026-10-09 tras resolver un captcha desde un navegador
-  // automatizado: "Se ha detectado un uso indebido. El acceso se ha
-  // bloqueado". En el iframe de DataDome, t=bv es veto y t=fe, captcha.
-  fatalMarkers: ['Se ha detectado un uso indebido', 'El acceso se ha bloqueado', '&t=bv&'],
-  minLength: 5000,
+  net: {
+    pause: [3, 8],
+    blockedMarkers: ['geo.captcha-delivery.com', 'captcha-delivery'],
+    // Visto el 2026-10-09 tras resolver un captcha desde un navegador
+    // automatizado: "Se ha detectado un uso indebido. El acceso se ha
+    // bloqueado". En el iframe de DataDome, t=bv es veto y t=fe, captcha.
+    fatalMarkers: ['Se ha detectado un uso indebido', 'El acceso se ha bloqueado', '&t=bv&'],
+    minLength: 5000,
+  },
   perArea: true,
   pageSize: 25,
   listUrl(area: Area | null, p: SearchProfile, page: number, city: City) {
-    const slug = area ? area.idealista : city.portals.idealista;
+    const slug = area ? area.portals.idealista : city.portals.idealista;
     if (!slug) return null;
     // Sin tope a mano, el del presupuesto: el alquiler solo nunca puede pasar
     // del total. Redondeado al escalon de 50 de idealista.
@@ -224,6 +279,9 @@ export const idealista: Source = {
     return buildUrl(slug, page, p.crawl.sort, filters, p.listing_type);
   },
   parseList,
+  // El listado corta la descripcion en 320 caracteres y no dice quien vive.
+  details: 'best',
   detailRequest: (l) => ({ url: l.url }),
   parseDetail,
-};
+  discover,
+});

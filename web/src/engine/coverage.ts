@@ -5,17 +5,6 @@ import type { Area } from './sources/base';
 import type { Destination } from './profiles';
 import type { Origin, Trip } from './travel';
 
-/** Donde busca cada portal la ciudad entera; null si no la tiene. */
-export interface CityPortals {
-  idealista: string | null;
-  fotocasa: string | null;
-  /** Con la provincia delante: 'granada-provincia/granada-capital'. */
-  habitaclia: string | null;
-  /** 'vizcaya/piso-compartido-bilbao'. */
-  roomgo: string | null;
-  /** El nombre que espera su buscador. */
-  depisoenpiso: string | null;
-}
 export interface City {
   city: string;
   name: string;
@@ -25,11 +14,25 @@ export interface City {
   box: [number, number, number, number];
   /** OpenStreetMap nombra las calles en catalan y los portales, en castellano. */
   catalanStreets: boolean;
-  portals: CityPortals;
+  /** Como llama cada portal a la ciudad entera; null si no la tiene. Lo
+   * escribe y lo lee solo la fuente de ese portal. */
+  portals: Record<string, string | null>;
   areas: Area[];
 }
+
+/** Las ciudades guardadas antes de las fuentes modulares llevaban un campo
+ * por portal en cada zona ('idealista', 'fotocasa', 'habitaclia'). */
+export function upgradeCity(c: City): City {
+  const areas = c.areas.map((a) => {
+    if (a.portals) return a;
+    const { name, lat, lon, ...portals } = a as unknown as Record<string, unknown>;
+    return { name, lat, lon, portals } as Area;
+  });
+  return { ...c, areas };
+}
+
 /** Las ciudades hechas a mano; las demas se descubren y se guardan. */
-export const CITIES: Record<string, City> = { barcelona: barcelona as City };
+export const CITIES: Record<string, City> = { barcelona: barcelona as unknown as City };
 
 // Un distrito mide kilometros: se mide desde su centro, pero su parte mas
 // cercana puede estar bastante mas cerca.

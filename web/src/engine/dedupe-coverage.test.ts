@@ -47,7 +47,7 @@ describe('selectAreas', () => {
   const trips = async (o: [number, number][], d: Destination) => o.map(([la, lo]) => estimateTrip(la, lo, d));
   it('has 19 areas with coordinates and portal slugs', () => {
     expect(areas).toHaveLength(19);
-    expect(areas.every((z) => z.lat && z.lon && z.fotocasa && z.habitaclia)).toBe(true);
+    expect(areas.every((z) => z.lat && z.lon && z.portals.fotocasa && z.portals.habitaclia)).toBe(true);
   });
   it('crawls everything without limits', async () => expect(await selectAreas(areas, [work(null)], trips)).toHaveLength(19));
   it('narrows with a short limit, widens with a long one, sorted by slack', async () => {

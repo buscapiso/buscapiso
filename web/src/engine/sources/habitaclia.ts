@@ -5,7 +5,9 @@
 import { emptyListing, type RawListing } from '../model';
 import type { City } from '../coverage';
 import type { SearchProfile } from '../profiles';
-import { surface, type Area, type Source } from './base';
+import { sameName, slug } from '../cities/names';
+import { pagedHtml, surface, zonesNote, type Area, type Coverage, type DiscoverCtx } from './base';
+import type { FotocasaFacts } from './fotocasa';
 
 const BASE = 'https://www.habitaclia.com';
 const MARK = '__INITIAL_PROPS__ = JSON.parse(';
@@ -106,17 +108,107 @@ export function parseList(html: string, now = new Date()): RawListing[] {
   return items.map((it) => toListing(it, now)).filter((l): l is RawListing => l !== null);
 }
 
-export const habitaclia: Source = {
+// --- Descubrir una ciudad ----------------------------------------------------
+/** Una zona hija o hermana: su nombre, su trozo de URL y cuantos anuncios tiene. */
+export interface PortalZone { name: string; path: string; count: number }
+
+export interface HabitacliaPage {
+  name: string;
+  /** Como se llama a si misma: 'bizkaia-provincia/bilbao'. */
+  path: string;
+  /** 'province', 'region', 'municipality'... */
+  layer: string;
+  code: string;
+  lat: number | null;
+  lon: number | null;
+  /** Zonas de dentro (distritos de un municipio) y vecinas del mismo nivel. */
+  sons: PortalZone[];
+  same: PortalZone[];
+}
+
+export function habitacliaPage(html: string): HabitacliaPage | null {
+  const c = props(html)?.initialSearchResultsPage?.initialSearchContext;
+  const g = c?.geography;
+  if (!g) return null;
+  const section = (type: string): PortalZone[] => ((c.internalLinks?.sections ?? []) as Json[])
+    .filter((s) => s.type === type).flatMap((s) => s.items ?? [])
+    .map((it: Json) => ({ name: String(it.locationLabel ?? ''), count: Number(it.count ?? 0),
+      path: String(it.href ?? '').match(/^\/alquiler\/viviendas\/(.+)\/s$/)?.[1] ?? '' }))
+    .filter((z: PortalZone) => z.name && z.path);
+  const slug = String(g.slug ?? ''), parent = String(g.parentSlug ?? '');
+  return { name: String(g.name ?? ''), path: parent && parent !== slug ? `${parent}/${slug}` : slug,
+    layer: String(g.layer ?? ''), code: String(g.code ?? ''),
+    lat: Number(g.latitude) || null, lon: Number(g.longitude) || null,
+    sons: section('GEOGRAPHY_SONS'), same: section('GEOGRAPHY_SAME_LEVEL') };
+}
+
+/** Pueblos de alrededor como mucho, y comarcas que se miran al buscar el
+ * municipio desde la provincia. */
+const NEIGHBOURS = 12;
+const COMARCAS = 8;
+
+/** El municipio con la provincia delante: 'granada-provincia/granada-capital'.
+ * Primero lo que dicta la regla (con el trozo de Fotocasa si lo encontro); si
+ * no, se baja por el arbol: provincia -> comarcas -> municipios. */
+async function discover(ctx: DiscoverCtx): Promise<Coverage | null> {
+  const foto = ctx.facts.fotocasa as FotocasaFacts | undefined;
+  const prov = ctx.province;
+  const provSlugs = [...new Set([prov.name, ...prov.aliases, prov.idealista].map((p) => `${slug(p)}-provincia`))];
+  const read = async (path: string) => {
+    const r = await ctx.page(`https://www.habitaclia.com/alquiler/viviendas/${path}/s`);
+    return r && habitacliaPage(r.html);
+  };
+  const isTheCity = (p: HabitacliaPage | null): p is HabitacliaPage => !!p && p.layer === 'municipality'
+    && (foto ? p.code === foto.ine : sameName(p.name, ctx.city.name));
+  let hab: { path: string; page: HabitacliaPage } | null = null;
+  const muniGuesses = foto ? [foto.slug] : ctx.slugs.flatMap((s) => [`${s}-capital`, s]);
+  for (const p of provSlugs) {
+    for (const m of muniGuesses) {
+      if (hab) break;
+      const page = await read(`${p}/${m}`);
+      if (isTheCity(page)) hab = { path: page.path || `${p}/${m}`, page };
+    }
+  }
+  for (const p of hab ? [] : provSlugs) {
+    const top = await read(p);
+    if (!top || top.layer !== 'province') continue;
+    for (const comarca of [...top.sons].sort((a, b) => b.count - a.count).slice(0, COMARCAS)) {
+      if (hab) break;
+      const son = (await read(comarca.path))?.sons.find((z) => sameName(z.name, ctx.city.name));
+      if (!son) continue;
+      const page = await read(son.path);
+      if (isTheCity(page)) hab = { path: page.path || son.path, page };
+    }
+    if (hab) break;
+  }
+  if (!hab) return null;
+  ctx.facts.habitaclia = { path: hab.path };
+  const depth = hab.path.split('/').length + 1;
+  const districts = hab.page.sons.filter((z) => z.path.split('/').length === depth);
+  const towns = [...hab.page.same].sort((a, b) => b.count - a.count).slice(0, NEIGHBOURS)
+    .filter((z) => !sameName(z.name, ctx.city.name));
+  return {
+    ref: hab.path,
+    note: zonesNote(districts.length),
+    zones: [...districts.map((z) => ({ label: z.name, town: false, ref: z.path, count: z.count })),
+      ...towns.map((z) => ({ label: z.name, town: true, ref: z.path, count: z.count }))],
+  };
+}
+
+export const habitaclia = pagedHtml({
   name: 'habitaclia',
+  label: 'Habitaclia',
   types: ['flat'],
-  pause: [3, 6],
-  blockedMarkers: ['captcha-delivery'],
-  readyMarkers: [MARK],
-  minLength: 5000,
+  net: {
+    pause: [3, 6],
+    blockedMarkers: ['captcha-delivery'],
+    readyMarkers: [MARK],
+    minLength: 5000,
+  },
   perArea: true,
   pageSize: 1,
   listUrl(area: Area | null, p: SearchProfile, page: number, city: City) {
-    const zone = area ? area.habitaclia : city.portals.habitaclia;
+    const zone = area ? area.portals.habitaclia : city.portals.habitaclia;
     if (!zone) return null;
     return buildUrl(zone, page, {
       maxPrice: p.flat.max_rent,
@@ -127,4 +219,5 @@ export const habitaclia: Source = {
   },
   parseList: (html) => parseList(html),
   totalPages,
-};
+  discover,
+});

@@ -20,62 +20,73 @@ línea en el registro. Nada más del motor ni de la interfaz cambia.
 
 ```ts
 interface Source {
-  id: string; label: string; types: ListingType[];
-  hosts: string[];              // lo que la extensión debe poder leer
+  name: string; label: string; types: ListingType[];
   net: NetRules;                // pausa, marcas de bloqueo y de veto, minLength, direct
-  discover(c: CityCandidate, ctx: DiscoverCtx): Promise<Coverage | null>;
   search(q: SearchQuery, net: Net): AsyncIterable<Batch>;
+  planned?(q: SearchQuery): number;
   detail?(l: RawListing, net: Net): Promise<Partial<RawListing>>;
   details?: 'all' | 'best';     // 'all': sin la ficha el anuncio no sirve
+  discover?(ctx: DiscoverCtx): Promise<Coverage | null>;
+  retryDiscover?: boolean;      // segunda vuelta con lo que dejaron las demas
+  fillZone?(zone): string | null;
 }
 ```
 
 - `search` decide cómo pedir, cuándo pasar de página y cuándo parar. Entrega
   lotes (`{ listings, label }`) que el pipeline deduplica, cuenta y enseña.
-- `Net` envuelve la extensión, o `fetch` directo si el portal admite CORS.
-  Aplica las `NetRules` de la fuente (pausa entre peticiones, bloqueo, veto) y
-  lanza `Blocked`, `Banned`, `Cancelled` o `NoExtension`. El pipeline los trata
-  en un solo sitio, con los mismos avisos que ahora.
-- Dos ayudas cubren los casos comunes: `pagedHtml({ listUrl, parseList,
-  pageSize, totalPages?, shouldStop? })` reproduce el bucle actual y
-  `embeddedJson` lee el JSON que la página lleva dentro. Las cinco fuentes
-  actuales pasan a `pagedHtml` sin cambiar sus parsers.
-- El registro (`SOURCES`, en orden) es la única lista de portales. Las listas
-  de habitaciones y pisos, la barra de criterios y los ajustes salen de `types`.
+- `Net` (`engine/net.ts`) envuelve la extensión, o `fetch` directo si el
+  portal o una petición concreta admite CORS. Aplica las `NetRules` de la
+  fuente (pausa entre peticiones, bloqueo, veto) y lanza `NetError` con el
+  motivo. El pipeline lo trata en un solo sitio, con los mismos avisos que
+  antes, más uno para una extensión antigua (`not-allowed`).
+- `pagedHtml({ listUrl, parseList, pageSize, ... })` reproduce el bucle de
+  páginas de siempre. Las cinco fuentes de antes lo usan sin cambiar sus
+  parsers; las nuevas escriben su propio `search`.
+- El registro (`sources/index.ts`) es la única lista de portales. Las listas
+  de habitaciones y pisos, la barra de criterios, los ajustes y la ficha
+  salen de ahí.
+- Los ajustes propios de un portal que ya existían (filtros de Idealista,
+  orden de Fotocasa) se quedan en el perfil, como estaban.
 
 ## Ciudades y zonas
 
-`City.portals` pasa a `City.sources: Record<id, unknown>` y cada zona lleva
-`refs: Record<id, unknown>` en vez de un campo por portal. Lo que hay dentro
-solo lo lee la fuente que lo escribió.
+`City.portals` sigue siendo un mapa por portal, ahora `Record<id, string |
+null>`, y cada zona lleva `portals` en vez de un campo por portal. Lo que hay
+dentro solo lo lee la fuente que lo escribió.
 
-`discover` de cada fuente devuelve `{ city, zones }`, donde cada zona es
-`{ label, town, ref, count }`. Las fuentes se descubren en el orden del
-registro y cada una recibe los *hechos* que dejaron las anteriores
-(`ctx.facts`): Habitaclia usa el código INE y el trozo de URL de Fotocasa.
-`cities/discover.ts` se queda con lo común: juntar zonas por nombre,
-situarlas en el mapa, la caja y las notas por portal.
+`discover` de cada fuente devuelve `{ ref, zones?, note? }`, donde cada zona
+es `{ label, town, ref, count }`. Las fuentes se descubren en el orden del
+registro (Fotocasa, Habitaclia, Idealista...) y cada una recibe los *hechos*
+que dejaron las anteriores (`ctx.facts`): Habitaclia usa el código INE y el
+trozo de URL de Fotocasa. Fotocasa vuelve a probar al final con el trozo de
+Habitaclia (`retryDiscover`) y nombra los pueblos que encontró Habitaclia
+(`fillZone`). `cities/discover.ts` se queda con lo común: juntar zonas por
+nombre, situarlas en el mapa, la caja y las notas por portal.
 
-Las ciudades guardadas (`barcelona.json` y las descubiertas, en IndexedDB) se
-convierten al leerlas: `portals.X` pasa a `sources.X` y `area.X` a
-`area.refs.X`. Los anuncios guardados no cambian: `source` sigue siendo el id.
+Las ciudades descubiertas antes se convierten al leerlas (`upgradeCity`) y,
+antes de la primera búsqueda, se pregunta solo a los portales que no
+conocían (`discoverMissing`). `barcelona.json` se convirtió a mano. Los
+anuncios guardados no cambian: `source` sigue siendo el id.
+
+Los perfiles recuerdan qué portales existían (`known_sources`): uno nuevo se
+añade encendido una vez, y uno que la persona apaga sigue apagado.
 
 ## Portales nuevos
 
 | Portal | Qué tiene | Cómo se lee |
 |---|---|---|
-| pisos.com | habitaciones y pisos | HTML paginado (`ad-preview`), sin antibots |
-| HousingAnywhere | habitaciones y pisos a medio plazo | JSON incrustado (`__CACHED_DATA__`) o su API de búsqueda |
-| Spotahome | habitaciones y pisos a medio plazo | JSON incrustado de React Router |
-| Badi | habitaciones | API JSON (`api.badiapp.com`) |
+| pisos.com | habitaciones y pisos | HTML paginado (`ad-preview`), directo: admite CORS |
+| HousingAnywhere | habitaciones y pisos a medio plazo | la clave pública de Algolia sale de su página (extensión); Algolia, directo |
+| Spotahome | habitaciones y pisos a medio plazo | API pública: puntos del mapa y fichas de 40 en 40 (extensión) |
+| Badi | habitaciones y algún piso | token de invitado de badi.com; su API por la extensión, zona a zona: sin cuenta da dos páginas por búsqueda |
 
-HousingAnywhere y Spotahome rellenan `minStayMonths` y `availableFrom`, que el
-perfil ya filtra (`move_in`, `stay_months`). Badi se empieza con una prueba en
-un navegador real para encontrar su búsqueda; si exige iniciar sesión, se
-para y se pregunta.
+Ninguno exige iniciar sesión. HousingAnywhere y Spotahome rellenan
+`minStayMonths` y `availableFrom`, que el perfil ya filtra; HousingAnywhere
+dice además si se puede empadronar y si el piso es solo de chicas o chicos.
 
-Los dominios nuevos van a `host_permissions` de la extensión, que necesita una
-versión nueva (zip de Chrome y xpi firmado de Firefox).
+Los dominios nuevos van a `host_permissions` de la extensión, versión 1.1.0.
+Las peticiones a APIs (con método, cabeceras o cuerpo) salen sin las cookies
+de la persona: un POST con su sesión podría actuar en su cuenta.
 
 ## Errores
 
@@ -90,8 +101,9 @@ de bloqueo devuelve un lote vacío; el aviso "0 listings" sale igual que hoy.
 - Cada portal nuevo tiene una página de ejemplo en `__fixtures__` y su test de
   parser.
 - Un test de contrato recorre el registro: cada fuente entrega anuncios con
-  `source === id`, URL, y precio o null, y declara sus `hosts`.
-- Un test de la conversión de ciudades guardadas al formato nuevo.
+  `source === id`, URL, y precio o null.
+- Tests de la conversión de ciudades guardadas y de los perfiles guardados.
+- Una prueba en vivo desde Node (no queda en el repo) con Barcelona y Granada.
 
 ## Fuera de alcance
 

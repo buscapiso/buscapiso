@@ -9,7 +9,8 @@
 import { emptyListing, type ListingType, type RawListing } from '../model';
 import type { City } from '../coverage';
 import type { SearchProfile } from '../profiles';
-import { inferGender, surface, type Area, type Source } from './base';
+import { sameName } from '../cities/names';
+import { inferGender, pagedHtml, surface, zonesNote, type Area, type Coverage, type DiscoverCtx } from './base';
 
 const BASE = 'https://www.fotocasa.es';
 const SORTS: Record<string, string> = {
@@ -122,17 +123,87 @@ export function parseList(html: string): RawListing[] {
   return (raws ?? []).map((r) => toListing(r as Json)).filter((l): l is RawListing => l !== null);
 }
 
-export const fotocasa: Source = {
+// --- Descubrir una ciudad ----------------------------------------------------
+// combinedLocation tiene nueve niveles: pais, comunidad, provincia, comarca,
+// subcomarca, municipio (codigo INE), -, distrito, barrio. "0" es vacio.
+const MUNI = 5, DISTRICT = 7, HOOD = 8, COMARCA = 3;
+
+/** Una zona hija o hermana: su nombre, su trozo de URL y cuantos anuncios tiene. */
+export interface PortalZone { name: string; path: string; count: number }
+
+export interface FotocasaPage {
+  /** 'Granada' en la pagina del municipio. */
+  name: string;
+  level: string;
+  ine: string;
+  ids: string[];
+  municipalities: PortalZone[];
+  districts: PortalZone[];
+  comarcas: (PortalZone & { ids: string[] })[];
+}
+
+export function fotocasaPage(html: string): FotocasaPage | null {
+  const h = html.replace(/\\"/g, '"');
+  const ids = h.match(/"combinedLocationIds":"([\d,]+)"/)?.[1]?.split(',');
+  if (!ids || ids.length < 9) return null;
+  const items = new Map<string, { ids: string[]; count: number; name: string; path: string }>();
+  for (const m of h.matchAll(/\{"combinedLocation":"([\d,]+)","counter":(\d+),"literal":"([^"]+)","segments":"([^"]+)"/g)) {
+    if (!items.has(m[4])) items.set(m[4], { ids: m[1].split(','), count: Number(m[2]), name: m[3].trim(), path: m[4] });
+  }
+  const all = [...items.values()];
+  const zone = ({ name, path, count }: PortalZone) => ({ name, path, count });
+  return {
+    name: (h.match(/"locationLiteral":"([^"]*)"/)?.[1] ?? '').trim(),
+    level: h.match(/"level":"([A-Z_]+)","locationCode"/)?.[1] ?? '',
+    ine: ids[MUNI] !== '0' ? ids[MUNI] : '',
+    ids,
+    municipalities: all.filter((x) => x.ids[MUNI] !== '0' && x.ids[DISTRICT] === '0').map(zone),
+    districts: all.filter((x) => x.ids[MUNI] === ids[MUNI] && x.ids[MUNI] !== '0' && x.ids[DISTRICT] !== '0' && x.ids[HOOD] === '0')
+      .map(zone),
+    comarcas: all.filter((x) => x.ids[COMARCA] !== '0' && x.ids[MUNI] === '0').map((x) => ({ ...zone(x), ids: x.ids })),
+  };
+}
+
+/** Lo que Fotocasa deja a las demas fuentes al descubrir. */
+export interface FotocasaFacts { slug: string; ine: string }
+
+/** 'granada-capital' o 'armilla'. Si no acierta, en la segunda vuelta prueba
+ * el trozo que encontro Habitaclia: son la misma empresa y lo comparten. */
+async function discover(ctx: DiscoverCtx): Promise<Coverage | null> {
+  const at = async (muni: string) => {
+    const r = await ctx.page(`https://www.fotocasa.es/es/alquiler/viviendas/${muni}/todas-las-zonas/l`);
+    const page = r && fotocasaPage(r.html);
+    return page && page.level === 'MUNICIPALITY' && sameName(page.name, ctx.city.name) ? { slug: muni, page } : null;
+  };
+  let foto: { slug: string; page: FotocasaPage } | null = null;
+  if (ctx.retry) {
+    const hab = ctx.facts.habitaclia as { path: string } | undefined;
+    if (hab) foto = await at(hab.path.split('/').at(-1)!);
+  } else {
+    for (const s of ctx.slugs) {
+      for (const g of [`${s}-capital`, s]) if (!foto) foto = await at(g);
+    }
+  }
+  if (!foto) return null;
+  ctx.facts.fotocasa = { slug: foto.slug, ine: foto.page.ine } satisfies FotocasaFacts;
+  return { ref: `${foto.slug}/todas-las-zonas`, note: zonesNote(foto.page.districts.length),
+    zones: foto.page.districts.map((z) => ({ label: z.name, town: false, ref: z.path, count: z.count })) };
+}
+
+export const fotocasa = pagedHtml({
   name: 'fotocasa',
+  label: 'Fotocasa',
   types: ['room', 'flat'],
-  pause: [3, 7],
-  blockedMarkers: ['captcha-delivery', 'Please enable JS'],
-  readyMarkers: ['"realEstates"'],
-  minLength: 20000,
+  net: {
+    pause: [3, 7],
+    blockedMarkers: ['captcha-delivery', 'Please enable JS'],
+    readyMarkers: ['"realEstates"'],
+    minLength: 20000,
+  },
   perArea: true,
   pageSize: 1,
   listUrl(area: Area | null, p: SearchProfile, page: number, city: City) {
-    const zone = area ? area.fotocasa : city.portals.fotocasa;
+    const zone = area ? area.portals.fotocasa : city.portals.fotocasa;
     return zone ? buildUrl(zone, page, p.crawl.fotocasa_sort, p.listing_type) : null;
   },
   parseList: (html, type) => parseList(html).filter((l) => l.type === type),
@@ -144,4 +215,8 @@ export const fotocasa: Source = {
     const prices = batch.map((l) => l.price).filter((x): x is number => !!x);
     return prices.length > 0 && Math.min(...prices) > ceiling;
   },
-};
+  discover,
+  retryDiscover: true,
+  // Los pueblos de alrededor los encuentra Habitaclia; Fotocasa usa el mismo trozo.
+  fillZone: (z) => (z.town && z.portals.habitaclia ? `${z.portals.habitaclia.split('/').at(-1)}/todas-las-zonas` : null),
+});

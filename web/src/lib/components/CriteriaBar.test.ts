@@ -87,6 +87,8 @@ test('a flat profile edits the flat rent, size and flat portals', async () => {
   expect(saved.flat.elevator_required).toBe(true);
 
   await userEvent.click(screen.getByRole('button', { name: '2 portals' }));
-  expect(screen.getByLabelText('habitaclia')).toBeChecked();
-  expect(screen.queryByLabelText('idealista')).toBeNull();
+  expect(screen.getByLabelText('Habitaclia')).toBeChecked();
+  // Los portales salen del registro: cada uno con su nombre y solo si tiene pisos.
+  expect(screen.getByLabelText('Idealista')).toBeInTheDocument();
+  expect(screen.queryByLabelText('Roomgo')).toBeNull();
 });

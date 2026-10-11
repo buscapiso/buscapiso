@@ -1,3 +1,4 @@
+import { SOURCES } from './sources';
 import { describe, expect, it } from 'vitest';
 import { listingFacts, type AICache, type ListingFacts } from './ai/extract';
 import { AIError, ClaudeProvider, type AIProvider } from './ai/providers';
@@ -58,8 +59,10 @@ function deps(over: Partial<Deps> = {}) {
   return { d, mem };
 }
 const collect = () => { const events: SearchEvent[] = []; return { events, emit: (kind: SearchEvent['kind'], message: string, data = {}) => { events.push({ kind, message, data }); } }; };
+// Los portales con fixtures de pagina entera; los nuevos tienen sus pruebas en sources/.
 const profile = (o = {}) => parseProfile({ name: 'T', household: { gender: 'any', no_live_in_owner: false }, budget: { ideal_total: 500, max_total: 900 },
-  crawl: { max_pages: 2, details_to_read: 3 }, ...o });
+  crawl: { max_pages: 2, details_to_read: 3 }, sources: ['idealista', 'fotocasa', 'roomgo', 'depisoenpiso'],
+  flat_sources: ['idealista', 'fotocasa', 'habitaclia'], known_sources: Object.keys(SOURCES), ...o });
 
 describe('runSearch', () => {
   it('crawls every portal, stores raw listings, scores them and reports', async () => {

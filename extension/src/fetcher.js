@@ -7,6 +7,18 @@ import { allowedUrl, isBlocked } from './protocol.js';
  * @param {object} api  fetch, tabs {create, update, get, remove}, scripting {executeScript}, sleep
  * @param {string[]} extraHosts  hosts de desarrollo (localhost) permitidos
  */
+/** Solo metodo, cabeceras y cuerpo de texto: nada que cambie a donde va la peticion. */
+export function pickInit(init) {
+  if (!init || typeof init !== 'object') return {};
+  const out = {};
+  if (init.method === 'GET' || init.method === 'POST') out.method = init.method;
+  if (init.headers && typeof init.headers === 'object') {
+    out.headers = Object.fromEntries(Object.entries(init.headers).filter(([k, v]) => typeof k === 'string' && typeof v === 'string'));
+  }
+  if (typeof init.body === 'string') out.body = init.body;
+  return out;
+}
+
 export function createFetcher(api, extraHosts = []) {
   const workTabs = new Map();     // portal -> id de pestaña
   const tabMode = new Set();      // portales que ya necesitaron pestaña
@@ -16,9 +28,12 @@ export function createFetcher(api, extraHosts = []) {
   const BANNED = { ok: false, reason: 'banned' };
 
   /** La pagina, BANNED si el portal ha vetado la conexion, o null para probar en pestaña. */
-  async function viaFetch(url, markers, fatal) {
+  async function viaFetch(url, markers, fatal, init) {
     try {
-      const r = await api.fetch(url, { credentials: 'include' });
+      // Las paginas, con las cookies de la persona, como si navegase. Las APIs
+      // (con `init`: metodo, cabeceras, cuerpo) sin ellas: un POST con su
+      // sesion podria actuar en su cuenta del portal.
+      const r = await api.fetch(url, init ? { credentials: 'omit', ...pickInit(init) } : { credentials: 'include' });
       const html = await r.text();
       if (isBlocked(html, fatal)) return BANNED;
       if (r.ok && !isBlocked(html, markers)) return { ok: true, html, finalUrl: r.url || url, via: 'fetch' };
@@ -81,7 +96,7 @@ export function createFetcher(api, extraHosts = []) {
       if (!allowedUrl(req.url, extraHosts)) return { ok: false, reason: 'not-allowed' };
       const markers = req.blockedMarkers || [];
       if (!tabMode.has(req.portal) || retryFetch.has(req.portal)) {
-        const r = await viaFetch(req.url, markers, req.fatalMarkers || []);
+        const r = await viaFetch(req.url, markers, req.fatalMarkers || [], req.init);
         if (retryFetch.delete(req.portal) && r) tabMode.delete(req.portal);
         if (r) return r;
       }

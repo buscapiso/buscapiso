@@ -1,12 +1,12 @@
 # buscapiso
 
-buscapiso looks for rooms and whole flats to rent in Barcelona, works out how long it takes to get from each one to the places you go often, and ranks the results so the best ones come first. Rooms come from Idealista, Fotocasa, Roomgo and De Piso en Piso, and whole flats from Idealista, Fotocasa and Habitaclia. You mark the listings you like, write notes, track who you have contacted, and get a phone notification when a good new one appears.
+buscapiso looks for rooms and whole flats to rent in Barcelona, works out how long it takes to get from each one to the places you go often, and ranks the results so the best ones come first. Rooms come from Idealista, Fotocasa, Roomgo, De Piso en Piso, pisos.com, Badi, HousingAnywhere and Spotahome, and whole flats from Idealista, Fotocasa, Habitaclia, pisos.com, Badi, HousingAnywhere and Spotahome. You mark the listings you like, write notes, track who you have contacted, and get a phone notification when a good new one appears.
 
 It is a website: open **https://buscapiso.github.io/buscapiso/**. There is nothing to install apart from a small browser extension on the computer you search from. Your listings, notes and keys stay in your browser; buscapiso has no server.
 
 ## The browser extension
 
-A website can't read other websites, so buscapiso uses a small extension to read the rental portals from your own browser, the same way you would browse them. It only reads Idealista, Fotocasa, Habitaclia, Roomgo and De Piso en Piso, and only when you press Search. It isn't in the browser stores; you install it from this repository.
+A website can't read other websites, so buscapiso uses a small extension to read the rental portals from your own browser, the same way you would browse them. It only reads Idealista, Fotocasa, Habitaclia, Roomgo, De Piso en Piso, pisos.com, Badi, HousingAnywhere and Spotahome, and only when you press Search. Version 1.1.0 added the last four; with an older version buscapiso skips them and tells you to update. It isn't in the browser stores; you install it from this repository.
 
 **Chrome, Edge, Brave, Vivaldi or Opera**
 

@@ -3,7 +3,10 @@ import type { FetchPage } from '../model';
 import { cityKey, discoverCity, DiscoveryError } from './discover';
 import { fixture } from '../testing';
 import { norm, province, provinceOfAddress, sameName, slug, variants, withoutArticle } from './names';
-import { fotocasaPage, habitacliaPage, idealistaDistricts, idealistaPage, roomgoHasCity } from './portals';
+import { fotocasaPage } from '../sources/fotocasa';
+import { habitacliaPage } from '../sources/habitaclia';
+import { idealistaDistricts, idealistaPage } from '../sources/idealista';
+import { roomgoHasCity } from '../sources/roomgo';
 
 describe('place names', () => {
   it('compare names the way portals write them', () => {
@@ -90,9 +93,10 @@ describe('discovering a city', () => {
       portals: { idealista: null, fotocasa: 'granada-capital/todas-las-zonas', habitaclia: 'granada-provincia/granada-capital',
         roomgo: 'granada/piso-compartido-granada', depisoenpiso: null } });
     const centro = city.areas.find((a) => a.name === 'Centro, Granada');
-    expect(centro).toMatchObject({ fotocasa: 'granada-capital/centro', habitaclia: 'granada-provincia/granada-capital/centro' });
+    expect(centro?.portals).toMatchObject({ fotocasa: 'granada-capital/centro', habitaclia: 'granada-provincia/granada-capital/centro' });
     const armilla = city.areas.find((a) => a.name === 'Armilla');
-    expect(armilla).toMatchObject({ fotocasa: 'armilla/todas-las-zonas', habitaclia: 'granada-provincia/armilla', idealista: null });
+    expect(armilla?.portals).toMatchObject({ fotocasa: 'armilla/todas-las-zonas', habitaclia: 'granada-provincia/armilla' });
+    expect(armilla?.portals.idealista ?? null).toBeNull();
     expect(city.areas.some((a) => a.name === 'Sierra Nevada')).toBe(false);
     expect(notes.find((n) => n.portal === 'roomgo')).toMatchObject({ found: true });
     expect(notes.find((n) => n.portal === 'idealista')).toMatchObject({ found: false });
