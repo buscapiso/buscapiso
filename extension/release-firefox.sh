@@ -11,9 +11,11 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+# El repo publico: con dos remotos (origin y private), gh no sabe cual usar.
+repo=buscapiso/buscapiso
 version=$(node -e "import('./extension/src/protocol.js').then((m) => console.log(m.VERSION))")
 tag="ext-v$version"
-gh release view "$tag" >/dev/null || { echo "No existe la release $tag: etiqueta y sube el tag primero."; exit 1; }
+gh release view "$tag" -R "$repo" >/dev/null || { echo "No existe la release $tag: etiqueta y sube el tag primero."; exit 1; }
 
 if [ -z "${WEB_EXT_API_KEY:-}" ]; then read -rp 'JWT issuer (user:...): ' WEB_EXT_API_KEY; fi
 if [ -z "${WEB_EXT_API_SECRET:-}" ]; then read -rsp 'JWT secret: ' WEB_EXT_API_SECRET; echo; fi
@@ -23,6 +25,6 @@ node extension/build.mjs
 out=$(mktemp -d)
 npx --yes web-ext@8 sign --source-dir extension/dist/firefox --channel unlisted --artifacts-dir "$out"
 cp "$out"/*.xpi "$out/buscapiso-firefox.xpi"
-gh release upload "$tag" "$out/buscapiso-firefox.xpi" --clobber
-gh release edit "$tag" --latest
+gh release upload "$tag" "$out/buscapiso-firefox.xpi" --clobber -R "$repo"
+gh release edit "$tag" --latest -R "$repo"
 echo "Listo: $tag lleva buscapiso-firefox.xpi firmado y es la release 'latest'."
