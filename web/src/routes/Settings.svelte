@@ -21,6 +21,7 @@
     <h1>{t(`settings.${section}`)}</h1>
     {#key section}
       {#if section === 'search'}
+        <p class="again"><a href={href({ name: 'welcome' })}>{t('wizard.again')}</a></p>
         <Profile part="basics" />
       {:else if section === 'places'}
         <Profile part="places" />
@@ -57,4 +58,5 @@
     nav { border-top: 0; padding-top: 0; border-bottom: 1px solid var(--ink); }
     nav a { white-space: nowrap; border: 0; padding: 6px 12px 6px 0; font-size: 16px; }
   }
+  .again { margin: -6px 0 12px; font-size: 14px; }
 </style>

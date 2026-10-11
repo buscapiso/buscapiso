@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { getWelcome } from '../lib/api';
+  import { onMount } from 'svelte';
   import { getActiveProfile, listListings, saveProfile, setStatus, ApiError,
            type Listing, type SearchProfile, type Status } from '../lib/api';
   import BoardView from '../lib/components/BoardView.svelte';
@@ -77,6 +79,8 @@
   }
 
   $effect(() => { load(); });
+  // Quien llega por primera vez empieza por los pasos de bienvenida.
+  onMount(() => { getWelcome().then((w) => { if (w?.show) location.hash = '#/welcome'; }).catch(() => {}); });
 </script>
 
 <ExtensionBanner />
@@ -133,6 +137,7 @@
   <section class="welcome">
     <h2>{t('welcome.title')}</h2>
     <p>{t('welcome.intro')}</p>
+    <p><a class="button primary" href={href({ name: 'welcome' })}>{t('welcome.stepByStep')}</a></p>
     <ol>
       <li><a href={href({ name: 'settings', section: 'places' })}>{t('welcome.places')}</a>
         <small>{t('welcome.placesHelp')}</small></li>

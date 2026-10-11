@@ -118,8 +118,11 @@
   let names = $state<string[]>([]);
   let center = $state<[number, number]>([41.3874, 2.1686]);
   // Que parte del perfil se edita: Settings la parte en secciones.
-  let { part = 'all' }: { part?: 'all' | 'basics' | 'places' | 'zones' } = $props();
-  const show = (x: 'basics' | 'places' | 'zones') => part === 'all' || part === x;
+  // `needs`: lo de basics que importa al empezar (sin ciudad, perfiles ni portales).
+  // `embedded`: dentro de la bienvenida, que guarda con su boton "Next".
+  let { part = 'all', embedded = false }: { part?: 'all' | 'basics' | 'places' | 'zones' | 'needs'; embedded?: boolean } = $props();
+  const show = (x: 'basics' | 'places' | 'zones') => part === 'all' || part === x || (part === 'needs' && x === 'basics');
+  const full = $derived(part !== 'needs');
 
 
   async function load() {
@@ -131,15 +134,18 @@
     if (show('zones')) names = (await getNeighbourhoods().catch(() => ({ names: [] }))).names;
   }
 
-  async function save() {
-    if (!p) return;
+  /** Guarda el perfil; false si hay errores (se enseñan junto a cada campo). */
+  export async function save(): Promise<boolean> {
+    if (!p) return false;
     errors = {};
     try {
       p = await saveProfile($state.snapshot(p));
       saved = true;
       setTimeout(() => (saved = false), 1500);
+      return true;
     } catch (e) {
       errors = e instanceof ApiError ? fieldErrors(e.detail) : { '': String(e) };
+      return false;
     }
   }
 
@@ -181,12 +187,12 @@
 {#if p && meta}
   {#if part === 'all'}<h1>{t('profile.title')}</h1>{/if}
   {#if show('basics')}
-  <CityPicker onchange={() => load()} />
+  {#if full}<CityPicker onchange={() => load()} />{/if}
   <DescribeProfile bind:text={p.description} onapply={applySuggestion} />
   {#if notice}<p class="notice" role="status">{notice}</p>{/if}
   {/if}
 
-  {#if show('basics')}
+  {#if show('basics') && full}
   <div class="profiles">
     <label>{t('profile.active')}
       <select value={p.name} onchange={(e) => switchTo((e.currentTarget as HTMLSelectElement).value)}>
@@ -213,6 +219,7 @@
     {/each}
   </fieldset>
 
+  {#if full}
   <fieldset>
     <legend>{t('profile.sources')}</legend>
     {#each flat ? meta.flat_sources : meta.sources as s}
@@ -223,6 +230,7 @@
     {#if err(sourceKey)}<p class="error">{err(sourceKey)}</p>{/if}
     {#each under(sourceKey) as m}<p class="error">{m}</p>{/each}
   </fieldset>
+  {/if}
   {/if}
 
   {#if show('basics') && flat}
@@ -424,10 +432,12 @@
   </details>
   {/if}
 
+  {#if !embedded}
   <div class="save">
     <button class="primary" onclick={save}>{t('profile.save')}</button>
     {#if saved}<span class="ok">{t('profile.saved')}</span>{/if}
   </div>
+  {/if}
 
 {/if}
 

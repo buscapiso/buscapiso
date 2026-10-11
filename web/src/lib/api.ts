@@ -207,6 +207,8 @@ export interface RouteTest {
 }
 export interface Place { name: string; lat: number; lon: number }
 
+export const getWelcome = () => call<{ show: boolean }>('GET', '/api/welcome');
+export const finishWelcome = () => call<{ show: boolean }>('PUT', '/api/welcome', {});
 export const getSettings = () => call<TravelSettings>('GET', '/api/settings');
 export const saveSettings = (s: Partial<TravelSettings> & { google_key?: string }) =>
   call<TravelSettings>('PUT', '/api/settings', s);

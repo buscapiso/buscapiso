@@ -7,6 +7,7 @@
   import ListingDetail from './routes/ListingDetail.svelte';
   import Rooms from './routes/Rooms.svelte';
   import Settings from './routes/Settings.svelte';
+  import Welcome from './routes/Welcome.svelte';
 
   // Las "orejas" de la cabecera, como en un diario: la fecha y la edicion.
   const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -31,6 +32,8 @@
     <Settings section={router.route.section} />
   {:else if router.route.name === 'extension'}
     <ExtensionGuide />
+  {:else if router.route.name === 'welcome'}
+    <Welcome />
   {:else}
     <Rooms filter={router.route.filter} view={router.route.view} />
   {/if}

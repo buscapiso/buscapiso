@@ -460,6 +460,10 @@ export function createBackend(deps: BackendDeps) {
       return { stopping: run.running };
     }],
     ['GET', /^\/api\/searches\/current$/, async () => ({ running: run.running, id: run.id, events: [...run.events], summary: run.summary })],
+    // La bienvenida: solo para quien empieza (sin sitios, sin anuncios) y no la cerro.
+    ['GET', /^\/api\/welcome$/, async () => ({
+      show: !(await get('welcome_done', false)) && !(await activeProfile()).destinations.length && !(await db.count('listings')) })],
+    ['PUT', /^\/api\/welcome$/, async () => { await set('welcome_done', true); return { show: false }; }],
     ['GET', /^\/api\/settings$/, async () => travelSettings()],
     ['PUT', /^\/api\/settings$/, async (_m, b) => {
       if (b.google_key !== undefined) await set('google_key', String(b.google_key).trim());

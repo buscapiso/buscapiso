@@ -289,3 +289,18 @@ describe('cities', () => {
     await expect(b.handle('PUT', '/api/profiles/Default', { name: 'Default', city: 'atlantis' })).rejects.toMatchObject({ status: 422 });
   });
 });
+
+describe('welcome', () => {
+  it('shows the first steps only to someone new, until they finish or skip them', async () => {
+    const { b } = await setup();
+    expect(await b.handle('GET', '/api/welcome')).toEqual({ show: true });
+    await b.handle('PUT', '/api/welcome', {});
+    expect(await b.handle('GET', '/api/welcome')).toEqual({ show: false });
+  });
+  it('is not shown to someone who already has places set', async () => {
+    const { b } = await setup();
+    await b.handle('PUT', '/api/profiles/Default', { ...searchRooms,
+      destinations: [{ name: 'Work', lat: 41.39, lon: 2.16 }] });
+    expect(await b.handle('GET', '/api/welcome')).toEqual({ show: false });
+  });
+});

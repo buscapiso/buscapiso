@@ -44,6 +44,12 @@ button.primary {
 button.primary:hover { background: #2d3e5f; }
 button:disabled, button:disabled:hover { opacity: 0.5; cursor: default; background: transparent; border-color: var(--line-strong); }
 button.primary:disabled { background: var(--ink); border-color: var(--ink); }
+/* Un enlace que hace de boton (descargas, "Set up step by step"). */
+a.button { display: inline-block; padding: 6px 14px; border-radius: var(--radius); text-decoration: none;
+  border: 1px solid var(--line-strong); color: var(--ink); }
+a.button.primary { background: var(--ink); border-color: var(--ink); color: var(--paper);
+  font-family: var(--display); font-stretch: 80%; font-weight: 700; letter-spacing: .03em; }
+a.button.primary:hover { background: #2d3e5f; }
 input, select, textarea {
   border: 1px solid var(--line-strong); background: var(--surface); border-radius: var(--radius); padding: 7px 9px;
   min-height: 36px;

@@ -55,8 +55,4 @@
   p { margin: 0; font-family: var(--serif); font-size: 17px; }
   .small { font-family: var(--text); font-size: 13px; color: var(--muted); }
   .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-  .button { display: inline-block; padding: 6px 14px; border-radius: var(--radius); text-decoration: none; }
-  .button.primary { background: var(--ink); color: var(--paper); font-family: var(--display); font-stretch: 80%; font-weight: 700;
-    letter-spacing: .03em; }
-  .button.primary:hover { background: #2d3e5f; }
 </style>

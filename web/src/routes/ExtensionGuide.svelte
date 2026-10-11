@@ -125,8 +125,4 @@
   .steps p { margin: 0 0 6px; }
   .copy { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
   .copy code { font-size: 15px; padding: 3px 8px; border: 1px solid var(--line-strong); background: var(--paper); user-select: all; }
-  .button { display: inline-block; padding: 6px 14px; border-radius: var(--radius); text-decoration: none; }
-  .button.primary { background: var(--ink); color: var(--paper); font-family: var(--display); font-stretch: 80%; font-weight: 700;
-    letter-spacing: .03em; }
-  .button.primary:hover { background: #2d3e5f; }
 </style>

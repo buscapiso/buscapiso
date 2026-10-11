@@ -10,7 +10,8 @@ export type Route =
   | { name: 'rooms'; filter: Filter; view: View }
   | { name: 'listing'; id: string }
   | { name: 'settings'; section: Section }
-  | { name: 'extension' };
+  | { name: 'extension' }
+  | { name: 'welcome' };
 
 const rooms = (filter: Filter = 'new', view: View = 'list'): Route => ({ name: 'rooms', filter, view });
 
@@ -27,6 +28,7 @@ export function parse(hash: string): Route {
   const [head, arg] = path.split('/');
   if (head === 'listing' && arg) return { name: 'listing', id: decodeURIComponent(arg) };
   if (head === 'extension') return { name: 'extension' };
+  if (head === 'welcome') return { name: 'welcome' };
   if (head === 'settings') {
     // "phone" era la seccion del QR de la app de escritorio; sus avisos estan en "alerts".
     const wanted = arg === 'phone' ? 'alerts' : arg;
@@ -43,6 +45,7 @@ export function parse(hash: string): Route {
 export function href(route: Route): string {
   if (route.name === 'listing') return `#/listing/${encodeURIComponent(route.id)}`;
   if (route.name === 'extension') return '#/extension';
+  if (route.name === 'welcome') return '#/welcome';
   if (route.name === 'settings') return route.section === 'search' ? '#/settings' : `#/settings/${route.section}`;
   const q = new URLSearchParams();
   if (route.filter !== 'new') q.set('f', route.filter);
