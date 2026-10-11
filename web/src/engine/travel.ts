@@ -139,8 +139,10 @@ type Json = Record<string, any>;  // eslint-disable-line @typescript-eslint/no-e
  * User-Agent: Transitous acepta el Referer y el contacto en la web. */
 export class TransitousProvider implements TravelProvider {
   name = 'transitous';
+  /** `stops`: donde guardar, por sitio y hora, las paradas desde las que se
+   * llega (unos dias): con ellas, un anuncio nuevo no necesita otra pregunta. */
   constructor(private base = TRANSITOUS_URL, private http: Http = browserHttp,
-    private now: () => Date = () => new Date()) {
+    private now: () => Date = () => new Date(), private stops: TravelCache | null = null, private stopsDays = 3) {
     this.base = base.replace(/\/+$/, '');
   }
 
@@ -148,25 +150,35 @@ export class TransitousProvider implements TravelProvider {
     return d.mode === 'transit' ? this.allToOne(origins, d) : this.direct(origins, d);
   }
 
-  /** Una sola consulta para todos los origenes: desde cada parada, cuanto
-   * antes hay que salir para llegar al destino a la hora fijada. */
-  private async allToOne(origins: Origin[], d: Destination) {
+  /** Las paradas desde las que se llega a `d` a su hora: [lat, lon, minutos, nombre]. */
+  async reachingStops(d: Destination): Promise<Stop[]> {
+    const key = ['stops', this.base, d.depart_at, roundCell(d.lat), roundCell(d.lon)].join('|');
+    const limit = this.now().getTime() - this.stopsDays * 86_400_000;
+    const hit = (await this.stops?.get(key)) as CachedStops | undefined;
+    if (hit?.stops && Date.parse(hit.at) >= limit) return hit.stops;
     const q = new URLSearchParams({ one: `${d.lat},${d.lon}`, time: iso(nextDeparture(d.depart_at, this.now())),
       arriveBy: 'true', maxTravelTime: '90' });
-    let stops: Json[];
+    let all: Json[];
     try {
-      stops = ((await this.http.getJson(`${this.base}/api/v1/one-to-all?${q}`)) as Json).all;
-      if (!Array.isArray(stops)) throw new Error('no "all" in the answer');
+      all = ((await this.http.getJson(`${this.base}/api/v1/one-to-all?${q}`)) as Json).all;
+      if (!Array.isArray(all)) throw new Error('no "all" in the answer');
     } catch (e) {
       throw new TravelError(`Transitous did not answer: ${(e as Error).message}`);
     }
-    const cells = new Map<string, [number, number, number, string][]>();
+    const stops: Stop[] = all.map((x) => [x.place.lat, x.place.lon, Number(x.duration), x.place.name ?? '']);
+    await this.stops?.put(key, { stops, at: this.now().toISOString() });
+    return stops;
+  }
+
+  /** Una sola consulta para todos los origenes: desde cada parada, cuanto
+   * antes hay que salir para llegar al destino a la hora fijada. */
+  private async allToOne(origins: Origin[], d: Destination) {
+    const cells = new Map<string, Stop[]>();
     const cell = (lat: number, lon: number) => `${Math.trunc(lat * 100)},${Math.trunc(lon * 100)}`;
-    for (const x of stops) {
-      const p = x.place;
-      const k = cell(p.lat, p.lon);
+    for (const s of await this.reachingStops(d)) {
+      const k = cell(s[0], s[1]);
       if (!cells.has(k)) cells.set(k, []);
-      cells.get(k)!.push([p.lat, p.lon, Number(x.duration), p.name ?? '']);
+      cells.get(k)!.push(s);
     }
     return origins.map(([lat, lon]) => {
       let best: [number, string] | null = null;
@@ -276,9 +288,12 @@ export class GoogleProvider implements TravelProvider {
 
 export interface CachedTrip { minutes: number; detail: string; at: string }
 export interface CachedRoute { route: Route | null; at: string }
+/** Una parada desde la que se llega a un sitio: [lat, lon, minutos, nombre]. */
+export type Stop = [number, number, number, string];
+export interface CachedStops { stops: Stop[]; at: string }
 export interface TravelCache {
-  get(key: string): Promise<CachedTrip | CachedRoute | undefined>;
-  put(key: string, value: CachedTrip | CachedRoute): Promise<void>;
+  get(key: string): Promise<CachedTrip | CachedRoute | CachedStops | undefined>;
+  put(key: string, value: CachedTrip | CachedRoute | CachedStops): Promise<void>;
 }
 
 /** Redondeo a 1/2000 de grado: unos 55 m de latitud y 40 de longitud. */

@@ -64,6 +64,23 @@ describe('Transitous', () => {
     expect(trips[1]!.minutes).toBeCloseTo(15.4, 0);
     expect(trips[2]).toBeNull();
   });
+  it('keeps the stops that reach a place for a few days: new listings cost no request', async () => {
+    const calls: string[] = [];
+    const store = new Map<string, unknown>();
+    const cache = { get: async (k: string) => store.get(k) as never, put: async (k: string, v: unknown) => { store.set(k, v); } };
+    let t = Date.parse('2026-10-09T10:00:00Z');
+    const p = new TransitousProvider(undefined, fakeHttp(['one_to_all', 'one_to_all'], calls), () => new Date(t), cache);
+    const first = await p.trips([SANTS], FIRA);
+    const again = await p.trips([[41.37587, 2.1184]], FIRA);
+    expect(calls).toHaveLength(1);
+    expect(again[0]!.minutes).toBeCloseTo(15.4, 0);
+    expect(first[0]!.detail).toBe('via Barcelona Sants');
+    // Otro sitio u otra hora, otra pregunta; y pasados tres dias, tambien.
+    await p.trips([SANTS], { ...FIRA, depart_at: '09:00' });
+    expect(calls).toHaveLength(2);
+    t += 4 * 86_400_000;
+    await expect(p.trips([SANTS], FIRA)).rejects.toThrow();   // no quedan respuestas falsas: ha vuelto a preguntar
+  });
   it('talks to a custom MOTIS server', async () => {
     const calls: string[] = [];
     await new TransitousProvider('http://localhost:8080/', fakeHttp(['one_to_all'], calls), now).trips([SANTS], FIRA);

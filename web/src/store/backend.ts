@@ -80,7 +80,7 @@ export function createBackend(deps: BackendDeps) {
   function makeTravel(c: TravelConfig): TravelProvider | null {
     if (deps.travelFactory) return deps.travelFactory(c);
     if (c.provider === 'google') return c.googleKey ? new GoogleProvider(c.googleKey) : null;
-    return new TransitousProvider(c.motisUrl || TRANSITOUS_URL);
+    return new TransitousProvider(c.motisUrl || TRANSITOUS_URL, undefined, undefined, travelCache);
   }
   async function travel(cached = true): Promise<TravelProvider | null> {
     const p = makeTravel(await travelConfig());
