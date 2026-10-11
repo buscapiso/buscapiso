@@ -1,8 +1,10 @@
 // IA opcional con la clave de cada persona, llamada desde el navegador.
 // Claude por su API de Messages (con la cabecera que permite el navegador);
 // Gemini, OpenAI, OpenRouter y Ollama por su API compatible con OpenAI.
-// La salida JSON se valida con zod y se reintenta una vez: algunas capas de
-// compatibilidad no respetan un esquema.
+// La salida JSON se pide con el esquema estricto del proveedor (structured
+// outputs en Claude, json_schema en las compatibles con OpenAI); si no lo
+// admite, se cae al modo JSON simple. Siempre se valida con zod y, si no
+// encaja, se reintenta una vez diciendole al modelo que fallo.
 import type { ZodType, ZodTypeDef } from 'zod';
 
 type Schema<T> = ZodType<T, ZodTypeDef, unknown>;
@@ -64,35 +66,87 @@ export function estimateCost(model: string, u: Usage): number | null {
 
 const FENCE = /^\s*```(?:json)?\s*([\s\S]*?)\s*```\s*$/;
 
+/** El esquema en la forma que exigen los modos estrictos: cada objeto cierra
+ * sus propiedades y las pide todas (lo opcional ya admite null), y cada enum
+ * dice su tipo. */
+export function strictSchema(s: Json): Json {
+  if (Array.isArray(s)) return s.map(strictSchema);
+  if (!s || typeof s !== 'object') return s;
+  const out: Json = {};
+  for (const [k, v] of Object.entries(s)) {
+    out[k] = k === 'properties'
+      ? Object.fromEntries(Object.entries(v as Json).map(([pk, pv]) => [pk, strictSchema(pv)]))
+      : strictSchema(v);
+  }
+  if (out.enum && !out.type) {
+    const types = [...new Set((out.enum as unknown[]).map((x) => (x === null ? 'null' : typeof x)))];
+    out.type = types.length === 1 ? types[0] : types;
+  }
+  if (out.type === 'object' || out.properties) {
+    out.type = 'object';
+    out.properties ??= {};
+    out.required = Object.keys(out.properties);
+    out.additionalProperties = false;
+  }
+  return out;
+}
+
+const issues = (e: { issues: { path: (string | number)[]; message: string }[] }) =>
+  e.issues.slice(0, 3).map((i) => `${i.path.join('.') || 'the answer'}: ${i.message}`).join('; ');
+
 async function jsonWithRetry<T>(complete: (system: string) => Promise<string>, system: string,
   schema: Schema<T>, jsonSchema: object): Promise<T> {
-  const sys = `${system}\n\nReply with a single JSON object that matches this JSON Schema, and nothing else:\n${JSON.stringify(jsonSchema)}`;
+  const base = `${system}\n\nReply with a single JSON object that matches this JSON Schema, and nothing else:\n${JSON.stringify(jsonSchema)}`;
+  let sys = base;
+  let problem = '';
   for (let i = 0; i < 2; i++) {
     const raw = await complete(sys);
     const m = raw.match(FENCE);
-    try {
-      const parsed = schema.safeParse(JSON.parse(m ? m[1] : raw));
-      if (parsed.success) return parsed.data;
-    } catch { /* reintenta */ }
+    let data: unknown;
+    try { data = JSON.parse(m ? m[1] : raw); } catch {
+      problem = '';
+      sys = `${base}\n\nYour previous reply was not valid JSON. Reply with the JSON object only.`;
+      continue;
+    }
+    const parsed = schema.safeParse(data);
+    if (parsed.success) return parsed.data;
+    problem = issues(parsed.error);
+    sys = `${base}\n\nYour previous reply did not match the schema (${problem}). Reply again with a corrected JSON object.`;
   }
-  throw new AIError('The model did not return valid JSON');
+  throw new AIError(problem ? `The model's answer did not match what buscapiso expects (${problem})`
+    : 'The model did not return valid JSON');
 }
+
+/** Un 400 que habla del formato de salida: el proveedor no admite esquemas. */
+const rejectsSchema = (status: number, data: Json) => status === 400
+  && /response_format|json_schema|output_config|format|schema|structured/i.test(JSON.stringify(data ?? {}));
 
 export class ClaudeProvider implements AIProvider {
   name = 'anthropic';
   usage: Usage = { calls: 0, inputTokens: 0, outputTokens: 0 };
+  /** Salidas estructuradas; se apaga si el modelo no las admite. */
+  private structured = true;
   constructor(private key: string, public model = 'claude-opus-5-5', private post: Post = browserPost) {}
 
-  private async complete(system: string, user: string, maxTokens: number): Promise<string> {
+  private async complete(system: string, user: string, maxTokens: number, jsonSchema?: object): Promise<string> {
+    const body: Record<string, unknown> = { model: this.model, max_tokens: maxTokens, system,
+      messages: [{ role: 'user', content: user }] };
+    const strict = jsonSchema && this.structured;
+    if (strict) body.output_config = { format: { type: 'json_schema', schema: strictSchema(jsonSchema) } };
     const { status, data } = await this.post('https://api.anthropic.com/v1/messages', {
       'x-api-key': this.key, 'anthropic-version': '2023-06-01',
       'anthropic-dangerous-direct-browser-access': 'true',
-    }, { model: this.model, max_tokens: maxTokens, system, messages: [{ role: 'user', content: user }] });
+    }, body);
+    if (strict && rejectsSchema(status, data)) {
+      this.structured = false;
+      return this.complete(system, user, maxTokens, jsonSchema);
+    }
     if (status !== 200) throw httpError('Claude', status, data);
     this.usage.calls++;
     this.usage.inputTokens += data.usage?.input_tokens ?? 0;
     this.usage.outputTokens += data.usage?.output_tokens ?? 0;
     if (data.stop_reason === 'refusal') throw new AIError('Claude declined this request');
+    if (data.stop_reason === 'max_tokens' && jsonSchema) throw new AIError('The answer was cut short: the model ran out of room');
     const text = (data.content ?? []).find((b: { type: string }) => b.type === 'text')?.text ?? '';
     if (!text) throw new AIError('Claude returned no text');
     return text;
@@ -100,7 +154,7 @@ export class ClaudeProvider implements AIProvider {
 
   text(system: string, user: string, maxTokens = 1024) { return this.complete(system, user, maxTokens); }
   json<T>(system: string, user: string, schema: Schema<T>, jsonSchema: object, maxTokens = 4096) {
-    return jsonWithRetry((sys) => this.complete(sys, user, maxTokens), system, schema, jsonSchema);
+    return jsonWithRetry((sys) => this.complete(sys, user, maxTokens, jsonSchema), system, schema, jsonSchema);
   }
 }
 
@@ -108,15 +162,23 @@ export class OpenAICompatProvider implements AIProvider {
   name = 'openai_compat';
   usage: Usage = { calls: 0, inputTokens: 0, outputTokens: 0 };
   private url: string;
+  /** response_format json_schema; se apaga si el proveedor no lo admite (Ollama viejo, algunos de OpenRouter). */
+  private structured = true;
   constructor(private key: string, baseUrl: string, public model: string, private post: Post = browserPost) {
     this.url = baseUrl.replace(/\/+$/, '') + '/chat/completions';
   }
 
-  private async complete(system: string, user: string, maxTokens: number, jsonMode: boolean): Promise<string> {
+  private async complete(system: string, user: string, maxTokens: number, jsonSchema?: object): Promise<string> {
     const body: Record<string, unknown> = { model: this.model, max_tokens: maxTokens,
       messages: [{ role: 'system', content: system }, { role: 'user', content: user }] };
-    if (jsonMode) body.response_format = { type: 'json_object' };
+    const strict = jsonSchema && this.structured;
+    if (strict) body.response_format = { type: 'json_schema', json_schema: { name: 'answer', strict: true, schema: strictSchema(jsonSchema) } };
+    else if (jsonSchema) body.response_format = { type: 'json_object' };
     const { status, data } = await this.post(this.url, this.key ? { Authorization: `Bearer ${this.key}` } : {}, body);
+    if (strict && rejectsSchema(status, data)) {
+      this.structured = false;
+      return this.complete(system, user, maxTokens, jsonSchema);
+    }
     if (status !== 200) throw httpError('The AI provider', status, data);
     this.usage.calls++;
     this.usage.inputTokens += data.usage?.prompt_tokens ?? 0;
@@ -131,12 +193,12 @@ export class OpenAICompatProvider implements AIProvider {
   }
 
   async text(system: string, user: string, maxTokens = 1024) {
-    const t = (await this.complete(system, user, maxTokens, false)).trim();
+    const t = (await this.complete(system, user, maxTokens)).trim();
     if (!t) throw new AIError('The AI provider returned no text');
     return t;
   }
   json<T>(system: string, user: string, schema: Schema<T>, jsonSchema: object, maxTokens = 4096) {
-    return jsonWithRetry((sys) => this.complete(sys, user, maxTokens, true), system, schema, jsonSchema);
+    return jsonWithRetry((sys) => this.complete(sys, user, maxTokens, jsonSchema), system, schema, jsonSchema);
   }
 }
 

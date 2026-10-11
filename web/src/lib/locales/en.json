@@ -189,6 +189,8 @@
   "describe.suggest": "Suggest settings",
   "describe.apply": "Apply",
   "describe.nothing": "The AI found nothing to change.",
+  "describe.city": "City: {value}",
+  "describe.otherCity": "You mentioned {city}. Your places were looked up there; set {city} up under City at the top so the search runs there too.",
   "describe.budgetIdeal": "Ideal monthly cost: {value} €",
   "describe.budgetMax": "Maximum monthly cost: {value} €",
   "describe.household": "Household: {value}",

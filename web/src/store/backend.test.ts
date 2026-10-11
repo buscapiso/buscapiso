@@ -268,6 +268,15 @@ describe('cities', () => {
     expect(cities.saved.map((c) => c.city)).toEqual(['barcelona', 'granada-granada']);
     expect((await b.handle('GET', '/api/neighbourhoods') as { names: string[] }).names).toContain('Centro');
   });
+  it('looks a place up in the city a description names, not inside this one', async () => {
+    const urls: string[] = [];
+    const { b } = await setup({ geoGet: async (u) => { urls.push(u); return [{ display_name: 'x', lat: '40.4', lon: '-3.7' }]; } });
+    await b.handle('GET', '/api/geocode?q=Calle%20Menorca&city=Madrid');
+    await b.handle('GET', '/api/geocode?q=Calle%20Menorca&city=Barcelona');
+    expect(new URL(urls[0]).searchParams.get('q')).toBe('Calle Menorca, Madrid, España');
+    expect(urls[0]).not.toContain('bounded');
+    expect(urls[1]).toContain('bounded=1');
+  });
   it('uses the built-in Barcelona without asking the portals', async () => {
     const { b } = await setup({ fetchPage: () => { throw new Error('should not fetch'); } });
     await b.handle('POST', '/api/cities/discover', { name: 'Barcelona', province: 'Barcelona', lat: 41.38, lon: 2.17, box: [0, 0, 0, 0] });

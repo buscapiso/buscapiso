@@ -85,8 +85,8 @@ export class Geocoder {
   }
 
   /** Varios resultados para elegir un sitio, dentro de la caja de la ciudad. */
-  async search(query: string, box: [number, number, number, number], limit = 5): Promise<Place[]> {
-    const data = await this.ask({ q: query, limit: String(limit), viewbox: box.join(','), bounded: '1' });
+  async search(query: string, box: [number, number, number, number] | null, limit = 5): Promise<Place[]> {
+    const data = await this.ask({ q: query, limit: String(limit), ...(box ? { viewbox: box.join(','), bounded: '1' } : {}) });
     return data.map((d) => ({ name: d.display_name, lat: parseFloat(d.lat), lon: parseFloat(d.lon) }));
   }
 

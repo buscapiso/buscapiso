@@ -13,6 +13,7 @@
     const s = suggestion;
     if (!s) return [];
     const out: string[] = [];
+    if (s.city) out.push(t('describe.city', { value: s.city }));
     if (s.budget_ideal !== null) out.push(t('describe.budgetIdeal', { value: s.budget_ideal }));
     if (s.budget_max !== null) out.push(t('describe.budgetMax', { value: s.budget_max }));
     if (s.household_gender) out.push(t('describe.household', { value: t(`gender.${s.household_gender}`) }));

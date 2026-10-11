@@ -54,8 +54,11 @@
     if (s.household_gender) p.household.gender = s.household_gender;
     if (s.owner_must_not_live_in !== null) p.household.no_live_in_owner = s.owner_must_not_live_in;
     if (s.visits) p.household.visits = s.visits;
+    const here = (await getCities().catch(() => null))?.active.name ?? '';
+    const elsewhere = s.city && s.city.toLowerCase() !== here.toLowerCase() ? s.city : '';
+    notice = elsewhere ? t('describe.otherCity', { city: elsewhere }) : '';
     for (const pl of s.places) {
-      const found = (await geocode(pl.address).catch(() => []))[0];
+      const found = (await geocode(pl.address, elsewhere || undefined).catch(() => []))[0];
       if (!found) {
         errors = { ...errors, destinations: t('describe.notFound', { address: pl.address }) };
         continue;
@@ -76,6 +79,7 @@
   let meta = $state<Meta | null>(null);
   let errors = $state<Record<string, string>>({});
   let saved = $state(false);
+  let notice = $state('');
   let names = $state<string[]>([]);
   let center = $state<[number, number]>([41.3874, 2.1686]);
   // Que parte del perfil se edita: Settings la parte en secciones.
@@ -144,6 +148,7 @@
   {#if show('basics')}
   <CityPicker onchange={() => load()} />
   <DescribeProfile bind:text={p.description} onapply={applySuggestion} />
+  {#if notice}<p class="notice" role="status">{notice}</p>{/if}
   {/if}
 
   {#if show('basics')}
@@ -341,4 +346,5 @@
   .save { position: sticky; bottom: 0; background: var(--paper); padding: 12px 0; display: flex; gap: 12px; align-items: center;
     border-top: 3px double var(--ink); z-index: 1; }
   .ok { color: var(--ok); }
+  .notice { border-left: 4px solid var(--gold); background: var(--box); padding: 6px 12px; margin: -8px 0 16px; font-size: 14px; }
 </style>

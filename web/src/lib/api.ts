@@ -189,8 +189,8 @@ export const getSettings = () => call<TravelSettings>('GET', '/api/settings');
 export const saveSettings = (s: Partial<TravelSettings> & { google_key?: string }) =>
   call<TravelSettings>('PUT', '/api/settings', s);
 export const testRoute = () => call<RouteTest>('POST', '/api/settings/test-route');
-export const geocode = (q: string) =>
-  call<Place[]>('GET', `/api/geocode?q=${encodeURIComponent(q)}`);
+export const geocode = (q: string, city?: string) =>
+  call<Place[]>('GET', `/api/geocode?q=${encodeURIComponent(q)}${city ? `&city=${encodeURIComponent(city)}` : ''}`);
 
 export interface AISettings {
   provider: 'none' | 'anthropic' | 'openai_compat';
@@ -201,6 +201,8 @@ export interface ProfileSuggestion {
   household_gender: 'female_only' | 'male_only' | 'mixed' | 'any' | null;
   owner_must_not_live_in: boolean | null;
   visits: 'strict' | 'preferred' | 'indifferent' | null;
+  /** La ciudad que nombra, si la nombra. */
+  city: string | null;
   places: { name: string; address: string; max_minutes: number | null; mode: 'transit' | 'walk' | 'bike' }[];
 }
 

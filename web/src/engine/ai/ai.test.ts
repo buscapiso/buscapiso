@@ -47,14 +47,34 @@ describe('Claude', () => {
 });
 
 describe('OpenAI-compatible', () => {
-  it('asks for a JSON object and sends the key as a bearer token', async () => {
-    const { calls, post } = recorder([{ status: 200, data: { choices: [{ message: { content: JSON.stringify(FACTS) } }],
-      usage: { prompt_tokens: 3, completion_tokens: 4 } } }]);
+  const ok = (content: unknown) => ({ status: 200, data: { choices: [{ message: { content: JSON.stringify(content) } }],
+    usage: { prompt_tokens: 3, completion_tokens: 4 } } });
+  it('asks for the exact JSON schema, strictly, and sends the key as a bearer token', async () => {
+    const { calls, post } = recorder([ok(FACTS)]);
     const p = new OpenAICompatProvider('k', 'https://api.openai.com/v1/', 'gpt-x', post);
-    await p.json('s', 'u', listingFacts, {});
+    await p.json('s', 'u', listingFacts, { type: 'object', properties: { a: { type: 'string' } } });
     expect(calls[0].url).toBe('https://api.openai.com/v1/chat/completions');
     expect(calls[0].headers.Authorization).toBe('Bearer k');
-    expect(calls[0].body.response_format).toEqual({ type: 'json_object' });
+    expect(calls[0].body.response_format).toEqual({ type: 'json_schema', json_schema: { name: 'answer', strict: true,
+      schema: { type: 'object', properties: { a: { type: 'string' } }, required: ['a'], additionalProperties: false } } });
+  });
+  it('falls back to plain JSON mode, once and for good, when the provider rejects schemas', async () => {
+    const { calls, post } = recorder([{ status: 400, data: { error: { message: 'response_format json_schema is not supported' } } },
+      ok(FACTS), ok(FACTS)]);
+    const p = new OpenAICompatProvider('k', 'http://localhost:11434/v1', 'llama', post);
+    await p.json('s', 'u', listingFacts, {});
+    await p.json('s', 'u', listingFacts, {});
+    expect(calls.map((c) => c.body.response_format.type)).toEqual(['json_schema', 'json_object', 'json_object']);
+  });
+  it('tells the model what was wrong when it asks again', async () => {
+    const { calls, post } = recorder([ok({ summary: 3 }), ok(FACTS)]);
+    await new OpenAICompatProvider('k', 'https://x/v1', 'm', post).json('s', 'u', listingFacts, {});
+    expect(calls[1].body.messages[0].content).toMatch(/household_gender/);
+  });
+  it('says which field broke when the answer never fits', async () => {
+    const { post } = recorder([ok({ summary: 3 }), ok({ summary: 3 })]);
+    await expect(new OpenAICompatProvider('k', 'https://x/v1', 'm', post).json('s', 'u', listingFacts, {}))
+      .rejects.toThrow(/did not match.*household_gender/);
   });
   it('marks a rate limit so the caller can wait and retry', async () => {
     const { post } = recorder([{ status: 429, data: {} }]);
@@ -156,6 +176,22 @@ describe('facts', () => {
     const { ai } = applyFacts(base(), f);
     expect(ai).toMatchObject({ wishesMet: ['has a balcony'], wishesMissed: ['no pets, and you have a cat'] });
     expect(listingFacts.parse({ household_gender: 'mixed', summary: 's' })).toMatchObject({ wishes_met: [], wishes_missed: [] });
+  });
+  it('asks Claude for structured output with the schema', async () => {
+    const { calls, post } = recorder([claudeText(JSON.stringify({ places: [] }))]);
+    await suggestProfile(new ClaudeProvider('k', undefined, post), 'x');
+    expect(calls[0].body.output_config.format).toMatchObject({ type: 'json_schema',
+      schema: { type: 'object', additionalProperties: false } });
+  });
+  it('takes a suggestion with gaps or loose values instead of throwing it away', async () => {
+    const { post } = recorder([claudeText(JSON.stringify({ budget_ideal: null, budget_max: 550.4, household_gender: 'any gender',
+      owner_must_not_live_in: null, visits: null, city: 'Madrid',
+      places: [{ name: 'Trabajo', address: 'El Corte Inglés de Serrano', max_minutes: null, mode: null },
+        { name: 'Familia', address: null }] }))]);
+    const s = await suggestProfile(new ClaudeProvider('k', undefined, post), 'Tengo 18 años, me quiero mudar a madrid...');
+    expect(s).toMatchObject({ budget_max: 550, household_gender: null, city: 'Madrid',
+      places: [{ name: 'Trabajo', address: 'El Corte Inglés de Serrano', mode: 'transit', max_minutes: null }] });
+    expect(s.places).toHaveLength(1);
   });
   it('turns a description into a profile suggestion', async () => {
     const { post } = recorder([claudeText(JSON.stringify({ budget_max: 700, places: [{ name: 'UPC', address: 'Campus Nord' }] }))]);

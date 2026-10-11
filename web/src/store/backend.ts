@@ -454,7 +454,10 @@ export function createBackend(deps: BackendDeps) {
       const text = q.get('q') ?? '';
       if (text.length < 2) throw new HttpError(422, 'Type at least two letters');
       const city = await activeCity();
-      try { return await geocoder.search(text, city.box); } catch (e) { throw new HttpError(502, `Address search is unavailable: ${(e as Error).message}`); }
+      // Un sitio de otra ciudad (la sugerencia la nombra): se busca alli, sin la caja de esta.
+      const other = (q.get('city') ?? '').trim();
+      const elsewhere = other && !sameName(other, city.name);
+      try { return await geocoder.search(elsewhere ? `${text}, ${other}, España` : text, elsewhere ? null : city.box); } catch (e) { throw new HttpError(502, `Address search is unavailable: ${(e as Error).message}`); }
     }],
     ['GET', /^\/api\/ai$/, async () => aiSettings()],
     ['PUT', /^\/api\/ai$/, async (_m, b) => {
