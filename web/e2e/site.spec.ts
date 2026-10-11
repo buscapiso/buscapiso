@@ -44,6 +44,8 @@ test('the site runs with no server, imports a shared file and scores it here', a
   await expect(page.getByRole('heading', { name: 'Welcome to buscapiso' })).toBeVisible();
   await expect(page.getByText(/Connected: version/)).toBeVisible();
   await page.getByRole('button', { name: "Skip, I'll set it up myself" }).click();
+  // Saltar guarda que ya se vio y luego va a Ajustes: se espera a eso.
+  await expect(page).toHaveURL(/#\/settings$/);
   await page.goto(`${SITE}#/`);
   // Con la extension instalada no hay aviso, y se puede buscar.
   await expect(page.getByRole('button', { name: 'Search now' })).toBeEnabled();
@@ -68,6 +70,8 @@ test('without the extension the site still opens and explains what to do', async
   await page.goto(SITE);
   await expect(page.getByText(/Not installed in this browser yet/)).toBeVisible();
   await page.getByRole('button', { name: "Skip, I'll set it up myself" }).click();
+  // Saltar guarda que ya se vio y luego va a Ajustes: se espera a eso.
+  await expect(page).toHaveURL(/#\/settings$/);
   await page.goto(`${SITE}#/`);
   await expect(page.getByText(/add the buscapiso extension/)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Search now' })).toBeDisabled();
