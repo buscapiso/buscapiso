@@ -90,6 +90,17 @@ describe('routes to draw on the map', () => {
     expect(r.legs[1].points).toHaveLength(3);
     expect(r.legs[1].points[0][0]).toBeCloseTo(41.379, 3);
   });
+  it('joins the stops when the line shape Transitous sends wanders off', async () => {
+    // Respuesta real: C3 Nuevos Ministerios -> Sol, 4 min, con un trazo que baja hasta Getafe y vuelve.
+    const c3 = { mode: 'REGIONAL_RAIL', routeShortName: 'C3', routeColor: '952585', duration: 240,
+      from: { name: 'Madrid-Nuevos Ministerios', lat: 40.44663, lon: -3.6923468 },
+      to: { name: 'Sol', lat: 40.416866, lon: -3.7028766 },
+      intermediateStops: [{ name: 'Recoletos', lat: 40.4233, lon: -3.6915 }],
+      legGeometry: { points: 'kitclAtrj`FljbF`cTqLmZsxgDnH', precision: 6, length: 4 } };
+    const http: Http = { getJson: async () => ({ itineraries: [{ duration: 240, legs: [c3] }] }), postJson: async () => ({}) };
+    const [leg] = (await new TransitousProvider(undefined, http, now).route(SANTS, FIRA))!.legs;
+    expect(leg.points).toEqual([[40.44663, -3.6923468], [40.4233, -3.6915], [40.416866, -3.7028766]]);
+  });
   it('has no route when Transitous finds none', async () => {
     const http: Http = { getJson: async () => ({ itineraries: [], direct: [] }), postJson: async () => ({}) };
     expect(await new TransitousProvider(undefined, http, now).route(SANTS, FIRA)).toBeNull();

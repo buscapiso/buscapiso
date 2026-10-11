@@ -116,6 +116,21 @@ export function nextDeparture(hhmm: string, now: Date): Date {
 
 const iso = (d: Date) => d.toISOString().replace(/\.\d{3}Z$/, 'Z');
 
+const pathM = (p: Origin[]) => p.slice(1).reduce((m, [lat, lon], i) => m + haversineM(p[i][0], p[i][1], lat, lon), 0);
+
+/** El trazo de un tramo. Algunas redes (Cercanias de Renfe) llegan con
+ * formas que MOTIS corta mal: Nuevos Ministerios -> Sol bajando hasta Getafe.
+ * Si el trazo es mucho mas largo que ir de parada en parada, se unen las paradas. */
+function legPoints(l: Json): Origin[] {
+  const shape = l.legGeometry?.points ? decodePolyline(l.legGeometry.points, l.legGeometry.precision ?? 7) : [];
+  const stops = [l.from, ...(l.intermediateStops ?? []), l.to]
+    .filter((s: Json | undefined) => Number.isFinite(s?.lat) && Number.isFinite(s?.lon))
+    .map((s: Json): Origin => [s.lat, s.lon]);
+  if (l.mode === 'WALK' || l.mode === 'BIKE' || stops.length < 2) return shape;
+  const direct = pathM(stops);
+  return shape.length < 2 || pathM(shape) > 2 * direct + 1000 ? stops : shape;
+}
+
 export const TRANSITOUS_URL = 'https://api.transitous.org';
 
 type Json = Record<string, any>;  // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -190,7 +205,7 @@ export class TransitousProvider implements TravelProvider {
       color: l.routeColor ? `#${String(l.routeColor).replace(/^#/, '')}` : null,
       from: stop(l.from), to: stop(l.to),
       minutes: Math.round(Number(l.duration ?? 0) / 60),
-      points: l.legGeometry?.points ? decodePolyline(l.legGeometry.points, l.legGeometry.precision ?? 7) : [],
+      points: legPoints(l),
     }));
     return { minutes: Math.round(Number(it.duration ?? 0) / 60), legs };
   }
@@ -303,7 +318,8 @@ export class CachedProvider implements TravelProvider {
 
   async route(from: Origin, d: Destination): Promise<Route | null> {
     if (!this.inner.route) return null;
-    const key = `route|${this.key(from[0], from[1], d)}`;
+    // v2: los caminos guardados antes de corregir los trazos de Cercanias.
+    const key = `route2|${this.key(from[0], from[1], d)}`;
     const hit = await this.cache.get(key) as CachedRoute | undefined;
     if (hit && Date.parse(hit.at) >= this.now().getTime() - this.ttlDays * 86_400_000) return hit.route;
     const route = await this.inner.route(from, d);
