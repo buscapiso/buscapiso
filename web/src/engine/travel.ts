@@ -135,6 +135,37 @@ export const TRANSITOUS_URL = 'https://api.transitous.org';
 
 type Json = Record<string, any>;  // eslint-disable-line @typescript-eslint/no-explicit-any
 
+/** Que parte de la ciudad tiene una parada a mano (a STOP_RADIUS_M) desde la
+ * que se llega: puntos cada 500 m dentro de la caja y a menos de `radiusKm`
+ * del centro. Parques, rio o mar cuentan como no cubiertos: por encima de
+ * 0,8, la cobertura es practicamente completa. */
+export function stopCoverage(stops: Stop[], center: [number, number], box: [number, number, number, number],
+  radiusKm = 5): number {
+  const [w, n, e, s] = box;
+  const dLat = 0.0045, dLon = 0.0045 / Math.cos((center[0] * Math.PI) / 180);
+  const cells = new Map<string, Stop[]>();
+  const cell = (lat: number, lon: number) => `${Math.trunc(lat * 100)},${Math.trunc(lon * 100)}`;
+  for (const st of stops) {
+    const k = cell(st[0], st[1]);
+    if (!cells.has(k)) cells.set(k, []);
+    cells.get(k)!.push(st);
+  }
+  let points = 0, covered = 0;
+  for (let lat = s; lat <= n; lat += dLat) {
+    for (let lon = w; lon <= e; lon += dLon) {
+      if (haversineM(center[0], center[1], lat, lon) > radiusKm * 1000) continue;
+      points++;
+      const ci = Math.trunc(lat * 100), cj = Math.trunc(lon * 100);
+      let near = false;
+      for (let di = -1; di <= 1 && !near; di++) for (let dj = -1; dj <= 1 && !near; dj++) {
+        near = (cells.get(`${ci + di},${cj + dj}`) ?? []).some((st) => haversineM(lat, lon, st[0], st[1]) <= STOP_RADIUS_M);
+      }
+      if (near) covered++;
+    }
+  }
+  return points ? covered / points : 0;
+}
+
 /** Transitous o cualquier MOTIS. Desde el navegador no se puede fijar el
  * User-Agent: Transitous acepta el Referer y el contacto en la web. */
 export class TransitousProvider implements TravelProvider {

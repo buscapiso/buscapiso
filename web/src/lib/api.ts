@@ -251,6 +251,8 @@ export const testNotify = () => call<{ ok: boolean }>('POST', '/api/notify/test'
 export interface CitySummary {
   city: string; name: string; province: string; center: [number, number]; areas: number;
   portals: Record<string, string | null>;
+  /** Que parte de la ciudad cubren los horarios del proveedor (0..1); null si no se sabe. */
+  transit?: { share: number; provider: string } | null;
 }
 export interface CityCandidate { name: string; province: string; lat: number; lon: number; box: [number, number, number, number] }
 export interface PortalNote { portal: string; found: boolean; detail: string }

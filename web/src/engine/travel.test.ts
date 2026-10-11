@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { fixture } from './testing';
 import { CachedProvider, decodePolyline, estimateTrip, GoogleProvider, nextDeparture, TransitousProvider, TravelError,
-  type CachedTrip, type Http, type Route } from './travel';
+  type CachedTrip, type Http, type Route, stopCoverage, type Stop } from './travel';
 import type { Destination } from './profiles';
 
 const SANTS: [number, number] = [41.3792, 2.1404];
@@ -194,5 +194,22 @@ describe('cache and estimate', () => {
     expect(t.minutes).toBeLessThan(40);
     expect(estimateTrip(SANTS[0], SANTS[1], { ...FIRA, mode: 'bike' }).minutes)
       .toBeLessThan(estimateTrip(SANTS[0], SANTS[1], { ...FIRA, mode: 'walk' }).minutes);
+  });
+});
+
+describe('how much of a city public transport reaches', () => {
+  const center: [number, number] = [41.65, -0.88];
+  const box: [number, number, number, number] = [-0.95, 41.70, -0.81, 41.60];
+  it('is the share of the city with a reaching stop within walking distance', () => {
+    // Una parada cada ~800 m por toda la caja: todo cubierto.
+    const dense: Stop[] = [];
+    for (let la = 41.60; la <= 41.70; la += 0.007) for (let lo = -0.95; lo <= -0.81; lo += 0.009) dense.push([la, lo, 20, 'x']);
+    expect(stopCoverage(dense, center, box)).toBeGreaterThan(0.95);
+    // Solo una linea de tranvia que cruza el centro: una franja.
+    const tram: Stop[] = Array.from({ length: 25 }, (_, i) => [41.60 + i * 0.004, -0.88, 20, 't']);
+    const share = stopCoverage(tram, center, box);
+    expect(share).toBeGreaterThan(0.1);
+    expect(share).toBeLessThan(0.5);
+    expect(stopCoverage([], center, box)).toBe(0);
   });
 });

@@ -13,7 +13,7 @@ import { DEFAULT_SERVER, randomTopic, send as ntfySend, notifyNew } from '../eng
 import { readFullListing, rescore, runSearch, type Deps, type SearchEvent } from '../engine/pipeline';
 import { defaultProfile, flatSources, parseProfile, roomSources, searchProfile, type SearchProfile } from '../engine/profiles';
 import { SOURCES } from '../engine/sources';
-import { CachedProvider, estimateTrip, GoogleProvider, TRANSITOUS_URL, TransitousProvider, TravelError, type Route,
+import { CachedProvider, estimateTrip, GoogleProvider, stopCoverage, TRANSITOUS_URL, TransitousProvider, TravelError, type Route,
   type TravelProvider } from '../engine/travel';
 import { setting, type Db } from './db';
 import { applyImport, exportData, ImportError, previewImport, type ImportPreview } from './transfer';
@@ -117,8 +117,28 @@ export function createBackend(deps: BackendDeps) {
   }
   const citySummary = (c: City) => ({ city: c.city, name: c.name, province: c.province, center: c.center,
     areas: c.areas.length, portals: c.portals });
+
+  // Que parte de la ciudad cubren los horarios de Transitous: se mide al
+  // preparar la ciudad (y, para las de antes, la primera vez que se miran).
+  type Coverage = { share: number; provider: string; at: string };
+  const coverageKey = (c: City) => `transit_coverage:${c.city}`;
+  const savedCoverage = (c: City) => get<Coverage | null>(coverageKey(c), null);
+  async function measureCoverage(c: City): Promise<Coverage | null> {
+    const p = makeTravel(await travelConfig());
+    if (!(p instanceof TransitousProvider)) return null;
+    const stops = await p.reachingStops({ name: c.name, lat: c.center[0], lon: c.center[1], mode: 'transit',
+      depart_at: '08:30', max_minutes: null, minute_weight: 1 });
+    const r = { share: Math.round(stopCoverage(stops, c.center, c.box) * 100) / 100, provider: p.name, at: now().toISOString() };
+    await set(coverageKey(c), r);
+    return r;
+  }
+  async function coverageOf(c: City): Promise<Coverage | null> {
+    const saved = await savedCoverage(c);
+    const fresh = saved && Date.now() - Date.parse(saved.at) < 7 * 86_400_000;
+    return fresh ? saved : measureCoverage(c).catch(() => saved);
+  }
   // Descubrir una ciudad tarda un minuto: corre aparte y la pantalla pregunta.
-  const discovery = { running: false, log: [] as string[], result: null as null | { city: ReturnType<typeof citySummary>;
+  const discovery = { running: false, log: [] as string[], result: null as null | { city: ReturnType<typeof citySummary> & { transit: Coverage | null };
     notes: Discovered['notes'] }, error: null as string | null, abort: null as AbortController | null };
 
   async function startDiscovery(c: CityCandidate) {
@@ -140,7 +160,9 @@ export function createBackend(deps: BackendDeps) {
         const found = await discoverCity(c, { fetchPage: page, fetchDirect: (u, i) => (deps.fetchDirect ?? defaultFetchDirect)(u, i),
           geocode: (q) => geocoder.geocode(q), log: (m) => discovery.log.push(m), signal: discovery.abort!.signal });
         await db.put('cities', found.city);
-        discovery.result = { city: citySummary(found.city), notes: found.notes };
+        discovery.log.push('Checking public transport timetables...');
+        const transit = await measureCoverage(found.city).catch(() => null);
+        discovery.result = { city: { ...citySummary(found.city), transit }, notes: found.notes };
       } catch (e) {
         discovery.error = e instanceof DiscoveryError ? e.message : `Could not set up the city: ${(e as Error).message}`;
       } finally {
@@ -528,7 +550,9 @@ export function createBackend(deps: BackendDeps) {
     }],
     ['GET', /^\/api\/cities$/, async () => {
       const saved = [...Object.values(CITIES), ...(await db.all<City>('cities'))];
-      return { active: citySummary(await activeCity()), saved: saved.map((c) => ({ city: c.city, name: c.name, province: c.province })) };
+      const active = await activeCity();
+      return { active: { ...citySummary(active), transit: await coverageOf(active) },
+        saved: saved.map((c) => ({ city: c.city, name: c.name, province: c.province })) };
     }],
     ['GET', /^\/api\/cities\/search$/, async (_m, _b, q) => {
       const text = (q.get('q') ?? '').trim();
@@ -545,7 +569,7 @@ export function createBackend(deps: BackendDeps) {
       if (!c) throw new HttpError(404, `no city ${b.city}`);
       const p = await activeProfile();
       await db.put('profiles', { ...p, city: c.city });
-      return citySummary(c);
+      return { ...citySummary(c), transit: await coverageOf(c) };
     }],
     ['GET', /^\/api\/neighbourhoods$/, async () => {
       const p = await activeProfile();

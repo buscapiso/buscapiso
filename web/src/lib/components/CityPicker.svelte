@@ -57,10 +57,20 @@
   $effect(() => { load(); });
 </script>
 
+{#snippet transit(c: CitySummary)}
+  {#if c.transit}
+    {@const pct = Math.round(c.transit.share * 100)}
+    <p class={c.transit.share >= 0.8 ? 'help' : c.transit.share >= 0.5 ? 'transit' : 'transit poor'}>
+      {t(c.transit.share >= 0.8 ? 'city.transitGood' : c.transit.share >= 0.5 ? 'city.transitPartial' : 'city.transitPoor',
+        { name: c.name, pct })}</p>
+  {/if}
+{/snippet}
+
 <fieldset class="city">
   <legend>{t('city.title')}</legend>
   {#if active}
     <p class="now">{t('city.current', { name: active.name, province: active.province, areas: active.areas })}</p>
+    {@render transit(active)}
   {/if}
   {#if saved.length > 1}
     <div class="saved">
@@ -106,6 +116,7 @@
           {/each}
         </ul>
       {/if}
+      {@render transit(job.result.city)}
       <button class="primary" onclick={() => switchTo(job!.result!.city.city)}>
         {t('city.use', { name: job.result.city.name })}</button>
     </div>
@@ -132,4 +143,6 @@
   .notes .off { color: var(--muted); }
   .help { color: var(--muted); font-size: 13px; margin: 0; }
   .error { color: var(--bad); margin: 0; font-size: 13px; }
+  .transit { margin: 0; font-size: 14px; border-left: 3px solid var(--gold); padding-left: 8px; }
+  .transit.poor { border-left-color: var(--bad); }
 </style>

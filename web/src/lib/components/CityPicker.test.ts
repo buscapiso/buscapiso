@@ -33,3 +33,15 @@ test('finds a town, sets it up and switches to it', async () => {
   expect(onchange).toHaveBeenCalledWith(expect.objectContaining({ name: 'Granada' }));
   expect(await screen.findByText(/You're searching in Granada/)).toBeInTheDocument();
 });
+
+test.each([
+  [0.93, /nearly all of Zaragoza, so travel times are real/],
+  [0.65, /about 65% of Zaragoza/],
+  [0.21, /only 21% of Zaragoza; it probably lacks the city buses/],
+])('says how much of the city the timetables cover (%s)', async (share, text) => {
+  const zgz = { city: 'zaragoza-zaragoza', name: 'Zaragoza', province: 'Zaragoza', center: [41.65, -0.88], areas: 10, portals: {},
+    transit: { share, provider: 'transitous' } };
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response(JSON.stringify({ active: zgz, saved: [zgz] })));
+  render(CityPicker, { onchange: vi.fn() });
+  expect(await screen.findByText(text)).toBeInTheDocument();
+});
