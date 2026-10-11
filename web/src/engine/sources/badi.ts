@@ -7,7 +7,8 @@
 // busqueda (la tercera pide iniciar sesion). Por eso se busca zona a zona,
 // como quien mueve el mapa: cada zona elegida es una busqueda. Las
 // coordenadas son aproximadas.
-import { emptyListing, type RawListing } from '../model';
+import { emptyListing, type Gender, type RawListing } from '../model';
+import type { Amenity } from '../profiles';
 import { activeBudget } from '../budget';
 import { inferGender, intFrom, NetError, type Area, type DiscoverCtx, type Net, type Source } from './base';
 
@@ -63,11 +64,59 @@ export function toListing(card: Json): RawListing | null {
   return l;
 }
 
-/** El token de invitado de badi.com: el mismo que recibe quien entra sin cuenta. */
-async function guestToken(json: Net['json']): Promise<string> {
-  const r = await json<{ access_token?: string }>({ url: 'https://badi.com/api/auth', direct: true });
-  if (!r.access_token) throw new NetError('no guest token');
-  return r.access_token;
+/** El token de invitado de badi.com: el mismo que recibe quien entra sin
+ * cuenta. Dura un mes: se pide una vez por sesion. */
+let token: Promise<string> | null = null;
+function guestToken(json: Net['json']): Promise<string> {
+  token ??= json<{ access_token?: string }>({ url: 'https://badi.com/api/auth', direct: true }).then((r) => {
+    if (!r.access_token) throw new NetError('no guest token');
+    return r.access_token;
+  });
+  return token.catch((e) => { token = null; throw e; });
+}
+
+const AMENITIES: Record<string, Amenity> = { air_conditioner: 'air_conditioning', heating: 'heating',
+  washing_machine: 'washing_machine', dishwasher: 'dishwasher', balcony: 'balcony_or_terrace', terrace: 'balcony_or_terrace' };
+const OCCUPATION: Record<string, string> = { worker: 'trabajadores', student: 'estudiantes' };
+
+/** La ficha (/v1/application/rooms/{id}): quien vive alli, normas, fianza y la
+ * descripcion entera, que el listado no trae. */
+export function parseRoom(r: Json): Partial<RawListing> {
+  const men = Number(r.male_tenants) || 0, women = Number(r.female_tenants) || 0, other = Number(r.non_binary_tenants) || 0;
+  const mates = men + women + other;
+  const gender: Gender | null = !mates ? null : other || (men && women) ? 'mixed' : women ? 'female_only' : 'male_only';
+  const rules = new Set<string>(r.house_rules_ids ?? []);
+  const price = (r.prices_attributes ?? [])[0] ?? {};
+  const ids: string[] = [...(r.entire_place_amenities_ids ?? []), ...(r.room_amenities_ids ?? [])];
+  const amenities = [...new Set([...ids.map((id) => AMENITIES[id]).filter(Boolean), ...(r.lift ? ['lift' as Amenity] : [])])];
+  const pref = r.preferences ?? {};
+  const who = [OCCUPATION[pref.occupation] ?? '', pref.min_age && pref.max_age ? `de ${pref.min_age} a ${pref.max_age} años` : '']
+    .filter(Boolean).join(', ');
+  const bedrooms = (Number(r.single_bedrooms) || 0) + (Number(r.double_bedrooms) || 0);
+  return {
+    detailRead: true,
+    description: String(r.description ?? '').trim(),
+    ...(r.street ? { address: [r.street, r.street_number].filter(Boolean).join(', ') } : {}),
+    ...(gender ? { gender, genderConfirmed: true, roommates: mates } : {}),
+    roommateAges: ((r.tenants ?? []) as Json[]).map((t) => t.age).filter(Boolean).join(', '),
+    minStayMonths: r.min_days ? Math.ceil(Number(r.min_days) / 30) : null,
+    availableFrom: dmy(r.available_from),
+    expenses: price.bills_included ? 0 : null,
+    depositEur: Number(price.deposit) || null,
+    agencyFee: Number(price.agency_fee) > 0 ? true : null,
+    smokingAllowed: rules.has('smoker_friendly') ? true : null,
+    petsAllowed: rules.has('pet_friendly') ? true : null,
+    couplesAllowed: rules.has('couples_accepted') ? true : null,
+    registrationAllowed: (r.benefits ?? []).includes('registration_available') ? true : null,
+    roomM2: Number(r.size) || null,
+    surfaceM2: Number(r.flat_size) || null,
+    bathrooms: Number(r.bathrooms) || null,
+    bedrooms: bedrooms || null,
+    elevator: typeof r.lift === 'boolean' ? r.lift : null,
+    furnished: (r.room_amenities_ids ?? []).includes('furnished') ? true : null,
+    amenities,
+    extraNotes: who ? `Prefieren: ${who}` : '',
+  };
 }
 
 export const badi: Source = {
@@ -75,6 +124,12 @@ export const badi: Source = {
   label: 'Badi',
   types: ['room', 'flat'],
   net: { pause: [2, 4], blockedMarkers: [], minLength: 2 },
+  details: 'best',
+  async detail(l, net) {
+    const t = await guestToken(net.json);
+    return parseRoom(await net.json<Json>({ url: `https://api.badiapp.com/v1/application/rooms/${l.sourceId}`,
+      headers: { Authorization: `Bearer ${t}` } }));
+  },
   planned: (q) => Math.max(q.areas.length, 1) * Math.min(q.pages, 2),
   async *search(q, net) {
     if (!q.city.portals.badi) return;

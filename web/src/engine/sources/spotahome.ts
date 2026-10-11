@@ -10,7 +10,8 @@
 import { emptyListing, type ListingType, type RawListing } from '../model';
 import { activeBudget } from '../budget';
 import { haversineM } from '../travel';
-import { inferGender, type DiscoverCtx, type SearchQuery, type Source } from './base';
+import type { Amenity } from '../profiles';
+import { getText, inferGender, parseHtml, type DiscoverCtx, type SearchQuery, type Source } from './base';
 
 const BASE = 'https://www.spotahome.com';
 const API = `${BASE}/api/public/listings/search`;
@@ -81,6 +82,48 @@ export function toListing(c: Json): RawListing {
   return l;
 }
 
+const AMENITIES: Record<string, Amenity> = { 'aire acondicionado': 'air_conditioning', 'calefacción': 'heating',
+  lavadora: 'washing_machine', lavavajillas: 'dishwasher', 'balcón o terraza': 'balcony_or_terrace', ascensor: 'lift' };
+
+/** La ficha: la descripcion entera en castellano (la del listado es un
+ * resumen en ingles) y, de su JSON-LD, mascotas, fumar, ascensor y estancia. */
+export function parseRoom(html: string): Partial<RawListing> {
+  const doc = parseHtml(html);
+  let ld: Json = {};
+  for (const sc of doc.querySelectorAll('script[type="application/ld+json"]')) {
+    try {
+      const j = JSON.parse(sc.textContent ?? '');
+      const items: Json[] = Array.isArray(j) ? j : j?.['@graph'] ?? [j];
+      ld = items.find((x) => x && 'petsAllowed' in x) ?? ld;
+    } catch { /* otro bloque */ }
+  }
+  // Dos bloques: lo que escribe el propietario y el resumen de Spotahome.
+  const blocks = [...doc.querySelectorAll('.listing-overview__listing-description')].map((el) => {
+    const copy = el.cloneNode(true) as Element;
+    copy.querySelectorAll('.listing-title').forEach((h) => h.remove());
+    return getText(copy);
+  }).filter(Boolean);
+  const text = blocks.join('\n\n') || String(ld.description ?? '');
+  const features = new Map(((ld.amenityFeature ?? []) as Json[]).map((f) => [String(f.name).toLowerCase(), f.value === true]));
+  const couples = /no (?:es )?adecuad[oa] para parejas|no (?:se )?admite[n]? parejas/i.test(text) ? false
+    : /(?:adecuad[oa] para|se admiten) parejas/i.test(text) ? true : null;
+  const yes = (k: string) => (features.has(k) ? features.get(k)! : null);
+  return {
+    detailRead: true,
+    description: text,
+    petsAllowed: typeof ld.petsAllowed === 'boolean' ? ld.petsAllowed : null,
+    smokingAllowed: typeof ld.smokingAllowed === 'boolean' ? ld.smokingAllowed : null,
+    ...(couples !== null ? { couplesAllowed: couples } : {}),
+    minStayMonths: Number(ld.offers?.leaseLength?.minValue) || null,
+    elevator: yes('ascensor'),
+    furnished: yes('amueblado'),
+    bedrooms: Number(ld.numberOfBedrooms) || null,
+    bathrooms: Number(ld.numberOfBathroomsTotal) || null,
+    surfaceM2: Number(ld.floorSize?.value) || null,
+    amenities: [...features].filter(([k, v]) => v && AMENITIES[k]).map(([k]) => AMENITIES[k]),
+  };
+}
+
 /** Los puntos mas cerca de las zonas elegidas primero: son las que se pueden pedir. */
 function nearest(markers: Marker[], q: SearchQuery): Marker[] {
   const dist = (m: Marker) => Math.min(...q.areas.map((a) => haversineM(a.lat, a.lon, m.coord[1], m.coord[0])));
@@ -93,6 +136,8 @@ export const spotahome: Source = {
   types: ['room', 'flat'],
   net: { pause: [2, 5], blockedMarkers: [], minLength: 2 },
   planned: (q) => q.pages,
+  details: 'best',
+  detail: async (l, net) => parseRoom((await net.page({ url: l.url })).body),
   async *search(q, net) {
     const city = q.city.portals.spotahome;
     if (!city) return;

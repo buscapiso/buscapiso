@@ -223,3 +223,34 @@ describe('saved data from before', () => {
     expect(() => parseProfile({ name: 'x', flat_sources: ['roomgo'] })).toThrow(/unknown portals: roomgo/);
   });
 });
+
+describe('full listings', () => {
+  it('Badi: who lives there, rules, deposit and the full description', () => {
+    const d = badi.parseRoom(JSON.parse(fixture('badi_room.json')));
+    expect(d).toMatchObject({ detailRead: true, gender: 'male_only', genderConfirmed: true, roommates: 2,
+      roommateAges: '35', minStayMonths: 6, depositEur: 600, expenses: null, smokingAllowed: true,
+      registrationAllowed: true, roomM2: 10, surfaceM2: 80, bathrooms: 2, bedrooms: 3, elevator: true, furnished: true,
+      address: "Carrer de l'Arc del Teatre, 18" });
+    expect(d.description).toMatch(/Roommates are two guys/);
+    expect(d.amenities).toEqual(expect.arrayContaining(['air_conditioning', 'washing_machine', 'balcony_or_terrace', 'lift']));
+    expect(d.extraNotes).toBe('Prefieren: trabajadores, de 26 a 40 años');
+  });
+  it('Badi: asks with the guest token, and the best listings are read in full', async () => {
+    const { net, calls } = fakeNet([[/badi\.com\/api\/auth/, '{"access_token":"g"}'], [/rooms\/1185096/, fixture('badi_room.json')]]);
+    const l = { ...badi.toListing(JSON.parse(fixture('badi_rooms.json')).data.results[0])! };
+    const d = await badi.badi.detail!(l, net);
+    expect(d.detailRead).toBe(true);
+    expect(calls.at(-1)).toMatchObject({ url: 'https://api.badiapp.com/v1/application/rooms/1185096', headers: { Authorization: expect.stringMatching(/^Bearer /) } });
+    expect(badi.badi.details).toBe('best');
+  });
+  it('Spotahome: the Spanish description, pets, smoking, couples and minimum stay', () => {
+    const d = spota.parseRoom(fixture('spotahome_room.html'));
+    expect(d).toMatchObject({ detailRead: true, petsAllowed: false, smokingAllowed: false, couplesAllowed: false,
+      minStayMonths: 1, elevator: false, furnished: true, bedrooms: 5, surfaceM2: 120 });
+    expect(d.description).toMatch(/^EN POBLENOU \| HABITACIÓN AMUEBLADA/);   // lo del propietario primero
+    expect(d.description).toMatch(/¿Buscas una habitación acogedora/);
+    expect(d.description).not.toMatch(/La opinión de Spotahome/);
+    expect(d.amenities).toContain('air_conditioning');
+    expect(spota.spotahome.details).toBe('best');
+  });
+});

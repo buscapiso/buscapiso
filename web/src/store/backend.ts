@@ -375,7 +375,7 @@ export function createBackend(deps: BackendDeps) {
       if (!l.detailRead) {
         const page = deps.fetchPage();
         if (!page) throw new HttpError(409, 'Reading the full listing needs the buscapiso extension');
-        const why = await readFullListing(l, page);
+        const why = await readFullListing(l, page, deps.fetchDirect ?? defaultFetchDirect);
         if (why) throw new HttpError(502, `Could not read the full listing (${why})`);
         await db.put('listings', l);
         const [d] = await rescore([l], await activeProfile(), { travel: await travel(), ai: await ai().catch(() => null),

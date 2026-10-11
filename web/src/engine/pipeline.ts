@@ -73,11 +73,11 @@ function netFor(src: Source, deps: Deps, emit: Emit) {
 
 /** La ficha completa de un anuncio, al abrirlo: Idealista solo da 320
  * caracteres en el listado. Devuelve null si la leyo, o el motivo si no. */
-export async function readFullListing(l: RawListing, fetchPage: FetchPage): Promise<string | null> {
+export async function readFullListing(l: RawListing, fetchPage: FetchPage,
+  fetchDirect: FetchDirect = async () => { throw new Error('not available here'); }): Promise<string | null> {
   const src = SOURCES[l.source];
   if (!src?.detail) return 'this portal has no separate full listing';
-  const net = makeNet(src, { fetchPage, fetchDirect: async () => { throw new Error('not available here'); },
-    sleep: async () => {}, random: () => 0 });
+  const net = makeNet(src, { fetchPage, fetchDirect, sleep: async () => {}, random: () => 0 });
   try {
     mergeDetail(l, await src.detail(l, net));
     return null;

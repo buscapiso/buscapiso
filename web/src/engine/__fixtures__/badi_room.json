@@ -1,0 +1,317 @@
+{
+ "id": 1185096,
+ "title": "Room C. L'Arc del Teatre 18B (Metro Drassanes)",
+ "description": "One single bedroom with new furniture. The flat is one minute away from the Rambla/Metro Drassanes, with many supermarkets and shops close by. Roommates are two guys, we both work. Swimming pool on the roof. ",
+ "description_language": "en",
+ "status": 1,
+ "status_label": null,
+ "settings": {
+  "interested_in_verification": false
+ },
+ "trust": {
+  "verified": false
+ },
+ "labels": [],
+ "address": "Carrer de l'Arc del Teatre, Barcelona, España",
+ "address_line_2": null,
+ "display_address": "Carrer de l'Arc del Teatre, Barcelona, España",
+ "street": "Carrer de l'Arc del Teatre",
+ "street_number": "18",
+ "city": "Barcelona",
+ "city_id": "Barcelona",
+ "country": "España",
+ "country_code": "ES",
+ "postal_code": "08001",
+ "latitude": 41.377485,
+ "longitude": 2.174372,
+ "available_from": "2026-12-01",
+ "available_to": null,
+ "published_at": "2026-10-11T15:58:31.000Z",
+ "min_days": 180,
+ "max_days": null,
+ "check_availability_url": null,
+ "external_form_url": null,
+ "place_type": 1,
+ "entire_place_type": null,
+ "room_type": null,
+ "bed_type": 2,
+ "size": 10,
+ "flat_size": 80,
+ "size_unit": 1,
+ "flat_amenities": {
+  "title": "Property amenities",
+  "elements": [
+   {
+    "content": "TV",
+    "icon": "tv"
+   },
+   {
+    "content": "Wifi",
+    "icon": "wifi"
+   },
+   {
+    "content": "Air conditioning",
+    "icon": "air_conditioner"
+   },
+   {
+    "content": "Washing machine",
+    "icon": "washing_machine"
+   },
+   {
+    "content": "Pool",
+    "icon": "pool"
+   }
+  ]
+ },
+ "room_amenities": {
+  "title": "Room amenities",
+  "elements": [
+   {
+    "content": "Furnished",
+    "icon": "furnished"
+   },
+   {
+    "content": "Balcony",
+    "icon": "balcony"
+   },
+   {
+    "content": "Natural light",
+    "icon": "exterior_view"
+   }
+  ]
+ },
+ "lift": true,
+ "abstract": {
+  "title": null,
+  "elements": [
+   {
+    "content": "Private room",
+    "icon": "property_type"
+   },
+   {
+    "content": "10 m²",
+    "icon": "area"
+   },
+   {
+    "content": "Lift",
+    "icon": "lift"
+   },
+   {
+    "content": "Single bed",
+    "icon": "bed_type"
+   }
+  ]
+ },
+ "property_details": {
+  "title": "Property details",
+  "elements": [
+   {
+    "title": "Bathrooms",
+    "elements": [
+     {
+      "content": "2 full bathrooms"
+     }
+    ]
+   },
+   {
+    "title": "Bedrooms",
+    "elements": [
+     {
+      "content": "2 single"
+     },
+     {
+      "content": "1 double"
+     }
+    ]
+   },
+   {
+    "title": "House rules",
+    "elements": [
+     {
+      "content": "Smoker friendly"
+     }
+    ]
+   },
+   {
+    "title": "Availability",
+    "elements": [
+     {
+      "content": "From 01 Dec 2026"
+     }
+    ]
+   },
+   {
+    "title": "Property size",
+    "elements": [
+     {
+      "content": "80 m²"
+     }
+    ]
+   }
+  ]
+ },
+ "bathrooms": 2,
+ "toilets": null,
+ "double_bedrooms": 1,
+ "single_bedrooms": 2,
+ "facade_side": null,
+ "services_included": {
+  "title": "Services included",
+  "elements": [
+   {
+    "title": null,
+    "elements": [
+     {
+      "content": "Maintenance service"
+     }
+    ]
+   },
+   {
+    "title": null,
+    "elements": [
+     {
+      "content": "City hall registration support"
+     }
+    ]
+   }
+  ]
+ },
+ "house_rules_ids": [
+  "smoker_friendly"
+ ],
+ "male_tenants": 2,
+ "female_tenants": 0,
+ "non_binary_tenants": 0,
+ "room_amenities_ids": [
+  "furnished",
+  "balcony",
+  "exterior_view"
+ ],
+ "energetic_certificate": null,
+ "amenities_attributes": [
+  {
+   "amenity_type": 1
+  },
+  {
+   "amenity_type": 2
+  },
+  {
+   "amenity_type": 3
+  },
+  {
+   "amenity_type": 7
+  },
+  {
+   "amenity_type": 9
+  },
+  {
+   "amenity_type": 14
+  },
+  {
+   "amenity_type": 15
+  },
+  {
+   "amenity_type": 17
+  },
+  {
+   "amenity_type": 18
+  },
+  {
+   "amenity_type": 5
+  }
+ ],
+ "entire_place_amenities_ids": [
+  "tv",
+  "wifi",
+  "air_conditioner",
+  "washing_machine",
+  "pool"
+ ],
+ "visit_preferences": null,
+ "preferences": {
+  "gender": "any",
+  "genders": [
+   1,
+   2,
+   3
+  ],
+  "occupation": "worker",
+  "min_age": 26,
+  "max_age": 40
+ },
+ "tenants": [
+  {
+   "age": 35,
+   "biological_sex": 2
+  }
+ ],
+ "price_details": {
+  "title": "Price",
+  "elements": [
+   {
+    "title": "Monthly rent",
+    "elements": [
+     {
+      "content": "€450/month"
+     }
+    ]
+   },
+   {
+    "title": "Deposit",
+    "elements": [
+     {
+      "content": "€600"
+     }
+    ]
+   },
+   {
+    "title": "Bills",
+    "elements": [
+     {
+      "content": "Not included"
+     }
+    ]
+   }
+  ]
+ },
+ "prices_attributes": [
+  {
+   "price_type": 3,
+   "price": 450,
+   "currency": "EUR",
+   "bills_included": false,
+   "deposit": 600,
+   "agency_fee": null,
+   "price_per_square_unit": null,
+   "square_unit": null
+  }
+ ],
+ "monthly_prices": {
+  "current": 450,
+  "previous": null
+ },
+ "agency_external_id": null,
+ "views_count": 37,
+ "fast_track_allowed": false,
+ "active_booking_proposals": 0,
+ "active_connections_count": 8,
+ "enquiry_stats": {
+  "standard_enquiries": 8,
+  "fast_track_enquiries": 0
+ },
+ "badi_impulsa": false,
+ "badi_plus_external_id": null,
+ "is_badi_plus": false,
+ "resident": null,
+ "benefits": [
+  "maintenance",
+  "registration_available"
+ ],
+ "tenants_number": 0,
+ "non_badi_tenants": {
+  "undefined_tenants": 0,
+  "male_tenants": 2,
+  "female_tenants": 0
+ },
+ "virtual_tour_link": null
+}
