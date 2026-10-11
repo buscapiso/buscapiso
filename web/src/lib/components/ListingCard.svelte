@@ -44,7 +44,7 @@
   </p>
   <p class="cost"><strong>{listing.total_cost ?? '?'} €</strong>
     <span>{t('listing.perMonth')}</span> <small>{costLine(listing)}</small>
-    {#if priceTag(listing)}<small class="vs" class:low={(listing.price_context?.diff ?? 0) < 0}>{priceTag(listing)}</small>{/if}</p>
+    {#if priceTag(listing)}<small class="vs">{priceTag(listing)}</small>{/if}</p>
   {#if listing.scam_signals?.length}
     <p class="check" title={listing.scam_signals.join('\n')}><span aria-hidden="true">⚠</span> {t('listing.checkBeforePaying')}</p>
   {/if}
@@ -141,7 +141,6 @@
     .stamp { right: 18px; top: 22px; }
     .actions button { flex: 1; min-height: 44px; }
   }
-  .vs { display: inline-block; margin-left: 6px; color: var(--muted); }
-  .vs.low { color: var(--ok); }
+  .vs { display: inline-block; margin-left: 6px; color: var(--ok); }
   .check { margin: 4px 0 0; font-size: 13.5px; font-weight: 700; color: var(--bad); }
 </style>

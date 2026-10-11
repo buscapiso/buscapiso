@@ -12,24 +12,31 @@ const rooms = (prices: number[], hood = 'Gràcia') => prices.map((price) => stor
 describe('price context', () => {
   it('compares a room with the median of its neighbourhood', () => {
     const ls = rooms([400, 450, 500, 500, 550, 600, 650]);
-    const ctx = priceContexts(ls, 'room').get(ls[0].id)!;
+    const ctx = priceContexts(ls, 'room', 900).get(ls[0].id)!;
     expect(ctx).toMatchObject({ median: 500, n: 7, place: 'Gràcia', perM2: false });
     expect(ctx.diff).toBeCloseTo(-0.2);
+    expect(ctx.cheaperThan).toBeCloseTo(6 / 7);
+  });
+  it('compares only with what fits the budget: portals without a price cap bring pricier ones', () => {
+    const ls = rooms([400, 450, 500, 500, 550, 600, 1200, 1500]);
+    const ctx = priceContexts(ls, 'room', 650).get(ls[0].id)!;
+    expect(ctx).toMatchObject({ median: 500, n: 6 });
+    expect(priceContexts(ls, 'room', 650).has(ls[7].id)).toBe(false);
   });
   it('falls back to the town when the neighbourhood has too few, and says nothing with too few overall', () => {
     const ls = [...rooms([300], 'Vallcarca'), ...rooms([500, 500, 520, 480, 510, 490], 'Sants')];
-    expect(priceContexts(ls, 'room').get(ls[0].id)).toMatchObject({ place: 'Barcelona', n: 7 });
-    expect(priceContexts(rooms([400, 500]), 'room').size).toBe(0);
+    expect(priceContexts(ls, 'room', 900).get(ls[0].id)).toMatchObject({ place: 'Barcelona', n: 7 });
+    expect(priceContexts(rooms([400, 500]), 'room', 900).size).toBe(0);
   });
   it('compares flats by price per square metre when the size is known', () => {
     const ls = [1000, 1100, 1200, 1300, 1400, 1500].map((price) => stored({ type: 'flat', price, surfaceM2: 70, neighbourhood: 'Eixample' }));
-    const ctx = priceContexts(ls, 'flat').get(ls[5].id)!;
+    const ctx = priceContexts(ls, 'flat', 2000).get(ls[5].id)!;
     expect(ctx.perM2).toBe(true);
     expect(ctx.median).toBeCloseTo(17.9, 1);
   });
   it('ignores placeholder prices', () => {
     const ls = rooms([1, 450, 500, 500, 550, 600]);
-    expect(priceContexts(ls, 'room').has(ls[0].id)).toBe(false);
+    expect(priceContexts(ls, 'room', 900).has(ls[0].id)).toBe(false);
   });
 });
 
@@ -43,9 +50,9 @@ describe('scam signals', () => {
   });
   it('flags a price far below similar listings', () => {
     const l = stored({ price: 250 });
-    expect(scamSignals(l, { median: 520, n: 12, place: 'Gràcia', diff: -0.52, perM2: false }, new Map()))
-      .toEqual(['Price is 52% below similar listings in Gràcia']);
-    expect(scamSignals(l, { median: 520, n: 4, place: 'Gràcia', diff: -0.52, perM2: false }, new Map())).toEqual([]);
+    const ctx = { median: 520, n: 12, place: 'Gràcia', diff: -0.52, cheaperThan: 1, perM2: false };
+    expect(scamSignals(l, ctx, new Map())).toEqual(['Price is 52% below other listings within your budget in Gràcia']);
+    expect(scamSignals(l, { ...ctx, n: 4 }, new Map())).toEqual([]);
   });
   it('flags a photo that another listing elsewhere also uses', () => {
     const a = stored({ photo: 'https://img/1.jpg', neighbourhood: 'Gràcia' });

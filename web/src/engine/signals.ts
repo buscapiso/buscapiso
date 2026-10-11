@@ -3,15 +3,22 @@
 import { norm } from './cities/names';
 import type { ListingType, StoredListing } from './model';
 
+// Ojo: los portales solo dan lo que cabe en el presupuesto (se les pide con
+// tope de precio), asi que esto NO es el precio de mercado de la zona: es como
+// esta un anuncio entre los que te puedes permitir alli. Por eso se dice asi,
+// y no hay "por encima de la zona": cerca del tope seria siempre "caro".
 export interface PriceContext {
-  /** Mediana de la zona: euros al mes o, en pisos con metros, euros por m². */
+  /** Mediana de los anuncios dentro del presupuesto en la zona: euros al mes
+   * o, en pisos con metros, euros por m². */
   median: number;
-  /** Cuantos anuncios entran en la mediana. */
+  /** Cuantos anuncios entran en la comparacion. */
   n: number;
   /** El barrio, o el municipio si el barrio tiene pocos. */
   place: string;
-  /** Diferencia con la mediana: -0.2 es un 20 % por debajo. */
+  /** Diferencia con esa mediana: -0.2 es un 20 % por debajo. */
   diff: number;
+  /** Parte de esos anuncios que cuestan mas que este (0..1). */
+  cheaperThan: number;
   perM2: boolean;
 }
 
@@ -25,10 +32,12 @@ const median = (xs: number[]) => {
   return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
 };
 
-/** Por anuncio, como esta su precio frente a los parecidos de su zona. */
-export function priceContexts(ls: StoredListing[], type: ListingType): Map<string, PriceContext> {
+/** Por anuncio, como esta su precio entre los parecidos de su zona que caben
+ * en el presupuesto (`maxPrice`, el alquiler: lo mismo que se pide a los
+ * portales que lo admiten; los que no, traen de todo y se recortan aqui). */
+export function priceContexts(ls: StoredListing[], type: ListingType, maxPrice: number): Map<string, PriceContext> {
   const value = (l: StoredListing): number | null => {
-    if (l.type !== type || !l.price || l.price < MIN_PRICE) return null;
+    if (l.type !== type || !l.price || l.price < MIN_PRICE || l.price > maxPrice) return null;
     if (type === 'flat') return l.surfaceM2 && l.surfaceM2 >= 15 ? l.price / l.surfaceM2 : null;
     return l.price;
   };
@@ -52,7 +61,8 @@ export function priceContexts(ls: StoredListing[], type: ListingType): Map<strin
       l.municipality ? groups.get(`m:${norm(l.municipality)}`) : undefined].find((x) => x && x.values.length >= MIN_SAMPLE);
     if (!g) continue;
     const m = median(g.values);
-    out.set(l.id, { median: Math.round(m * 10) / 10, n: g.values.length, place: g.label, diff: v / m - 1, perM2: type === 'flat' });
+    out.set(l.id, { median: Math.round(m * 10) / 10, n: g.values.length, place: g.label, diff: v / m - 1,
+      cheaperThan: g.values.filter((x) => x > v).length / g.values.length, perM2: type === 'flat' });
   }
   return out;
 }
@@ -88,7 +98,7 @@ const STORIES: [string, RegExp][] = [
 export function scamSignals(l: StoredListing, ctx: PriceContext | undefined, photos: Map<string, Set<string>>): string[] {
   const text = `${l.title} ${l.description}`;
   const out = STORIES.filter(([, re]) => re.test(text)).map(([label]) => label);
-  if (ctx && ctx.n >= 8 && ctx.diff <= -0.4) out.push(`Price is ${Math.round(-ctx.diff * 100)}% below similar listings in ${ctx.place}`);
+  if (ctx && ctx.n >= 8 && ctx.diff <= -0.4) out.push(`Price is ${Math.round(-ctx.diff * 100)}% below other listings within your budget in ${ctx.place}`);
   if (l.photo && (photos.get(l.photo)?.size ?? 0) > 1) out.push('Same photo as a listing elsewhere');
   return out;
 }

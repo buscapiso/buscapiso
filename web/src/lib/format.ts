@@ -9,21 +9,21 @@ export function costLine(l: Listing): string {
 }
 
 
-/** "12% below the median for rooms in Gràcia (520 €, 14 listings)", o '' sin mediana. */
+/** "Cheaper than 80% of the 14 listings within your budget in Gràcia (median
+ * 520 €)": una posicion entre lo que cabe en el presupuesto, que es lo que
+ * traen los portales; no el precio de mercado. '' sin bastantes anuncios. */
 export function priceLine(l: Listing): string {
   const c = l.price_context;
   if (!c) return '';
-  const pct = Math.round(Math.abs(c.diff) * 100);
   const median = c.perM2 ? `${Math.round(c.median)} €/m²` : `${Math.round(c.median)} €`;
-  const vars = { pct, place: c.place, median, n: c.n, kind: t(c.perM2 ? 'listing.kindFlats' : 'listing.kindRooms') };
-  return t(pct < 5 ? 'listing.priceAbout' : c.diff < 0 ? 'listing.priceBelow' : 'listing.priceAbove', vars);
+  return t(c.perM2 ? 'listing.priceRankFlat' : 'listing.priceRank',
+    { pct: Math.round(c.cheaperThan * 100), n: c.n, place: c.place, median });
 }
 
-/** En la tarjeta, solo si se aparta: "15% below Gràcia". */
+/** En la tarjeta, solo lo que es noticia: de lo mas barato que cabe en tu presupuesto. */
 export function priceTag(l: Listing): string {
   const c = l.price_context;
-  if (!c || Math.abs(c.diff) < 0.1) return '';
-  return t(c.diff < 0 ? 'card.below' : 'card.above', { pct: Math.round(Math.abs(c.diff) * 100), place: c.place });
+  return c && c.cheaperThan >= 0.75 ? t('card.cheapIn', { place: c.place }) : '';
 }
 
 export const STATUSES: Status[] = [

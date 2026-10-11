@@ -313,7 +313,7 @@ export async function rescore(listings: StoredListing[], p: SearchProfile,
   }
   // 4. Precio frente a la zona y señales de estafa: reglas, sin red ni IA.
   const mine = ws.map((w) => w.stored).filter((l) => l.type === p.listing_type);
-  const prices = priceContexts(mine, p.listing_type);
+  const prices = priceContexts(mine, p.listing_type, p.listing_type === 'flat' ? p.flat.max_rent : p.budget.max_total);
   const photos = photoPlaces(mine);
   for (const w of ws) {
     const ctx = prices.get(w.stored.id) ?? null;
