@@ -28,10 +28,9 @@
 
   const PROGRESS: Status[] = ['contacted', 'visit_scheduled', 'visited', 'applied'];
   const MATCH: Record<Filter, (l: Listing) => boolean> = {
-    new: (l) => l.status === 'new' && l.group === 'accepted',
+    new: (l) => l.status === 'new',
     liked: (l) => l.status === 'liked',
     progress: (l) => PROGRESS.includes(l.status),
-    ask: (l) => l.status === 'new' && l.group === 'possible',
     hidden: (l) => l.status === 'hidden' || l.status === 'discarded',
   };
 
@@ -48,7 +47,7 @@
     return { id: l.id, lat: l.lat!, lon: l.lon!, label: l.title || l.neighbourhood,
       sub: place ? t('map.pointSub', { cost: l.total_cost ?? '?', minutes: Math.round(minutes), place }) : undefined,
       href: href({ name: 'listing', id: l.id }), color: scoreColor(l.score, best), n: view === 'list' ? n : undefined,
-      faint: l.group === 'possible' };
+      faint: !!l.ask?.length };
   }));
 
   async function load() {
@@ -158,7 +157,7 @@
       {#each shown as l, i (l.id)}
         <ListingCard listing={l} n={i + 1} boxed={i === 0 && filter === 'new'} active={l.id === selected}
           onhover={(id) => (hovered = id)}
-          onstatus={filter === 'new' || filter === 'ask' ? (s) => changeStatus(l, s) : undefined} />
+          onstatus={filter === 'new' ? (s) => changeStatus(l, s) : undefined} />
       {/each}
     </div>
     <aside class="side">

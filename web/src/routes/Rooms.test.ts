@@ -26,15 +26,15 @@ beforeEach(() => {
 });
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
-test('filters are chips with counts, and the list shows only that filter', async () => {
+test('filters are chips with counts; listings to ask about stay in New', async () => {
   render(Rooms, { filter: 'new', view: 'list' });
   await screen.findByText('Room a');
   const filtros = screen.getByRole('navigation', { name: 'Filter by status' });
   const n = (label: string) => within(filtros).getByRole('link', { name: new RegExp(`^${label}`) }).textContent;
-  expect(n('New')).toMatch(/2/);
+  expect(n('New')).toMatch(/3/);
   expect(n('Liked')).toMatch(/1/);
   expect(n('In progress')).toMatch(/1/);
-  expect(n('Ask first')).toMatch(/1/);
+  expect(within(filtros).queryByRole('link', { name: /^Ask first/ })).toBeNull();
   expect(n('Hidden')).toMatch(/1/);
   expect(screen.getByText('Room a')).toBeInTheDocument();
   expect(screen.queryByText('Room c')).toBeNull();

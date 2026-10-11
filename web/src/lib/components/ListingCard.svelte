@@ -59,6 +59,9 @@
       {/each}
     </ul>
   {/if}
+  {#if listing.ask?.length}
+    <p class="askfirst">{t('listing.askFirst', { what: listing.ask.join(', ') })}</p>
+  {/if}
   {#if met.length || missed.length}
     <ul class="wishes" aria-label={t('listing.wishes')}>
       {#each met as w}<li class="yes"><span aria-hidden="true">✓</span> {w}</li>{/each}
@@ -106,6 +109,8 @@
   .travel { list-style: none; padding: 0; margin: 8px 0 0; display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 14px; }
   .travel li { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
   .chip { background: var(--chip); color: #fff; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 2px; line-height: 1.4; }
+  .askfirst { margin: 8px 0 0; justify-self: start; font-size: 13.5px; font-weight: 700; color: var(--gold-ink);
+    border: 1.5px solid var(--gold); padding: 1px 8px; background: color-mix(in srgb, var(--gold) 10%, transparent); }
   .wishes { list-style: none; margin: 8px 0 0; padding: 6px 0 0; border-top: 1px dashed var(--line-strong);
     display: flex; flex-wrap: wrap; gap: 2px 14px; font-size: 14px; }
   .wishes .yes { color: var(--ok); }

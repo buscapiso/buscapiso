@@ -25,7 +25,10 @@ describe('ranking matches ranking.py', () => {
       const res = filter(ls, p);
       const got: Record<string, unknown> = {};
       for (const [group, list] of [['accepted', res.accepted], ['possible', res.possible]] as const) {
-        for (const l of list) got[`${l.source}:${l.sourceId}`] = { group, ...score(l, p, c.today) };
+        for (const l of list) {
+          const { score: s, reasons } = score(l, p, c.today);
+          got[`${l.source}:${l.sourceId}`] = { group, score: s, reasons };
+        }
       }
       for (const [l, reason] of res.rejected) got[`${l.source}:${l.sourceId}`] = { group: 'rejected', reason };
       for (const [k, want] of Object.entries(c.results)) expect.soft(got[k], k).toEqual(want);

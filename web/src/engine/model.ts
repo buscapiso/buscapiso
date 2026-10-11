@@ -50,6 +50,19 @@ export interface RawListing {
   floor: string;
   elevator: boolean | null;
   furnished: boolean | null;
+  // Lo que suele venir solo en el texto (lo lee la IA). Opcionales: los
+  // anuncios guardados antes no los tienen, y ausente es "no se sabe".
+  depositMonths?: number | null;
+  depositEur?: number | null;
+  agencyFee?: boolean | null;
+  registrationAllowed?: boolean | null;
+  petsAllowed?: boolean | null;
+  roomM2?: number | null;
+  privateBathroom?: boolean | null;
+  doubleBed?: boolean | null;
+  /** Extras que el anuncio dice que tiene, y los que dice que no. */
+  amenities?: string[];
+  amenitiesMissing?: string[];
 }
 
 /** Un anuncio guardado: lo del portal mas cuando y donde se vio. */
@@ -86,6 +99,8 @@ export interface Derived {
   /** Por que la IA no lo leyo, o '' si lo leyo (o no habia IA). */
   aiNote?: string;
   alsoOn: string[];
+  /** Lo que importa y el anuncio calla: "Ask first" en la tarjeta. */
+  ask?: string[];
 }
 
 export interface HistoryEntry { status: Status; note: string; at: string }
@@ -124,7 +139,7 @@ export function emptyListing(source: string, sourceId: string, url: string): Raw
 export function emptyDerived(id: string): Derived {
   return { id, group: 'rejected', rejectReason: '', score: 0, reasons: [], travel: {},
     routes: {}, travelSource: '', summary: '', pros: [], cons: [], redFlags: [],
-    aiTemporary: null, wishesMet: [], wishesMissed: [], aiFacts: [], aiNote: '', alsoOn: [] };
+    aiTemporary: null, wishesMet: [], wishesMissed: [], aiFacts: [], aiNote: '', alsoOn: [], ask: [] };
 }
 
 /** Identificador estable entre ejecuciones, dispositivos y la version Python. */

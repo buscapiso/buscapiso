@@ -5,6 +5,7 @@
 // Traduccion literal de ranking.py; los textos de los motivos son los mismos,
 // con el mismo formato de numeros que Python (redondeo al par, "-0").
 import { estimatedCost, type Gender, type RawListing } from './model';
+import { prefsReject, prefsScore } from './prefs';
 import { activeBudget, DEFAULT_WEIGHTS, type SearchProfile } from './profiles';
 
 export interface Scorable extends RawListing {
@@ -17,7 +18,8 @@ export interface Scorable extends RawListing {
   /** Los gastos no los dio el portal: salen del texto (regex o IA). */
   billsFromText?: boolean;
 }
-export interface Scored { score: number; reasons: string[] }
+/** `ask`: lo que te importa y el anuncio no dice; la tarjeta lo enseña como "Ask first". */
+export interface Scored { score: number; reasons: string[]; ask: string[] }
 
 // --- numeros con el formato de Python ------------------------------------
 /** Redondeo de Python: al par en los empates exactos. */
@@ -117,6 +119,11 @@ export function filter<T extends Scorable>(listings: T[], p: SearchProfile, disc
     } else if (p.household.visits === 'strict') {
       if (l.visitsAllowed === false || NO_GUESTS.test(text(l))) { reject('no guests allowed'); continue; }
     }
+    const pref = prefsReject(l, p);
+    if (pref) { reject(pref); continue; }
+    if (p.prefs.seasonal === 'required' && (SHORT_LET.test(text(l)) || l.aiTemporary === true)) {
+      reject('a short or seasonal let'); continue;
+    }
     if (limited.some((d) => !(d.name in l.travel))) { reject('no usable location'); continue; }
     const far = limited.find((d) => l.travel[d.name] > d.max_minutes!);
     if (far) { reject(`${fmt0(l.travel[far.name])} min to ${far.name}`); continue; }
@@ -186,7 +193,7 @@ export function score(l: Scorable, p: SearchProfile, today: string): Scored {
     total += w.ambiente_joven;
     reasons.push(`young people or students (+${fmt0(w.ambiente_joven)})`);
   }
-  if (SHORT_LET.test(text(l))) {
+  if (p.prefs.seasonal === 'any') { /* no le importa */ } else if (SHORT_LET.test(text(l))) {
     total -= w.temporal;
     reasons.push(`looks like a short or seasonal let (-${fmt0(w.temporal)})`);
   } else if (l.aiTemporary === true) {
@@ -203,6 +210,9 @@ export function score(l: Scorable, p: SearchProfile, today: string): Scored {
     reasons.push(`AI: ${x} (-${fmt0(w.deseo_incumplido)})`);
   }
 
+  const ask: string[] = [];
+  total += prefsScore(l, p, w, reasons, ask);
+
   if (flat) total += flatScore(l, p, w, reasons);
   else if (l.roommates && l.roommates > w.companeros_comodos) {
     const penalty = (l.roommates - w.companeros_comodos) * w.por_companero_extra;
@@ -217,12 +227,29 @@ export function score(l: Scorable, p: SearchProfile, today: string): Scored {
     total -= w.visitas;
     reasons.push(`a quiet house that rarely has guests (-${fmt0(w.visitas)})`);
   }
-  if (!flat && l.couplesAllowed === false) {
+  // Si vas en pareja, lo puntua la preferencia; si no, la regla de siempre.
+  if (!flat && p.prefs.couple === 'any' && l.couplesAllowed === false) {
     total -= w.no_admite_parejas;
     reasons.push(`no couples (-${fmt0(w.no_admite_parejas)})`);
   }
   // Edad real de los compañeros: mejor señal que buscar "joven" en el texto.
-  if (l.roommateAges && !flat) {
+  // Con tu propio rango, cuenta ese; sin el, la edad de siempre.
+  const ownAges = p.prefs.age_min !== null || p.prefs.age_max !== null;
+  if (l.roommateAges && !flat && ownAges) {
+    const nums = (l.roommateAges.match(/\d+/g) ?? []).map(Number);
+    if (nums.length) {
+      const lo = Math.min(...nums), hi = Math.max(...nums);
+      const min = p.prefs.age_min ?? 0, max = p.prefs.age_max ?? 120;
+      const range = `${p.prefs.age_min ?? ''}–${p.prefs.age_max ?? ''}`;
+      if (hi >= min && lo <= max) {
+        total += w.ambiente_joven;
+        reasons.push(`roommates aged ${l.roommateAges}, in your ${range} (+${fmt0(w.ambiente_joven)})`);
+      } else {
+        total -= w.pref_incumple;
+        reasons.push(`roommates aged ${l.roommateAges}, outside your ${range} (-${fmt0(w.pref_incumple)})`);
+      }
+    }
+  } else if (l.roommateAges && !flat) {
     const m = l.roommateAges.match(/^\s*([+-]?\d+)\s*-\s*([+-]?\d+)\s*$/);
     if (m && Math.abs((+m[1] + +m[2]) / 2 - w.edad_afin) <= w.margen_edad) {
       total += w.ambiente_joven;
@@ -232,11 +259,14 @@ export function score(l: Scorable, p: SearchProfile, today: string): Scored {
   // Entrar "ya": libre dentro de un mes vale menos que libre hoy.
   const free = l.availableFrom ? parseDmy(l.availableFrom) : null;
   if (free) {
-    const days = Math.round((free.getTime() - Date.parse(`${today}T00:00:00Z`)) / 86_400_000);
+    // Con fecha de entrada propia, la espera se cuenta desde ahi, no desde hoy.
+    const from = p.prefs.move_in && p.prefs.move_in > today ? p.prefs.move_in : today;
+    const days = Math.round((free.getTime() - Date.parse(`${from}T00:00:00Z`)) / 86_400_000);
     if (days > w.dias_de_espera_tolerables) {
       const penalty = Math.min((days - w.dias_de_espera_tolerables) * w.por_dia_de_espera, w.espera_maxima);
       total -= penalty;
-      reasons.push(`free from ${l.availableFrom}, in ${days} days (${fmt0(-penalty, true)})`);
+      const when = from === today ? `in ${days} days` : `${days} days after you move in`;
+      reasons.push(`free from ${l.availableFrom}, ${when} (${fmt0(-penalty, true)})`);
     }
   }
   const zone = (l.neighbourhood || l.municipality).toLowerCase();
@@ -256,7 +286,9 @@ export function score(l: Scorable, p: SearchProfile, today: string): Scored {
     total -= w.ubicacion_estimada;
     reasons.push(`approximate location, not exact (-${fmt0(w.ubicacion_estimada)})`);
   }
-  return { score: pyRound(total, 1), reasons };
+  if (flat && p.flat.elevator_required && l.elevator === null) ask.push('lift');
+  if (flat && p.flat.furnished !== 'any' && l.furnished === null) ask.push('furnishing');
+  return { score: pyRound(total, 1), reasons, ask };
 }
 
 /** Lo propio de un piso entero: metros por encima del minimo, y avisar de

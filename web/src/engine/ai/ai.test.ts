@@ -208,6 +208,16 @@ describe('facts', () => {
     await extractMany(p, [base()], cache, { seeker: 'I have a dog' });
     expect(calls).toHaveLength(2);
   });
+  it('fill the new facts on a copy, ignoring extras outside the list', () => {
+    const f = listingFacts.parse({ ...FACTS, pets_allowed: false, deposit_months: 2, registration_allowed: true, room_m2: 11,
+      private_bathroom: true, amenities: ['lift', 'jacuzzi', 'air_conditioning'], amenities_missing: ['heating'] });
+    expect(f.amenities).toEqual(['lift', 'air_conditioning']);
+    const { listing, filled } = applyFacts(base(), f);
+    expect(listing).toMatchObject({ petsAllowed: false, depositMonths: 2, registrationAllowed: true, roomM2: 11,
+      privateBathroom: true, amenities: ['lift', 'air_conditioning'], amenitiesMissing: ['heating'] });
+    expect(filled).toEqual(expect.arrayContaining(['petsAllowed', 'depositMonths', 'amenities']));
+    expect(describeFacts(f, filled).find((r) => r.label === 'Pets')).toEqual({ label: 'Pets', value: 'not allowed', used: true });
+  });
   it('pass on the wishes a listing meets and misses', () => {
     const f = { ...FACTS, wishes_met: ['has a balcony'], wishes_missed: ['no pets, and you have a cat'] };
     const { ai } = applyFacts(base(), f);
@@ -235,6 +245,13 @@ describe('facts', () => {
     await suggestProfile(new ClaudeProvider('k', undefined, post), 'x');
     expect(calls[0].body.system).toMatch(/Example/);
     expect(calls[0].body.system).toMatch(/"budget_max": ?600/);
+  });
+  it('reads who you are and what you need from the description', async () => {
+    const { post } = recorder([claudeText(JSON.stringify({ has_pet: true, needs_registration: true, age_min: 16, age_max: '22',
+      roommates_occupation: 'students', amenities_required: ['lift', 'sauna'], move_in: 'next month', places: [] }))]);
+    const s = await suggestProfile(new ClaudeProvider('k', undefined, post), 'Tengo 18 años y un gato, necesito ascensor');
+    expect(s).toMatchObject({ has_pet: true, needs_registration: true, age_min: 16, age_max: 22,
+      roommates_occupation: 'students', amenities_required: ['lift'], move_in: null, smokes: null });
   });
   it('turns a description into a profile suggestion', async () => {
     const { post } = recorder([claudeText(JSON.stringify({ budget_max: 700, places: [{ name: 'UPC', address: 'Campus Nord' }] }))]);

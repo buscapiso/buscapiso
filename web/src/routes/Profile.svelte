@@ -8,6 +8,17 @@
   import NeighbourhoodPicker from '../lib/components/NeighbourhoodPicker.svelte';
   import DescribeProfile from '../lib/components/DescribeProfile.svelte';
   import CityPicker from '../lib/components/CityPicker.svelte';
+  import LevelSelect from '../lib/components/LevelSelect.svelte';
+  import { AMENITIES, type Amenity, type Level } from '../lib/api';
+
+  // Un extra sin nivel guardado es "me da igual"; volver a eso lo borra.
+  function setAmenity(a: Amenity, l: Level) {
+    if (!p) return;
+    const next = { ...p.prefs.amenities };
+    if (l === 'any') delete next[a]; else next[a] = l;
+    p.prefs.amenities = next;
+  }
+  const num = (v: string) => (v === '' ? null : Number(v));
   import { fieldErrors } from '../lib/profileErrors';
   import { t } from '../lib/i18n';
 
@@ -54,6 +65,22 @@
     if (s.household_gender) p.household.gender = s.household_gender;
     if (s.owner_must_not_live_in !== null) p.household.no_live_in_owner = s.owner_must_not_live_in;
     if (s.visits) p.household.visits = s.visits;
+    // Lo que dices de ti es imprescindible; lo que te gustaria del piso, "mejor si".
+    const x = p.prefs;
+    if (s.has_pet) x.pets = 'required';
+    if (s.smokes === true) x.smoking = 'required';
+    if (s.smokes === false) x.no_smokers = 'preferred';
+    if (s.couple) x.couple = 'required';
+    if (s.needs_registration) x.registration = 'required';
+    if (s.move_in) x.move_in = s.move_in;
+    if (s.stay_months) x.stay_months = s.stay_months;
+    if (s.roommates_max != null) x.roommates_max = s.roommates_max;
+    if (s.age_min != null) x.age_min = s.age_min;
+    if (s.age_max != null) x.age_max = s.age_max;
+    if (s.roommates_occupation) { x.occupation = s.roommates_occupation; x.occupation_level = 'preferred'; }
+    if (s.private_bathroom) x.private_bathroom = 'preferred';
+    for (const a of s.amenities_wanted ?? []) x.amenities[a] = 'preferred';
+    for (const a of s.amenities_required ?? []) x.amenities[a] = 'required';
     const here = (await getCities().catch(() => null))?.active.name ?? '';
     const elsewhere = s.city && s.city.toLowerCase() !== here.toLowerCase() ? s.city : '';
     notice = elsewhere ? t('describe.otherCity', { city: elsewhere }) : '';
@@ -243,6 +270,77 @@
   </fieldset>
   {/if}
 
+  {#if show('basics')}
+  <fieldset>
+    <legend>{t('prefs.you')}</legend>
+    <p class="help">{t('prefs.levelsHelp')}</p>
+    <LevelSelect label={t('prefs.pets')} bind:value={p.prefs.pets} />
+    <LevelSelect label={t('prefs.smoking')} bind:value={p.prefs.smoking} />
+    <LevelSelect label={t('prefs.noSmokers')} bind:value={p.prefs.no_smokers} />
+    {#if !flat}<LevelSelect label={t('prefs.couple')} bind:value={p.prefs.couple} />{/if}
+    <LevelSelect label={t('prefs.registration')} bind:value={p.prefs.registration} />
+    {#each under('prefs') as m}<p class="error">{m}</p>{/each}
+  </fieldset>
+
+  {#if !flat}
+  <fieldset>
+    <legend>{t('prefs.roommates')}</legend>
+    <div class="row3">
+      <label>{t('prefs.roommatesMax')}<input type="number" min="0" max="20" value={p.prefs.roommates_max ?? ''}
+        oninput={(e) => (p!.prefs.roommates_max = num((e.currentTarget as HTMLInputElement).value))} /></label>
+      <label>{t('prefs.ageMin')}<input type="number" min="16" max="99" value={p.prefs.age_min ?? ''}
+        oninput={(e) => (p!.prefs.age_min = num((e.currentTarget as HTMLInputElement).value))} /></label>
+      <label>{t('prefs.ageMax')}<input type="number" min="16" max="99" value={p.prefs.age_max ?? ''}
+        oninput={(e) => (p!.prefs.age_max = num((e.currentTarget as HTMLInputElement).value))} /></label>
+    </div>
+    <div class="row2">
+      <label>{t('prefs.occupation')}
+        <select bind:value={p.prefs.occupation}>
+          {#each ['any', 'students', 'workers'] as o}<option value={o}>{t(`occupation.${o}`)}</option>{/each}
+        </select>
+      </label>
+      {#if p.prefs.occupation !== 'any'}<LevelSelect label={t('prefs.howMuch')} bind:value={p.prefs.occupation_level} />{/if}
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>{t('prefs.room')}</legend>
+    <label>{t('prefs.roomMinM2')}<input type="number" min="1" value={p.prefs.room_min_m2 ?? ''}
+      oninput={(e) => (p!.prefs.room_min_m2 = num((e.currentTarget as HTMLInputElement).value))} /></label>
+    <LevelSelect label={t('prefs.privateBathroom')} bind:value={p.prefs.private_bathroom} />
+    <LevelSelect label={t('prefs.doubleBed')} bind:value={p.prefs.double_bed} />
+    <LevelSelect label={t('prefs.exterior')} bind:value={p.prefs.exterior} />
+  </fieldset>
+  {/if}
+
+  <details class="more">
+    <summary>{t('prefs.more')}</summary>
+    <fieldset>
+      <legend>{t('prefs.dates')}</legend>
+      <div class="row2">
+        <label>{t('prefs.moveIn')}<input type="date" value={p.prefs.move_in ?? ''}
+          oninput={(e) => (p!.prefs.move_in = (e.currentTarget as HTMLInputElement).value || null)} /></label>
+        <label>{t('prefs.stayMonths')}<input type="number" min="1" max="120" value={p.prefs.stay_months ?? ''}
+          oninput={(e) => (p!.prefs.stay_months = num((e.currentTarget as HTMLInputElement).value))} /></label>
+      </div>
+      <LevelSelect label={t('prefs.seasonal')} bind:value={p.prefs.seasonal} />
+    </fieldset>
+    <fieldset>
+      <legend>{t('prefs.money')}</legend>
+      <label>{t('prefs.maxDeposit')}<input type="number" min="0" max="12" step="0.5" value={p.prefs.max_deposit_months ?? ''}
+        oninput={(e) => (p!.prefs.max_deposit_months = num((e.currentTarget as HTMLInputElement).value))} /></label>
+      <LevelSelect label={t('prefs.agencyFee')} bind:value={p.prefs.agency_fee} />
+      {#if flat}<LevelSelect label={t('prefs.exterior')} bind:value={p.prefs.exterior} />{/if}
+    </fieldset>
+    <fieldset>
+      <legend>{t('prefs.extras')}</legend>
+      {#each AMENITIES as a}
+        <LevelSelect label={t(`amenity.${a}`)} bind:value={() => p!.prefs.amenities[a] ?? 'any', (v) => setAmenity(a, v)} />
+      {/each}
+    </fieldset>
+  </details>
+  {/if}
+
   {#if show('places')}
   <fieldset>
     <legend>{t('profile.destinations')}</legend>
@@ -346,5 +444,11 @@
   .save { position: sticky; bottom: 0; background: var(--paper); padding: 12px 0; display: flex; gap: 12px; align-items: center;
     border-top: 3px double var(--ink); z-index: 1; }
   .ok { color: var(--ok); }
+  .row2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; align-items: end; }
+  .row3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; align-items: end; }
+  .more { margin: 0 0 16px; }
+  .more > summary { cursor: pointer; font-family: var(--display); font-stretch: 80%; font-weight: 700; font-size: 17px;
+    padding: 6px 0; }
+  .more[open] > summary { margin-bottom: 10px; }
   .notice { border-left: 4px solid var(--gold); background: var(--box); padding: 6px 12px; margin: -8px 0 16px; font-size: 14px; }
 </style>

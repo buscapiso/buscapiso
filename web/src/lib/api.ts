@@ -14,6 +14,8 @@ export interface Listing {
   summary: string; pros: string[]; cons: string[]; red_flags: string[];
   /** Lo que pediste con tus palabras y el anuncio cumple o descarta. */
   wishes_met?: string[]; wishes_missed?: string[];
+  /** Lo que te importa y el anuncio no dice. */
+  ask?: string[];
   /** Lo que la IA leyo, en palabras; `used` si cambio la puntuacion. */
   ai_facts?: { label: string; value: string; used: boolean }[];
   /** Por que la IA no lo leyo; '' si lo leyo. */
@@ -45,6 +47,20 @@ export interface FlatPrefs {
   elevator_required: boolean; furnished: 'any' | 'yes' | 'no';
 }
 
+export type Level = 'required' | 'preferred' | 'any';
+export const AMENITIES = ['air_conditioning', 'heating', 'balcony_or_terrace', 'washing_machine', 'dishwasher',
+  'wifi_included', 'cleaning_included', 'lift'] as const;
+export type Amenity = (typeof AMENITIES)[number];
+export interface Prefs {
+  max_deposit_months: number | null; agency_fee: Level; registration: Level;
+  move_in: string | null; stay_months: number | null; seasonal: Level;
+  pets: Level; smoking: Level; no_smokers: Level; couple: Level;
+  roommates_max: number | null; age_min: number | null; age_max: number | null;
+  occupation: 'any' | 'students' | 'workers'; occupation_level: Level;
+  room_min_m2: number | null; private_bathroom: Level; double_bed: Level; exterior: Level;
+  amenities: Partial<Record<Amenity, 'required' | 'preferred'>>;
+}
+
 export interface SearchProfile {
   name: string;
   description: string;
@@ -60,6 +76,7 @@ export interface SearchProfile {
     no_live_in_owner: boolean; visits: 'strict' | 'preferred' | 'indifferent';
   };
   zones: { exclude: string[]; penalize: string[]; prefer: string[] };
+  prefs: Prefs;
   idealista: Record<string, number | boolean | null>;
   crawl: { sort: string; fotocasa_sort: string; max_pages: number; details_to_read: number;
            real_travel_times: number };
@@ -204,6 +221,10 @@ export interface ProfileSuggestion {
   /** La ciudad que nombra, si la nombra. */
   city: string | null;
   places: { name: string; address: string; max_minutes: number | null; mode: 'transit' | 'walk' | 'bike' }[];
+  has_pet: boolean | null; smokes: boolean | null; couple: boolean | null; needs_registration: boolean | null;
+  move_in: string | null; stay_months: number | null; roommates_max: number | null;
+  age_min: number | null; age_max: number | null; roommates_occupation: 'students' | 'workers' | null;
+  private_bathroom: boolean | null; amenities_required: Amenity[]; amenities_wanted: Amenity[];
 }
 
 export const getAI = () => call<AISettings>('GET', '/api/ai');

@@ -216,7 +216,9 @@ function classify(ws: Working[], p: SearchProfile, discarded: Set<string>, today
     for (const l of list) {
       const s = score(l, p, today);
       const w = byId.get(l.id)!;
-      Object.assign(w.derived, { group, rejectReason: '', score: s.score, reasons: s.reasons });
+      // Sin saber quien vive en el piso: a la lista con "Ask first", no aparte.
+      const ask = group === 'possible' ? ['who lives there', ...s.ask] : s.ask;
+      Object.assign(w.derived, { group, rejectReason: '', score: s.score, reasons: s.reasons, ask });
       // Los "posibles" solo se enseñan si puntuan bien.
       if (group === 'possible' && s.score < p.household.min_score_to_ask) {
         Object.assign(w.derived, { group: 'rejected', rejectReason: 'gender not confirmed and low score' });

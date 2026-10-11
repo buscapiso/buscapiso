@@ -11,7 +11,47 @@ export const DEFAULT_WEIGHTS: Record<string, number> = {
   por_dia_de_espera: 0.8, espera_maxima: 30, zona_preferida: 12, zona_penalizada: 20,
   ubicacion_estimada: 6, por_m2_extra: 0.25, tope_m2_extra: 15,
   deseo_cumplido: 4, deseo_incumplido: 10,
+  // Preferencias con nivel: lo que el anuncio cumple, lo que incumple y lo
+  // que calla cuando para ti es imprescindible.
+  pref_cumple: 6, pref_incumple: 12, pref_desconocida: 3,
 };
+
+/** Imprescindible (descarta), mejor si (suma o resta), me da igual. */
+export const LEVELS = ['required', 'preferred', 'any'] as const;
+export type Level = (typeof LEVELS)[number];
+const level = z.enum(LEVELS).default('any');
+export const AMENITIES = ['air_conditioning', 'heating', 'balcony_or_terrace', 'washing_machine', 'dishwasher',
+  'wifi_included', 'cleaning_included', 'lift'] as const;
+export type Amenity = (typeof AMENITIES)[number];
+const optInt = (min: number, max: number) => z.number().int().min(min).max(max).nullable().default(null);
+
+// Lo que cada cual necesita, con su nivel. Por defecto nada cambia la
+// puntuacion de antes: "me da igual" y sin limites.
+const prefs = z.object({
+  max_deposit_months: z.number().min(0).max(12).nullable().default(null),
+  agency_fee: level,
+  registration: level,
+  /** Fecha en que quieres entrar (aaaa-mm-dd): la espera se cuenta desde ahi. */
+  move_in: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().default(null),
+  /** Meses que te quedas: un anuncio que pide mas, fuera. */
+  stay_months: optInt(1, 120),
+  /** Alquiler de temporada: "mejor si no" es lo que hacia siempre el ranking. */
+  seasonal: z.enum(LEVELS).default('preferred'),
+  pets: level,
+  smoking: level,
+  no_smokers: level,
+  couple: level,
+  roommates_max: optInt(0, 20),
+  age_min: optInt(16, 99),
+  age_max: optInt(16, 99),
+  occupation: z.enum(['any', 'students', 'workers']).default('any'),
+  occupation_level: level,
+  room_min_m2: optInt(1, 200),
+  private_bathroom: level,
+  double_bed: level,
+  exterior: level,
+  amenities: z.record(z.enum(AMENITIES), z.enum(['required', 'preferred'])).default({}),
+}).refine((x) => x.age_min === null || x.age_max === null || x.age_min <= x.age_max, 'age_min cannot be above age_max');
 
 export const ROOM_SOURCES = ['idealista', 'fotocasa', 'roomgo', 'depisoenpiso'] as const;
 export const FLAT_SOURCES = ['idealista', 'fotocasa', 'habitaclia'] as const;
@@ -85,6 +125,7 @@ export const searchProfile = z.object({
       'destination names must be unique'),
   budget: budget.default({}),
   household: household.default({}),
+  prefs: prefs.default({}),
   zones: z.object({
     exclude: z.array(z.string()).default([]),
     penalize: z.array(z.string()).default([]),

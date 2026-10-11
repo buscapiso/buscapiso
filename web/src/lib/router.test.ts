@@ -10,7 +10,8 @@ test.each([
   ['#/settings/ai', { name: 'settings', section: 'ai' }],
   // Rutas antiguas: marcadores y enlaces que ya existan siguen funcionando.
   ['#/liked', { name: 'rooms', filter: 'liked', view: 'list' }],
-  ['#/ask', { name: 'rooms', filter: 'ask', view: 'list' }],
+  // "Ask first" ya no es una lista: el enlace viejo lleva a New.
+  ['#/ask', { name: 'rooms', filter: 'new', view: 'list' }],
   ['#/map', { name: 'rooms', filter: 'new', view: 'map' }],
   ['#/board', { name: 'rooms', filter: 'new', view: 'board' }],
   ['#/search', { name: 'rooms', filter: 'new', view: 'list' }],

@@ -47,3 +47,8 @@ test('says when the pointer is over it, so the map can light up its pin', async 
   await userEvent.unhover(screen.getByRole('article'));
   expect(onhover).toHaveBeenLastCalledWith(null);
 });
+
+test('says what to ask first, without leaving the listing out', () => {
+  render(ListingCard, { listing: { ...listing, ask: ['who lives there', 'pets'] } as Listing });
+  expect(screen.getByText('Ask first: who lives there, pets')).toBeInTheDocument();
+});

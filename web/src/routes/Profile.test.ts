@@ -12,6 +12,10 @@ const profile = {
   household: { gender: 'female_only', ask_if_gender_unknown: true, min_score_to_ask: 60,
     no_live_in_owner: true, visits: 'preferred' },
   zones: { exclude: [], penalize: [], prefer: [] }, idealista: {},
+  prefs: { max_deposit_months: null, agency_fee: 'any', registration: 'any', move_in: null, stay_months: null,
+    seasonal: 'preferred', pets: 'any', smoking: 'any', no_smokers: 'any', couple: 'any', roommates_max: null,
+    age_min: null, age_max: null, occupation: 'any', occupation_level: 'any', room_min_m2: null,
+    private_bathroom: 'any', double_bed: 'any', exterior: 'any', amenities: {} },
   crawl: { sort: 'newest', fotocasa_sort: 'cheapest', max_pages: 3, details_to_read: 12 },
   weights: { novedad: 25 },
 };
@@ -131,4 +135,16 @@ test('choosing a whole flat swaps the room settings for the flat ones', async ()
   expect(p.flat.max_rent).toBe(1300);
   expect(p.flat.furnished).toBe('no');
   expect(p.budget.max_total).toBe(650);
+});
+
+test('preferences have a level, and extras can be set one by one', async () => {
+  render(Profile);
+  await userEvent.selectOptions(await screen.findByLabelText('Pets allowed (you have one)'), 'Must');
+  await userEvent.click(screen.getByText('More preferences: dates, money, extras'));
+  await userEvent.selectOptions(screen.getByLabelText('lift'), 'Better if');
+  await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+  expect(await screen.findByText('Saved')).toBeInTheDocument();
+  const sent = saved as { prefs: { pets: string; amenities: Record<string, string> } };
+  expect(sent.prefs.pets).toBe('required');
+  expect(sent.prefs.amenities).toEqual({ lift: 'preferred' });
 });

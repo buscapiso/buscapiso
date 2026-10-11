@@ -1,4 +1,5 @@
-export const FILTERS = ['new', 'liked', 'progress', 'ask', 'hidden'] as const;
+// "Ask first" ya no es una lista aparte: esos anuncios van en New con su etiqueta.
+export const FILTERS = ['new', 'liked', 'progress', 'hidden'] as const;
 export const VIEWS = ['list', 'map', 'board'] as const;
 export const SECTIONS = ['search', 'places', 'zones', 'auto', 'alerts', 'ai', 'data'] as const;
 export type Filter = (typeof FILTERS)[number];
@@ -14,7 +15,7 @@ const rooms = (filter: Filter = 'new', view: View = 'list'): Route => ({ name: '
 
 // Rutas de antes de la pagina Rooms, para que los enlaces viejos sigan valiendo.
 const LEGACY: Record<string, Route> = {
-  inbox: rooms(), liked: rooms('liked'), progress: rooms('progress'), ask: rooms('ask'),
+  inbox: rooms(), liked: rooms('liked'), progress: rooms('progress'), ask: rooms(),
   hidden: rooms('hidden'), map: rooms('new', 'map'), board: rooms('new', 'board'),
   search: rooms(), phone: { name: 'settings', section: 'alerts' },
   profile: { name: 'settings', section: 'search' },
