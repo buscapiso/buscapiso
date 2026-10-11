@@ -67,6 +67,25 @@ describe('OpenAI-compatible', () => {
     await p.json('s', 'u', listingFacts, {});
     expect(calls.map((c) => c.body.response_format.type)).toEqual(['json_schema', 'json_object', 'json_object']);
   });
+  it('keeps Gemini thinking to a minimum, since its thoughts eat the answer', async () => {
+    const gemini = 'https://generativelanguage.googleapis.com/v1beta/openai/';
+    const sent = async (model: string, base = gemini) => {
+      const { calls, post } = recorder([ok(FACTS)]);
+      await new OpenAICompatProvider('k', base, model, post).json('s', 'u', listingFacts, {});
+      return calls[0].body.reasoning_effort;
+    };
+    expect(await sent('gemini-3.5-flash-lite')).toBe('minimal');
+    expect(await sent('gemini-2.5-flash')).toBe('none');
+    expect(await sent('gemini-2.5-pro')).toBe('low');
+    expect(await sent('gpt-x', 'https://api.openai.com/v1')).toBeUndefined();
+  });
+  it('drops the thinking setting for good if Gemini refuses it', async () => {
+    const { calls, post } = recorder([{ status: 400, data: { error: { message: 'Invalid value for reasoning_effort' } } }, ok(FACTS), ok(FACTS)]);
+    const p = new OpenAICompatProvider('k', 'https://generativelanguage.googleapis.com/v1beta/openai', 'gemini-x', post);
+    await p.json('s', 'u', listingFacts, {});
+    await p.json('s', 'u', listingFacts, {});
+    expect(calls.map((c) => c.body.reasoning_effort)).toEqual(['minimal', undefined, undefined]);
+  });
   it('tells the model what was wrong when it asks again', async () => {
     const { calls, post } = recorder([ok({ summary: 3 }), ok(FACTS)]);
     await new OpenAICompatProvider('k', 'https://x/v1', 'm', post).json('s', 'u', listingFacts, {});
@@ -210,6 +229,12 @@ describe('facts', () => {
     expect(s).toMatchObject({ budget_max: 550, household_gender: null, city: 'Madrid',
       places: [{ name: 'Trabajo', address: 'El Corte Inglés de Serrano', mode: 'transit', max_minutes: null }] });
     expect(s.places).toHaveLength(1);
+  });
+  it('shows the model a worked example of a description and its settings', async () => {
+    const { calls, post } = recorder([claudeText(JSON.stringify({ places: [] }))]);
+    await suggestProfile(new ClaudeProvider('k', undefined, post), 'x');
+    expect(calls[0].body.system).toMatch(/Example/);
+    expect(calls[0].body.system).toMatch(/"budget_max": ?600/);
   });
   it('turns a description into a profile suggestion', async () => {
     const { post } = recorder([claudeText(JSON.stringify({ budget_max: 700, places: [{ name: 'UPC', address: 'Campus Nord' }] }))]);

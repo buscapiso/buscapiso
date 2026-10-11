@@ -178,8 +178,12 @@ export class OpenAICompatProvider implements AIProvider {
   private url: string;
   /** response_format json_schema; se apaga si el proveedor no lo admite (Ollama viejo, algunos de OpenRouter). */
   private structured = true;
+  /** Gemini: lo que piensa cuenta contra max_tokens y deja la respuesta a
+   * medias. Para sacar datos de un texto no hace falta: se pide el minimo. */
+  private thinking: string | null;
   constructor(private key: string, baseUrl: string, public model: string, private post: Post = browserPost) {
     this.url = baseUrl.replace(/\/+$/, '') + '/chat/completions';
+    this.thinking = /generativelanguage\.googleapis\.com/.test(baseUrl) ? geminiThinking(model) : null;
   }
 
   private async complete(system: string, user: string, maxTokens: number, jsonSchema?: object): Promise<string> {
@@ -188,7 +192,12 @@ export class OpenAICompatProvider implements AIProvider {
     const strict = jsonSchema && this.structured;
     if (strict) body.response_format = { type: 'json_schema', json_schema: { name: 'answer', strict: true, schema: strictSchema(jsonSchema) } };
     else if (jsonSchema) body.response_format = { type: 'json_object' };
+    if (this.thinking) body.reasoning_effort = this.thinking;
     const { status, data } = await this.post(this.url, this.key ? { Authorization: `Bearer ${this.key}` } : {}, body);
+    if (this.thinking && status === 400 && /reasoning|thinking/i.test(JSON.stringify(data ?? {}))) {
+      this.thinking = null;
+      return this.complete(system, user, maxTokens, jsonSchema);
+    }
     if (strict && rejectsSchema(status, data)) {
       this.structured = false;
       return this.complete(system, user, maxTokens, jsonSchema);
@@ -217,6 +226,13 @@ export class OpenAICompatProvider implements AIProvider {
   json<T>(system: string, user: string, schema: Schema<T>, jsonSchema: object, maxTokens = JSON_MAX_TOKENS) {
     return jsonWithRetry((sys) => this.complete(sys, user, maxTokens, jsonSchema), system, schema, jsonSchema);
   }
+}
+
+/** El minimo que admite cada Gemini por la API compatible: los 2.5 lo apagan
+ * con "none" (salvo Pro, que no puede); los 3 bajan a "minimal". */
+function geminiThinking(model: string): string {
+  if (/^gemini-2\.5/.test(model)) return /pro/.test(model) ? 'low' : 'none';
+  return 'minimal';
 }
 
 // Modelos que /models incluye pero que no conversan.
