@@ -11,6 +11,7 @@ import type { Geocoder } from './geocode';
 import { billsFromText, emptyDerived, listingId, type Derived, type FetchPage, type RawListing, type StoredListing } from './model';
 import { activeSources, type Destination, type SearchProfile } from './profiles';
 import { filter, score, type Scorable } from './ranking';
+import { photoPlaces, priceContexts, scamSignals } from './signals';
 import { makeNet, CAPTCHA_TIMEOUT_MS, type FetchDirect } from './net';
 import { FATAL, mergeDetail, NetError, type SearchQuery, type Source } from './sources/base';
 import { SOURCES } from './sources/index';
@@ -309,6 +310,16 @@ export async function rescore(listings: StoredListing[], p: SearchProfile,
       emit('warning', `    ${deps.travel.name} did not answer (${e.message}); using estimated times`, { provider: deps.travel.name });
     }
     classify(ws, p, discarded, today);
+  }
+  // 4. Precio frente a la zona y señales de estafa: reglas, sin red ni IA.
+  const mine = ws.map((w) => w.stored).filter((l) => l.type === p.listing_type);
+  const prices = priceContexts(mine, p.listing_type);
+  const photos = photoPlaces(mine);
+  for (const w of ws) {
+    const ctx = prices.get(w.stored.id) ?? null;
+    w.derived.priceContext = ctx;
+    w.derived.scamSignals = scamSignals(w.stored, ctx ?? undefined, photos);
+    for (const s of w.derived.scamSignals) w.derived.reasons.push(`Check before paying: ${s}`);
   }
   return ws.map((w) => w.derived);
 }

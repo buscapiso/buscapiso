@@ -5,7 +5,7 @@
   import MapView, { type MapRoute } from '../lib/components/MapView.svelte';
   import MessageDraft from '../lib/components/MessageDraft.svelte';
   import StatusPicker from '../lib/components/StatusPicker.svelte';
-  import { costLine, directionsUrl, legParts, lineChips, lineColor } from '../lib/format';
+  import { costLine, directionsUrl, legParts, lineChips, lineColor, priceLine } from '../lib/format';
   import { t } from '../lib/i18n';
 
   let { id }: { id: string } = $props();
@@ -72,6 +72,7 @@
       <p class="where">{[l.neighbourhood, l.municipality].filter(Boolean).join(', ')}</p>
       <p class="cost"><strong>{l.total_cost ?? '?'} €</strong> {t('listing.perMonth')}
         <small>{costLine(l)}</small></p>
+      {#if priceLine(l)}<p class="vs">{priceLine(l)}</p>{/if}
       <div class="score" class:ask={l.group === 'possible'} title={t('listing.score')}>{Math.round(l.score)}</div>
     </header>
 
@@ -86,6 +87,13 @@
       </ul>
     {/if}
     {#if l.group === 'possible'}<p class="warn">{t('listing.genderUnknown')}</p>{/if}
+    {#if l.scam_signals?.length}
+      <div class="check" role="note">
+        <strong>{t('listing.checkBeforePaying')}</strong>
+        <ul>{#each l.scam_signals as s}<li>{s}</li>{/each}</ul>
+        <p>{t('listing.checkHelp')}</p>
+      </div>
+    {/if}
 
     <div class="row">
       <StatusPicker value={l.status} onchange={changeStatus} />
@@ -218,4 +226,8 @@
   @media (max-width: 560px) {
     .score { width: 60px; height: 60px; font-size: 25px; align-self: start; margin-top: 10px; }
   }
+  .vs { margin: 2px 0 0; font-size: 14px; color: var(--muted); }
+  .check { border: 1.5px solid var(--bad); border-left-width: 6px; padding: 10px 14px; margin: 12px 0; background: var(--surface); }
+  .check ul { margin: 6px 0; padding-left: 18px; }
+  .check p { margin: 0; font-size: 13px; color: var(--muted); }
 </style>

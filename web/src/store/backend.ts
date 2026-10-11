@@ -218,6 +218,7 @@ export function createBackend(deps: BackendDeps) {
       summary: dd.summary, pros: dd.pros, cons: dd.cons, red_flags: dd.redFlags,
       wishes_met: dd.wishesMet ?? [], wishes_missed: dd.wishesMissed ?? [], ask: dd.ask ?? [],
       ai_facts: dd.aiFacts ?? [], ai_note: dd.aiNote ?? '', detail_read: l.detailRead,
+      price_context: dd.priceContext ?? null, scam_signals: dd.scamSignals ?? [],
       score: dd.score, reasons: dd.group === 'rejected' ? [`no longer fits: ${dd.rejectReason}`] : dd.reasons,
       gender: l.gender, gender_confirmed: l.genderConfirmed, roommates: l.roommates, bedrooms: l.bedrooms,
       surface_m2: l.surfaceM2, bathrooms: l.bathrooms, floor: l.floor, elevator: l.elevator, furnished: l.furnished,

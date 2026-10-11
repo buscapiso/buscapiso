@@ -22,6 +22,10 @@ export interface Listing {
   ai_note?: string;
   /** Ya se leyo la ficha completa (no solo el listado). */
   detail_read?: boolean;
+  /** Su precio frente a la mediana de su zona (en pisos con metros, por m²). */
+  price_context?: { median: number; n: number; place: string; diff: number; perM2: boolean } | null;
+  /** Lo que conviene comprobar antes de pagar. */
+  scam_signals?: string[];
   score: number; reasons: string[];
   gender: 'female_only' | 'male_only' | 'mixed' | 'unknown'; gender_confirmed: boolean;
   roommates: number | null;

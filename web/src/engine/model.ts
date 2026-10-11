@@ -1,5 +1,6 @@
 // Esquema normalizado: toda fuente devuelve RawListing y nada mas del motor
 // necesita saber de que portal vino cada anuncio.
+import type { PriceContext } from './signals';
 
 export type ListingType = 'room' | 'flat';
 export type Gender = 'female_only' | 'male_only' | 'mixed' | 'unknown';
@@ -98,6 +99,10 @@ export interface Derived {
   aiFacts?: { label: string; value: string; used: boolean }[];
   /** Por que la IA no lo leyo, o '' si lo leyo (o no habia IA). */
   aiNote?: string;
+  /** Su precio frente a los parecidos de su zona, si hay bastantes. */
+  priceContext?: PriceContext | null;
+  /** Lo que conviene comprobar antes de pagar (reglas, sin IA). */
+  scamSignals?: string[];
   alsoOn: string[];
   /** Lo que importa y el anuncio calla: "Ask first" en la tarjeta. */
   ask?: string[];

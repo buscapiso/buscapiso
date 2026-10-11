@@ -9,6 +9,23 @@ export function costLine(l: Listing): string {
 }
 
 
+/** "12% below the median for rooms in Gràcia (520 €, 14 listings)", o '' sin mediana. */
+export function priceLine(l: Listing): string {
+  const c = l.price_context;
+  if (!c) return '';
+  const pct = Math.round(Math.abs(c.diff) * 100);
+  const median = c.perM2 ? `${Math.round(c.median)} €/m²` : `${Math.round(c.median)} €`;
+  const vars = { pct, place: c.place, median, n: c.n, kind: t(c.perM2 ? 'listing.kindFlats' : 'listing.kindRooms') };
+  return t(pct < 5 ? 'listing.priceAbout' : c.diff < 0 ? 'listing.priceBelow' : 'listing.priceAbove', vars);
+}
+
+/** En la tarjeta, solo si se aparta: "15% below Gràcia". */
+export function priceTag(l: Listing): string {
+  const c = l.price_context;
+  if (!c || Math.abs(c.diff) < 0.1) return '';
+  return t(c.diff < 0 ? 'card.below' : 'card.above', { pct: Math.round(Math.abs(c.diff) * 100), place: c.place });
+}
+
 export const STATUSES: Status[] = [
   'new', 'liked', 'contacted', 'visit_scheduled', 'visited', 'applied',
   'got_it', 'rejected', 'hidden', 'discarded',

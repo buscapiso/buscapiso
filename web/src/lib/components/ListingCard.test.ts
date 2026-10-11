@@ -52,3 +52,15 @@ test('says what to ask first, without leaving the listing out', () => {
   render(ListingCard, { listing: { ...listing, ask: ['who lives there', 'pets'] } as Listing });
   expect(screen.getByText('Ask first: who lives there, pets')).toBeInTheDocument();
 });
+
+test('says how the price compares with the area, and when to check before paying', () => {
+  render(ListingCard, { listing: { ...listing, price_context: { median: 560, n: 14, place: 'Sants', diff: -0.2, perM2: false },
+    scam_signals: ['Says the owner is abroad'] } as Listing });
+  expect(screen.getByText('20% below Sants')).toBeInTheDocument();
+  expect(screen.getByText(/Check before paying/)).toHaveAttribute('title', 'Says the owner is abroad');
+});
+
+test('a price near the median gets no tag', () => {
+  render(ListingCard, { listing: { ...listing, price_context: { median: 460, n: 14, place: 'Sants', diff: -0.02, perM2: false } } as Listing });
+  expect(screen.queryByText(/below Sants|above Sants/)).toBeNull();
+});

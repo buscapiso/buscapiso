@@ -436,6 +436,15 @@ describe('rescore', () => {
     expect(ds.some((x) => x.travel.Work === 12)).toBe(true);
     expect(events.some((e) => /only has timetables near/.test(e.message))).toBe(false);
   });
+  it('adds price context and scam signals, without AI', async () => {
+    const listings = await stored();
+    listings[0].description = 'Estoy en el extranjero; te envío las llaves por correo tras el pago por adelantado.';
+    const ds = await rescore(listings, profile(), { travel: null, ai: null, aiCache: noCache, now: () => new Date() }, new Set());
+    const d = ds.find((x) => x.id === listings[0].id)!;
+    expect(d.scamSignals).toEqual(expect.arrayContaining(['Asks for payment before you visit', 'Says the owner is abroad']));
+    expect(d.reasons).toContain('Check before paying: Says the owner is abroad');
+    expect(ds.some((x) => x.priceContext)).toBe(true);
+  });
   it('asks the AI about several listings at once, but not all of them', async () => {
     let inFlight = 0, most = 0;
     const ai = fakeAI(async () => {
