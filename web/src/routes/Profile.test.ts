@@ -21,6 +21,7 @@ const profile = {
 };
 
 let saved: unknown = null;
+let suggested: unknown = null;
 
 beforeEach(() => {
   saved = null;
@@ -40,6 +41,7 @@ beforeEach(() => {
       }
       return new Response(JSON.stringify(saved));
     }
+    if (u.endsWith('/api/profiles/suggest')) return new Response(JSON.stringify(suggested));
     if (u.includes('/api/geocode')) return new Response(JSON.stringify([
       { name: 'Fira Gran Via, Barcelona', lat: 41.354, lon: 2.127 }]));
     if (u.endsWith('/api/profiles')) return new Response(JSON.stringify([{ name: 'default', active: true }]));
@@ -147,4 +149,27 @@ test('preferences have a level, and extras can be set one by one', async () => {
   const sent = saved as { prefs: { pets: string; amenities: Record<string, string> } };
   expect(sent.prefs.pets).toBe('required');
   expect(sent.prefs.amenities).toEqual({ lift: 'preferred' });
+});
+
+test('a suggested cap below the ideal lowers the ideal, so applying and saving works', async () => {
+  const suggestion = { budget_ideal: null, budget_max: 400, household_gender: null, owner_must_not_live_in: null,
+    visits: 'preferred', city: null, pets: 'preferred', smokes: null, couple: null, registration: null, move_in: null,
+    stay_months: null, roommates_max: null, age_min: null, age_max: null, roommates_occupation: null,
+    private_bathroom: null, amenities_required: [], amenities_wanted: [],
+    places: [{ name: 'Work', address: 'Centro Comercial Aragonia', max_minutes: null, mode: 'walk' },
+      { name: 'Friend', address: 'Juan Pablo Bonet 13', max_minutes: 20, mode: 'transit' }] };
+  suggested = suggestion;
+  render(Profile);
+  await userEvent.type(await screen.findByLabelText("Describe what you're looking for"), 'como mucho 400');
+  await userEvent.click(screen.getByRole('button', { name: 'Suggest settings' }));
+  expect(await screen.findByText('Pets allowed: better if')).toBeInTheDocument();
+  expect(screen.getByText('Place: Work (Centro Comercial Aragonia), on foot')).toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: 'Apply' }));
+  await screen.findByText('Review the changes below and press Save to keep them.');
+  await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+  expect(await screen.findByText('Saved')).toBeInTheDocument();
+  const sent = saved as typeof profile & { prefs: { pets: string } };
+  expect(sent.budget).toMatchObject({ ideal_total: 400, max_total: 400 });
+  expect(sent.prefs.pets).toBe('preferred');
+  expect(sent.destinations.map((d) => d.name)).toEqual(['Fira', 'Work', 'Friend']);
 });

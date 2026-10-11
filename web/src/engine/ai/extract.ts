@@ -358,8 +358,10 @@ null. Budgets are monthly euros. city is the city or town in Spain where they wa
 live, if they name it. Places are where they go often (work, university, family...):
 give a short name, and an address or landmark that a map search can find, without the
 city (it is added later). Give max_minutes only if they say how long, and mode "walk"
-or "bike" only if they say so, "transit" otherwise. About them: has_pet, smokes, couple
-(they move in as a couple), needs_registration (empadronarse); move_in as YYYY-MM-DD
+or "bike" only if they say so, "transit" otherwise. pets and registration (empadronarse)
+are "required" when they need it (they have a pet, they must register) and "preferred"
+when they only say it would be better ("mejor si", "ideally"). About them: smokes, couple
+(they move in as a couple); move_in as YYYY-MM-DD
 if they say when (the next such date); stay_months if they say how long. About the flat:
 roommates_max, age_min and age_max for the roommates (from "people my age", use their
 age plus or minus a few years), roommates_occupation "students" or "workers",
@@ -373,8 +375,8 @@ piso solo de chicas. Estudio en la Politècnica y quiero llegar en 20 minutos en
 Answer: {"budget_ideal": null, "budget_max": 600, "household_gender": "female_only",
 "owner_must_not_live_in": null, "visits": null, "city": "Valencia", "places": [{"name":
 "University", "address": "Universitat Politècnica de València", "max_minutes": 20,
-"mode": "bike"}], "has_pet": null, "smokes": null, "couple": null, "needs_registration":
-null, "move_in": "2027-09-01", "stay_months": null, "roommates_max": null, "age_min": null,
+"mode": "bike"}], "pets": null, "smokes": null, "couple": null, "registration": null,
+"move_in": "2027-09-01", "stay_months": null, "roommates_max": null, "age_min": null,
 "age_max": null, "roommates_occupation": "students", "private_bathroom": null,
 "amenities_required": [], "amenities_wanted": []}`;
 
@@ -390,6 +392,7 @@ function looseEnum<T extends string>(values: readonly T[]) {
   return z.unknown().transform((x) => ((values as readonly unknown[]).includes(x) ? (x as T) : null));
 }
 const MODES = ['transit', 'walk', 'bike'] as const;
+const LEVELS = ['required', 'preferred'] as const;
 const onlyAmenities = (xs: unknown[]) => xs.filter((x): x is Amenity => (AMENITIES as readonly unknown[]).includes(x));
 const suggestedPlace = z.object({
   name: z.string().trim().min(1), address: z.string().trim().min(1), max_minutes: looseInt,
@@ -403,7 +406,7 @@ export const profileSuggestion = z.object({
   owner_must_not_live_in: looseBool,
   visits: looseEnum(['strict', 'preferred', 'indifferent'] as const),
   city: looseText,
-  has_pet: looseBool, smokes: looseBool, couple: looseBool, needs_registration: looseBool,
+  pets: looseEnum(LEVELS), registration: looseEnum(LEVELS), smokes: looseBool, couple: looseBool,
   move_in: z.unknown().transform((x) => (typeof x === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(x) ? x : null)),
   stay_months: looseInt, roommates_max: looseInt, age_min: looseInt, age_max: looseInt,
   roommates_occupation: looseEnum(['students', 'workers'] as const),
@@ -421,7 +424,7 @@ const SUGGEST_JSON_SCHEMA = {
     budget_ideal: I, budget_max: I,
     household_gender: { enum: ['female_only', 'male_only', 'mixed', 'any', null] },
     owner_must_not_live_in: B, visits: { enum: ['strict', 'preferred', 'indifferent', null] }, city: S,
-    has_pet: B, smokes: B, couple: B, needs_registration: B, move_in: S, stay_months: I, roommates_max: I,
+    pets: { enum: [...LEVELS, null] }, registration: { enum: [...LEVELS, null] }, smokes: B, couple: B, move_in: S, stay_months: I, roommates_max: I,
     age_min: I, age_max: I, roommates_occupation: { enum: ['students', 'workers', null] }, private_bathroom: B,
     amenities_required: { type: 'array', items: { enum: [...AMENITIES] } },
     amenities_wanted: { type: 'array', items: { enum: [...AMENITIES] } },

@@ -245,12 +245,14 @@ describe('facts', () => {
     await suggestProfile(new ClaudeProvider('k', undefined, post), 'x');
     expect(calls[0].body.system).toMatch(/Example/);
     expect(calls[0].body.system).toMatch(/"budget_max": ?600/);
+    // "mejor si" es un deseo, no una condicion: la IA puede decir "preferred".
+    expect(calls[0].body.system).toMatch(/"preferred"[\s\S]*mejor si/);
   });
   it('reads who you are and what you need from the description', async () => {
-    const { post } = recorder([claudeText(JSON.stringify({ has_pet: true, needs_registration: true, age_min: 16, age_max: '22',
+    const { post } = recorder([claudeText(JSON.stringify({ pets: 'required', registration: 'maybe', age_min: 16, age_max: '22',
       roommates_occupation: 'students', amenities_required: ['lift', 'sauna'], move_in: 'next month', places: [] }))]);
     const s = await suggestProfile(new ClaudeProvider('k', undefined, post), 'Tengo 18 años y un gato, necesito ascensor');
-    expect(s).toMatchObject({ has_pet: true, needs_registration: true, age_min: 16, age_max: 22,
+    expect(s).toMatchObject({ pets: 'required', registration: null, age_min: 16, age_max: 22,
       roommates_occupation: 'students', amenities_required: ['lift'], move_in: null, smokes: null });
   });
   it('turns a description into a profile suggestion', async () => {

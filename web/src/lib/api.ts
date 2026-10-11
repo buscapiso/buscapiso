@@ -221,7 +221,8 @@ export interface ProfileSuggestion {
   /** La ciudad que nombra, si la nombra. */
   city: string | null;
   places: { name: string; address: string; max_minutes: number | null; mode: 'transit' | 'walk' | 'bike' }[];
-  has_pet: boolean | null; smokes: boolean | null; couple: boolean | null; needs_registration: boolean | null;
+  pets: 'required' | 'preferred' | null; registration: 'required' | 'preferred' | null;
+  smokes: boolean | null; couple: boolean | null;
   move_in: string | null; stay_months: number | null; roommates_max: number | null;
   age_min: number | null; age_max: number | null; roommates_occupation: 'students' | 'workers' | null;
   private_bathroom: boolean | null; amenities_required: Amenity[]; amenities_wanted: Amenity[];

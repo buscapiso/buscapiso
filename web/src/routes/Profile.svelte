@@ -60,18 +60,23 @@
 
   async function applySuggestion(s: ProfileSuggestion) {
     if (!p) return;
-    if (s.budget_ideal !== null) p.budget.ideal_total = s.budget_ideal;
-    if (s.budget_max !== null) p.budget.max_total = s.budget_max;
+    // Lo que no dice se mueve para que ideal <= maximo siga valiendo al guardar.
+    const b = p.budget;
+    if (s.budget_ideal !== null) b.ideal_total = s.budget_ideal;
+    if (s.budget_max !== null) b.max_total = s.budget_max;
+    if (b.ideal_total > b.max_total) {
+      if (s.budget_max !== null) b.ideal_total = b.max_total; else b.max_total = b.ideal_total;
+    }
     if (s.household_gender) p.household.gender = s.household_gender;
     if (s.owner_must_not_live_in !== null) p.household.no_live_in_owner = s.owner_must_not_live_in;
     if (s.visits) p.household.visits = s.visits;
     // Lo que dices de ti es imprescindible; lo que te gustaria del piso, "mejor si".
     const x = p.prefs;
-    if (s.has_pet) x.pets = 'required';
+    if (s.pets) x.pets = s.pets;
     if (s.smokes === true) x.smoking = 'required';
     if (s.smokes === false) x.no_smokers = 'preferred';
     if (s.couple) x.couple = 'required';
-    if (s.needs_registration) x.registration = 'required';
+    if (s.registration) x.registration = s.registration;
     if (s.move_in) x.move_in = s.move_in;
     if (s.stay_months) x.stay_months = s.stay_months;
     if (s.roommates_max != null) x.roommates_max = s.roommates_max;
@@ -83,16 +88,19 @@
     for (const a of s.amenities_required ?? []) x.amenities[a] = 'required';
     const here = (await getCities().catch(() => null))?.active.name ?? '';
     const elsewhere = s.city && s.city.toLowerCase() !== here.toLowerCase() ? s.city : '';
-    notice = elsewhere ? t('describe.otherCity', { city: elsewhere }) : '';
+    const notes = elsewhere ? [t('describe.otherCity', { city: elsewhere })] : [];
     for (const pl of s.places) {
       const found = (await geocode(pl.address, elsewhere || undefined).catch(() => []))[0];
       if (!found) {
-        errors = { ...errors, destinations: t('describe.notFound', { address: pl.address }) };
+        // Un aviso y no un error: en Ajustes > Search no se ven los sitios y el
+        // error saldria como "nada guardado" sin decir cual.
+        notes.push(t('describe.notFound', { address: pl.address }));
         continue;
       }
       p.destinations.push({ name: pl.name, lat: found.lat, lon: found.lon, max_minutes: pl.max_minutes,
                             minute_weight: 1, mode: pl.mode, depart_at: '08:30' });
     }
+    notice = notes.join(' ');
   }
 
   function addPlace() {

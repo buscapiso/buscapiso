@@ -19,11 +19,11 @@
     if (s.household_gender) out.push(t('describe.household', { value: t(`gender.${s.household_gender}`) }));
     if (s.owner_must_not_live_in) out.push(t('describe.owner'));
     if (s.visits) out.push(t('describe.visits', { value: t(`visits.${s.visits}`) }));
-    if (s.has_pet) out.push(t('describe.pet'));
+    if (s.pets) out.push(t(`describe.pets.${s.pets}`));
     if (s.smokes === true) out.push(t('describe.smokes'));
     if (s.smokes === false) out.push(t('describe.noSmokers'));
     if (s.couple) out.push(t('describe.couple'));
-    if (s.needs_registration) out.push(t('describe.registration'));
+    if (s.registration) out.push(t(`describe.registration.${s.registration}`));
     if (s.move_in) out.push(t('describe.moveIn', { value: s.move_in }));
     if (s.stay_months) out.push(t('describe.stay', { value: s.stay_months }));
     if (s.roommates_max != null) out.push(t('describe.roommatesMax', { value: s.roommates_max }));
@@ -32,10 +32,12 @@
     if (s.private_bathroom) out.push(t('describe.privateBathroom'));
     for (const a of s.amenities_required ?? []) out.push(t('describe.amenityRequired', { value: t(`amenity.${a}`) }));
     for (const a of s.amenities_wanted ?? []) out.push(t('describe.amenityWanted', { value: t(`amenity.${a}`) }));
+    // El modo se ve: "andando" cambia que sitios quedan cerca.
     for (const p of s.places) {
-      out.push(p.max_minutes !== null
+      const line = p.max_minutes !== null
         ? t('describe.placeLimit', { name: p.name, address: p.address, minutes: p.max_minutes })
-        : t('describe.place', { name: p.name, address: p.address }));
+        : t('describe.place', { name: p.name, address: p.address });
+      out.push(p.mode === 'transit' ? line : `${line}, ${t(`describe.mode.${p.mode}`)}`);
     }
     return out;
   });
