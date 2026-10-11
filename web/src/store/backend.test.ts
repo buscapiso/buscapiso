@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { emptyListing, listingId, type FetchPage, type StoredListing } from '../engine/model';
 import { fixture } from '../engine/testing';
 import type { SearchEvent } from '../engine/pipeline';
+import type { CityCandidate } from '../engine/geocode';
 import { createBackend, HttpError, type BackendDeps } from './backend';
 import { Db } from './db';
 
@@ -226,5 +227,56 @@ describe('listing types', () => {
     await until(b);
     const ls = await b.handle('GET', '/api/listings') as { id: string; type: string }[];
     expect(ls.some((l) => l.id === 'flat1' && l.type === 'flat')).toBe(true);
+  });
+});
+
+describe('cities', () => {
+  const granadaPages: Record<string, string> = {
+    'https://www.fotocasa.es/es/alquiler/viviendas/granada-capital/todas-las-zonas/l': 'fotocasa_granada_ciudad.html',
+    'https://www.habitaclia.com/alquiler/viviendas/granada-provincia/granada-capital/s': 'habitaclia_granada_ciudad.html',
+  };
+  const portals: FetchPage = async (req) => (granadaPages[req.url]
+    ? { ok: true, html: fixture(granadaPages[req.url]), finalUrl: req.url, via: 'fetch' }
+    : { ok: false, reason: 'blocked' });
+  const nominatim = async (url: string) => (url.includes('featureType=settlement')
+    ? [{ lat: '37.17', lon: '-3.59', name: 'Granada', boundingbox: ['37.13', '37.22', '-3.65', '-3.55'],
+      address: { city: 'Granada', province: 'Granada', state: 'Andalucía' } }]
+    : [{ lat: '37.18', lon: '-3.60' }]);
+  const settle = async (b: { handle: (m: string, u: string) => Promise<unknown> }) => {
+    for (;;) {
+      const d = await b.handle('GET', '/api/cities/discover') as { running: boolean };
+      if (!d.running) return d as unknown;
+      await new Promise((r) => setTimeout(r, 5));
+    }
+  };
+
+  it('finds a city, sets it up through the extension and moves the profile there', async () => {
+    let closed = 0;
+    const { b } = await setup({ fetchPage: () => portals, geoGet: nominatim, onStop: async () => { closed++; } });
+    const [granada] = await b.handle('GET', '/api/cities/search?q=Granada') as CityCandidate[];
+    expect(granada).toMatchObject({ name: 'Granada', province: 'Granada' });
+    expect(await b.handle('POST', '/api/cities/discover', granada)).toEqual({ running: true });
+    const done = await settle(b) as { result: { city: { city: string; areas: number } }; error: string | null; log: string[] };
+    expect(done.error).toBeNull();
+    expect(done.result.city).toMatchObject({ city: 'granada-granada' });
+    expect(done.result.city.areas).toBeGreaterThan(5);
+    expect(closed).toBe(1);
+    await b.handle('POST', '/api/cities/use', { city: 'granada-granada' });
+    expect(await b.handle('GET', '/api/profiles/active')).toMatchObject({ city: 'granada-granada' });
+    const cities = await b.handle('GET', '/api/cities') as { active: { name: string }; saved: { city: string }[] };
+    expect(cities.active.name).toBe('Granada');
+    expect(cities.saved.map((c) => c.city)).toEqual(['barcelona', 'granada-granada']);
+    expect((await b.handle('GET', '/api/neighbourhoods') as { names: string[] }).names).toContain('Centro');
+  });
+  it('uses the built-in Barcelona without asking the portals', async () => {
+    const { b } = await setup({ fetchPage: () => { throw new Error('should not fetch'); } });
+    await b.handle('POST', '/api/cities/discover', { name: 'Barcelona', province: 'Barcelona', lat: 41.38, lon: 2.17, box: [0, 0, 0, 0] });
+    expect(await settle(b)).toMatchObject({ result: { city: { city: 'barcelona' } } });
+  });
+  it('needs the extension to set up a new city, and refuses an unknown one in a profile', async () => {
+    const { b } = await setup({ fetchPage: () => null });
+    await expect(b.handle('POST', '/api/cities/discover', { name: 'Granada', province: 'Granada', lat: 37, lon: -3, box: [0, 0, 0, 0] }))
+      .rejects.toMatchObject({ status: 409 });
+    await expect(b.handle('PUT', '/api/profiles/Default', { name: 'Default', city: 'atlantis' })).rejects.toMatchObject({ status: 422 });
   });
 });

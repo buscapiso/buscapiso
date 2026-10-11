@@ -9,7 +9,8 @@
   /** Un tramo de camino: color de la linea, a trazos si se va andando. */
   export interface MapRoute { points: [number, number][]; color: string; dashed?: boolean; stops?: MapPlace[] }
 
-  let { points = [], places = [], routes = [], onpick, onmove, onselect, highlight = null, height = '360px', label }: {
+  let { points = [], places = [], routes = [], onpick, onmove, onselect, highlight = null, height = '360px', label,
+    center = [41.3874, 2.1686] }: {
     points?: MapPoint[]; places?: MapPlace[]; routes?: MapRoute[];
     /** Clic en un punto: su id. */
     onselect?: (id: string) => void;
@@ -19,6 +20,8 @@
     /** Arrastrar el destino i a otro sitio. */
     onmove?: (i: number, lat: number, lon: number) => void;
     height?: string; label: string;
+    /** Donde mirar si aun no hay nada que encuadrar: el centro de la ciudad. */
+    center?: [number, number];
   } = $props();
 
   let el: HTMLDivElement;
@@ -45,7 +48,7 @@
   }
 
   onMount(() => {
-    const m = L.map(el, { scrollWheelZoom: true, zoomSnap: 0.5 }).setView([41.3874, 2.1686], 12);
+    const m = L.map(el, { scrollWheelZoom: true, zoomSnap: 0.5 }).setView(center, 12);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',

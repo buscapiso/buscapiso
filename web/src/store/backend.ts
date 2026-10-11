@@ -3,8 +3,10 @@
 // que la interfaz no cambie de contrato.
 import { draftMessage, suggestProfile } from '../engine/ai/extract';
 import { AIError, ClaudeProvider, listModels, OpenAICompatProvider, type AIProvider } from '../engine/ai/providers';
-import { CITIES } from '../engine/coverage';
-import { Geocoder } from '../engine/geocode';
+import { discoverCity, DiscoveryError, type Discovered } from '../engine/cities/discover';
+import { sameName } from '../engine/cities/names';
+import { CITIES, type City } from '../engine/coverage';
+import { Geocoder, type CityCandidate } from '../engine/geocode';
 import { emptyDerived, STATUSES, totalCost, type Derived, type FetchPage, type Status, type StoredListing,
   type UserState } from '../engine/model';
 import { DEFAULT_SERVER, randomTopic, send as ntfySend, notifyNew } from '../engine/notify';
@@ -93,6 +95,52 @@ export function createBackend(deps: BackendDeps) {
     const local = /^http:\/\/(localhost|127\.0\.0\.1)/.test(c.baseUrl);
     if (!key && !local) return fail('AI: this provider needs an API key in the settings');
     return new OpenAICompatProvider(key, c.baseUrl, c.model);
+  }
+
+  // --- ciudades ------------------------------------------------------------
+  async function cityOf(key: string): Promise<City | null> {
+    return CITIES[key] ?? (await db.get<City>('cities', key)) ?? null;
+  }
+  async function activeCity(): Promise<City> {
+    const p = await activeProfile();
+    const c = await cityOf(p.city);
+    if (!c) throw new HttpError(409, `The city of this profile (${p.city}) is not set up here: choose it again in Settings → Search`);
+    return c;
+  }
+  const citySummary = (c: City) => ({ city: c.city, name: c.name, province: c.province, center: c.center,
+    areas: c.areas.length, portals: c.portals });
+  // Descubrir una ciudad tarda un minuto: corre aparte y la pantalla pregunta.
+  const discovery = { running: false, log: [] as string[], result: null as null | { city: ReturnType<typeof citySummary>;
+    notes: Discovered['notes'] }, error: null as string | null, abort: null as AbortController | null };
+
+  async function startDiscovery(c: CityCandidate) {
+    if (discovery.running) throw new HttpError(409, 'A city is already being set up');
+    if (run.running) throw new HttpError(409, 'Wait for the search to finish');
+    for (const [key, built] of Object.entries(CITIES)) {
+      if (sameName(built.name, c.name) && sameName(built.province, c.province)) {
+        Object.assign(discovery, { running: false, log: [`${built.name} is built in`], error: null,
+          result: { city: citySummary(CITIES[key]), notes: [] } });
+        return { running: false };
+      }
+    }
+    await deps.beforeSearch?.().catch(() => {});
+    const page = deps.fetchPage();
+    if (!page) throw new HttpError(409, 'Setting up a new city needs the buscapiso extension, on a computer');
+    Object.assign(discovery, { running: true, log: [], result: null, error: null, abort: new AbortController() });
+    void (async () => {
+      try {
+        const found = await discoverCity(c, { fetchPage: page, fetchDirect: (u) => (deps.fetchDirect ?? defaultFetchDirect)(u),
+          geocode: (q) => geocoder.geocode(q), log: (m) => discovery.log.push(m), signal: discovery.abort!.signal });
+        await db.put('cities', found.city);
+        discovery.result = { city: citySummary(found.city), notes: found.notes };
+      } catch (e) {
+        discovery.error = e instanceof DiscoveryError ? e.message : `Could not set up the city: ${(e as Error).message}`;
+      } finally {
+        discovery.running = false;
+        await deps.onStop?.().catch(() => {});
+      }
+    })();
+    return { running: true };
   }
 
   // --- perfiles ------------------------------------------------------------
@@ -189,7 +237,7 @@ export function createBackend(deps: BackendDeps) {
   async function pipelineDeps(signal: AbortSignal): Promise<Deps> {
     const n = await notifySettings();
     return {
-      fetchPage: deps.fetchPage(), fetchDirect: deps.fetchDirect ?? defaultFetchDirect, store,
+      fetchPage: deps.fetchPage(), fetchDirect: deps.fetchDirect ?? defaultFetchDirect, store, city: await activeCity(),
       travel: await travel(), geocoder, ai: await ai().catch(() => null), aiCache, now,
       sleep, random: deps.random ?? Math.random, signal,
       notify: n.topic ? (items, kind) => notifyNew({ server: n.server, topic: n.topic, minScore: n.min_score },
@@ -344,6 +392,7 @@ export function createBackend(deps: BackendDeps) {
       if (b.name !== name) throw new HttpError(400, 'the profile name in the body must match the URL');
       const r = searchProfile.safeParse(b);
       if (!r.success) throw new HttpError(422, r.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; '));
+      if (!(await cityOf(r.data.city))) throw new HttpError(422, `city: ${r.data.city} is not set up; choose it in Settings → Search`);
       const first = (await db.count('profiles')) === 0;
       await db.put('profiles', r.data);
       if (first) await set('active_profile', name);
@@ -382,9 +431,12 @@ export function createBackend(deps: BackendDeps) {
     }],
     ['POST', /^\/api\/settings\/test-route$/, async () => {
       const p = await activeProfile();
-      const dest = p.destinations[0] ?? { name: 'Fira', lat: 41.3519, lon: 2.1307, mode: 'transit' as const, depart_at: '08:30',
-        max_minutes: null, minute_weight: 1 };
-      const origin: [number, number] = [41.3792, 2.1404];
+      const c = await activeCity();
+      // De una zona de la ciudad a tu primer sitio, o al centro.
+      const dest = p.destinations[0] ?? { name: c.name, lat: c.center[0], lon: c.center[1], mode: 'transit' as const,
+        depart_at: '08:30', max_minutes: null, minute_weight: 1 };
+      const from = c.areas.find((a) => Math.abs(a.lat - dest.lat) + Math.abs(a.lon - dest.lon) > 0.01) ?? c.areas[0];
+      const origin: [number, number] = [from.lat, from.lon];
       const est = estimateTrip(origin[0], origin[1], dest);
       const out = { estimate: { minutes: est.minutes, detail: est.detail }, provider: null as null | object, error: null as string | null };
       const t = await travel(false);
@@ -400,8 +452,8 @@ export function createBackend(deps: BackendDeps) {
     ['GET', /^\/api\/geocode$/, async (_m, _b, q) => {
       const text = q.get('q') ?? '';
       if (text.length < 2) throw new HttpError(422, 'Type at least two letters');
-      const city = CITIES[(await activeProfile()).city];
-      try { return await geocoder.search(text, city?.box); } catch (e) { throw new HttpError(502, `Address search is unavailable: ${(e as Error).message}`); }
+      const city = await activeCity();
+      try { return await geocoder.search(text, city.box); } catch (e) { throw new HttpError(502, `Address search is unavailable: ${(e as Error).message}`); }
     }],
     ['GET', /^\/api\/ai$/, async () => aiSettings()],
     ['PUT', /^\/api\/ai$/, async (_m, b) => {
@@ -450,9 +502,30 @@ export function createBackend(deps: BackendDeps) {
       } catch (e) { throw new HttpError(502, `Could not reach ntfy: ${(e as Error).message}`); }
       return { ok: true };
     }],
+    ['GET', /^\/api\/cities$/, async () => {
+      const saved = [...Object.values(CITIES), ...(await db.all<City>('cities'))];
+      return { active: citySummary(await activeCity()), saved: saved.map((c) => ({ city: c.city, name: c.name, province: c.province })) };
+    }],
+    ['GET', /^\/api\/cities\/search$/, async (_m, _b, q) => {
+      const text = (q.get('q') ?? '').trim();
+      if (text.length < 2) throw new HttpError(422, 'Type at least two letters');
+      try { return await geocoder.cities(text); } catch (e) { throw new HttpError(502, `Place search is unavailable: ${(e as Error).message}`); }
+    }],
+    ['POST', /^\/api\/cities\/discover$/, async (_m, b) => startDiscovery(b as CityCandidate)],
+    ['GET', /^\/api\/cities\/discover$/, async () => ({ running: discovery.running, log: [...discovery.log],
+      result: discovery.result, error: discovery.error })],
+    ['POST', /^\/api\/cities\/discover\/stop$/, async () => { discovery.abort?.abort(); return { stopping: discovery.running }; }],
+    // La ciudad pasa al perfil activo; los anuncios de cada ciudad se guardan aparte.
+    ['POST', /^\/api\/cities\/use$/, async (_m, b) => {
+      const c = await cityOf(String(b.city ?? ''));
+      if (!c) throw new HttpError(404, `no city ${b.city}`);
+      const p = await activeProfile();
+      await db.put('profiles', { ...p, city: c.city });
+      return citySummary(c);
+    }],
     ['GET', /^\/api\/neighbourhoods$/, async () => {
       const p = await activeProfile();
-      const names = new Set((CITIES[p.city]?.areas ?? []).map((a) => a.name.split(',')[0].trim()));
+      const names = new Set(((await cityOf(p.city))?.areas ?? []).map((a) => a.name.split(',')[0].trim()));
       for (const l of await db.byCity<StoredListing>(p.city)) {
         for (const n of [l.neighbourhood, l.municipality]) if (n?.trim()) names.add(n.trim());
       }

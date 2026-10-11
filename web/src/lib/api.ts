@@ -221,6 +221,24 @@ export const saveNotify = (s: { enabled?: boolean; server?: string; min_score?: 
   call<NotifySettings>('PUT', '/api/notify', s);
 export const testNotify = () => call<{ ok: boolean }>('POST', '/api/notify/test');
 
+export interface CitySummary {
+  city: string; name: string; province: string; center: [number, number]; areas: number;
+  portals: Record<string, string | null>;
+}
+export interface CityCandidate { name: string; province: string; lat: number; lon: number; box: [number, number, number, number] }
+export interface PortalNote { portal: string; found: boolean; detail: string }
+export interface Discovery {
+  running: boolean; log: string[]; error: string | null;
+  result: { city: CitySummary; notes: PortalNote[] } | null;
+}
+export const getCities = () =>
+  call<{ active: CitySummary; saved: { city: string; name: string; province: string }[] }>('GET', '/api/cities');
+export const searchCities = (q: string) => call<CityCandidate[]>('GET', `/api/cities/search?q=${encodeURIComponent(q)}`);
+export const discoverCity = (c: CityCandidate) => call<{ running: boolean }>('POST', '/api/cities/discover', c);
+export const discoveryState = () => call<Discovery>('GET', '/api/cities/discover');
+export const stopDiscovery = () => call<{ stopping: boolean }>('POST', '/api/cities/discover/stop');
+export const useCity = (city: string) => call<CitySummary>('POST', '/api/cities/use', { city });
+
 export const getNeighbourhoods = () => call<{ names: string[] }>('GET', '/api/neighbourhoods');
 export const listModels = (base_url: string, key?: string) =>
   call<{ models: string[] }>('POST', '/api/ai/models', key ? { base_url, key } : { base_url });

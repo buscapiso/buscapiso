@@ -3,20 +3,21 @@
 // habitaciones, baños, metros construidos, planta, caracteristicas,
 // coordenadas, fecha de actualizacion y contacto.
 import { emptyListing, type RawListing } from '../model';
+import type { City } from '../coverage';
 import type { SearchProfile } from '../profiles';
 import { surface, type Area, type Source } from './base';
 
 const BASE = 'https://www.habitaclia.com';
 const MARK = '__INITIAL_PROPS__ = JSON.parse(';
-export const CITY_AREA = 'barcelona-capital';
 const FLOORS: Record<string, string> = {
   BASEMENT: '-1', SEMI_BASEMENT: '-1', GROUND: '0', MEZZANINE: '0', FIRST: '1', SECOND: '2',
   THIRD: '3', FOURTH: '4', FIFTH: '5', SIXTH: '6', SEVENTH: '7', EIGHTH: '8', NINTH: '9',
   TENTH: '10', PENTHOUSE: 'penthouse',
 };
 
+/** `zone` lleva la provincia delante: 'barcelona-provincia/barcelona-capital/gracia'. */
 export function buildUrl(zone: string, page = 1, filters: Record<string, unknown> = {}): string {
-  let url = `${BASE}/alquiler/viviendas/barcelona-provincia/${zone}/s`;
+  let url = `${BASE}/alquiler/viviendas/${zone}/s`;
   if (page > 1) url += `/${page}`;
   const q = new URLSearchParams();
   for (const [k, v] of Object.entries(filters)) if (v) q.set(k, String(v));
@@ -27,7 +28,7 @@ export function buildUrl(zone: string, page = 1, filters: Record<string, unknown
 type Json = Record<string, any>;  // eslint-disable-line @typescript-eslint/no-explicit-any
 
 /** El argumento de JSON.parse es una cadena JSON que contiene JSON. */
-function props(html: string): Json | null {
+export function props(html: string): Json | null {
   const i = html.indexOf(MARK);
   if (i < 0) return null;
   const start = i + MARK.length;
@@ -114,8 +115,8 @@ export const habitaclia: Source = {
   minLength: 5000,
   perArea: true,
   pageSize: 1,
-  listUrl(area: Area | null, p: SearchProfile, page: number) {
-    const zone = area ? area.habitaclia : CITY_AREA;
+  listUrl(area: Area | null, p: SearchProfile, page: number, city: City) {
+    const zone = area ? area.habitaclia : city.portals.habitaclia;
     if (!zone) return null;
     return buildUrl(zone, page, {
       maxPrice: p.flat.max_rent,

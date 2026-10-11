@@ -8,6 +8,7 @@
 //    estricto se aplica en local sobre el genero.
 // 3. Los listados NO traen coordenadas: se geocodifica la direccion del titulo.
 import { emptyListing, type Gender, type ListingType, type RawListing } from '../model';
+import type { City } from '../coverage';
 import { activeBudget, type SearchProfile } from '../profiles';
 import { getText, parseHtml, type Area, type Source } from './base';
 
@@ -213,13 +214,14 @@ export const idealista: Source = {
   minLength: 5000,
   perArea: true,
   pageSize: 25,
-  listUrl(area: Area | null, p: SearchProfile, page: number) {
-    if (!area?.idealista) return null;
+  listUrl(area: Area | null, p: SearchProfile, page: number, city: City) {
+    const slug = area ? area.idealista : city.portals.idealista;
+    if (!slug) return null;
     // Sin tope a mano, el del presupuesto: el alquiler solo nunca puede pasar
     // del total. Redondeado al escalon de 50 de idealista.
     const max = p.idealista.max_price || Math.ceil(activeBudget(p).max / 50) * 50;
     const filters = { ...p.idealista, max_price: max, women: p.household.gender === 'female_only' };
-    return buildUrl(area.idealista, page, p.crawl.sort, filters, p.listing_type);
+    return buildUrl(slug, page, p.crawl.sort, filters, p.listing_type);
   },
   parseList,
   detailRequest: (l) => ({ url: l.url }),

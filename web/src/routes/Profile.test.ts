@@ -39,6 +39,8 @@ beforeEach(() => {
     if (u.includes('/api/geocode')) return new Response(JSON.stringify([
       { name: 'Fira Gran Via, Barcelona', lat: 41.354, lon: 2.127 }]));
     if (u.endsWith('/api/profiles')) return new Response(JSON.stringify([{ name: 'default', active: true }]));
+    if (u.endsWith('/api/cities')) return new Response(JSON.stringify({ saved: [{ city: 'barcelona', name: 'Barcelona', province: 'Barcelona' }],
+      active: { city: 'barcelona', name: 'Barcelona', province: 'Barcelona', center: [41.38, 2.17], areas: 19, portals: {} } }));
     if (u.endsWith('/api/meta')) return new Response(JSON.stringify({
       statuses: [], sources: ['idealista', 'fotocasa'], flat_sources: ['fotocasa', 'habitaclia'], genders: ['female_only', 'male_only', 'mixed', 'any'] }));
     return new Response(JSON.stringify(profile));

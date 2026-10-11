@@ -3,23 +3,25 @@
 // una peticion por segundo, asi que la cache es lo que hace viable buscar
 // muchas veces. Nominatim no permite autocompletar: `search` se llama al
 // pulsar, no letra a letra.
+import { provinceOfAddress } from './cities/names';
 import type { RawListing } from './model';
 
 export const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
 const PAUSE_MS = 1100;
-/** [oeste, norte, este, sur] del area de Barcelona. */
-export const BARCELONA_BOX: [number, number, number, number] = [1.90, 41.60, 2.35, 41.25];
 
 export interface GeoCache {
   get(query: string): Promise<{ lat: number | null; lon: number | null } | undefined>;
   put(query: string, value: { lat: number | null; lon: number | null }): Promise<void>;
 }
 export interface Place { name: string; lat: number; lon: number }
+export interface CityCandidate { name: string; province: string; lat: number; lon: number; box: [number, number, number, number] }
 
 type Json = Record<string, any>;  // eslint-disable-line @typescript-eslint/no-explicit-any
 
 export class Geocoder {
   private last = -Infinity;
+  /** Lo pone la busqueda segun la ciudad: en Cataluña, "Calle" se busca como "Carrer". */
+  catalanStreets = true;
   constructor(private cache: GeoCache, private getJson: (url: string) => Promise<unknown> = defaultGet,
     private sleep: (ms: number) => Promise<void> = (ms) => new Promise((r) => setTimeout(r, ms)),
     private clock: () => number = () => Date.now(), private offline = false) {}
@@ -60,7 +62,7 @@ export class Geocoder {
    * solo para los que merecen un trayecto fiable. */
   async pinpoint(l: RawListing): Promise<boolean> {
     if (!l.address || !l.municipality) return false;
-    const street = streetName(l.address);
+    const street = streetName(l.address, this.catalanStreets);
     const exact = await this.geocode(`${street}, ${l.municipality}, España`);
     if (exact) { [l.lat, l.lon] = exact; l.approximateLocation = false; return true; }
     // Sin el numero, la calle: mejor que el barrio, pero sigue siendo aproximado.
@@ -83,15 +85,32 @@ export class Geocoder {
   }
 
   /** Varios resultados para elegir un sitio, dentro de la caja de la ciudad. */
-  async search(query: string, box = BARCELONA_BOX, limit = 5): Promise<Place[]> {
+  async search(query: string, box: [number, number, number, number], limit = 5): Promise<Place[]> {
     const data = await this.ask({ q: query, limit: String(limit), viewbox: box.join(','), bounded: '1' });
     return data.map((d) => ({ name: d.display_name, lat: parseFloat(d.lat), lon: parseFloat(d.lon) }));
+  }
+
+  /** Ciudades, pueblos y municipios que se llaman asi, con su provincia. */
+  async cities(query: string): Promise<CityCandidate[]> {
+    const data = await this.ask({ q: query, limit: '8', addressdetails: '1', featureType: 'settlement' });
+    const out: CityCandidate[] = [];
+    for (const d of data) {
+      const a: Json = d.address ?? {};
+      const name = a.city ?? a.town ?? a.village ?? a.municipality ?? d.name;
+      const province = provinceOfAddress(a);
+      const [s, n, w, e] = (d.boundingbox ?? []).map(Number);
+      if (!name || !province || out.some((c) => c.name === name && c.province === province)) continue;
+      out.push({ name, province, lat: parseFloat(d.lat), lon: parseFloat(d.lon),
+        box: [w, n, e, s].every(Number.isFinite) ? [w, n, e, s] : [0, 0, 0, 0] });
+    }
+    return out;
   }
 }
 
 /** Idealista quita el tipo de via: "de Pons i Gallarza, 3" es "Carrer de
  * Pons i Gallarza, 3". Sin el, Nominatim casi nunca la encuentra. */
-export function streetName(address: string): string {
+export function streetName(address: string, catalan = true): string {
+  if (!catalan) return /^(de|del|de la|de los|de las)\s/i.test(address) ? `Calle ${address}` : address;
   if (/^(de|del|dels|de la|de les)\s/i.test(address) || /^d'/i.test(address)) return `Carrer ${address}`;
   // OpenStreetMap nombra las calles de Barcelona en catalan; Idealista, en castellano.
   return address.replace(/^(\p{L}+)(?=\s)/u, (w) => CATALAN_STREET[w.toLowerCase()] ?? w);

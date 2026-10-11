@@ -13,7 +13,7 @@ import { inferGender, type Source } from './base';
 const BASE = 'https://www.depisoenpiso.com';
 const DEFAULT_PHOTO = 'default_room.png';
 
-export function buildUrl(city = 'Barcelona'): string {
+export function buildUrl(city: string): string {
   return `${BASE}/new-assets/php/find-places.php?get_properties=true&city=${encodeURIComponent(city)}`;
 }
 
@@ -85,7 +85,7 @@ export const depisoenpiso: Source = {
   pageSize: Number.MAX_SAFE_INTEGER,   // una sola respuesta con todo
   direct: true,
   detailsForAll: true,
-  listUrl: (_area, _p, page) => (page === 1 ? buildUrl('Barcelona') : null),
+  listUrl: (_area, _p, page, city) => (page === 1 && city.portals.depisoenpiso ? buildUrl(city.portals.depisoenpiso) : null),
   parseList: (body, type) => parseList(body).filter((l) => l.type === type),
   detailRequest: (l) => ({ url: `${BASE}/new-assets/php/alojamiento.php`, form: { id: l.sourceId } }),
   parseDetail,

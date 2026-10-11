@@ -7,6 +7,7 @@
 //
 // accuracy=false: la posicion es del barrio, no del portal.
 import { emptyListing, type ListingType, type RawListing } from '../model';
+import type { City } from '../coverage';
 import type { SearchProfile } from '../profiles';
 import { inferGender, surface, type Area, type Source } from './base';
 
@@ -18,7 +19,6 @@ const SORTS: Record<string, string> = {
 };
 const SECTION: Record<ListingType, string> = { room: 'compartir/pisos', flat: 'alquiler/viviendas' };
 const RENT = 3;   // transactionTypeId: 5 es compartir, 3 es alquiler
-export const CITY_AREA = 'barcelona-capital/todas-las-zonas';
 
 export function buildUrl(zone: string, page = 1, sort = 'relevance', type: ListingType = 'room'): string {
   let url = `${BASE}/es/${SECTION[type]}/${zone}/l`;
@@ -131,8 +131,8 @@ export const fotocasa: Source = {
   minLength: 20000,
   perArea: true,
   pageSize: 1,
-  listUrl(area: Area | null, p: SearchProfile, page: number) {
-    const zone = area ? area.fotocasa : CITY_AREA;
+  listUrl(area: Area | null, p: SearchProfile, page: number, city: City) {
+    const zone = area ? area.fotocasa : city.portals.fotocasa;
     return zone ? buildUrl(zone, page, p.crawl.fotocasa_sort, p.listing_type) : null;
   },
   parseList: (html, type) => parseList(html).filter((l) => l.type === type),

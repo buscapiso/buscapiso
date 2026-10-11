@@ -1,12 +1,13 @@
 <script lang="ts">
   import {
-    ApiError, activateProfile, deleteProfile, getActiveProfile, getMeta, listProfiles,
+    ApiError, activateProfile, deleteProfile, getActiveProfile, getCities, getMeta, listProfiles,
     geocode, getNeighbourhoods, saveProfile, type Meta, type Place, type ProfileSuggestion, type ProfileSummary,
     type SearchProfile,
   } from '../lib/api';
   import MapView from '../lib/components/MapView.svelte';
   import NeighbourhoodPicker from '../lib/components/NeighbourhoodPicker.svelte';
   import DescribeProfile from '../lib/components/DescribeProfile.svelte';
+  import CityPicker from '../lib/components/CityPicker.svelte';
   import { fieldErrors } from '../lib/profileErrors';
   import { t } from '../lib/i18n';
 
@@ -65,7 +66,7 @@
   }
 
   function addPlace() {
-    p!.destinations.push({ name: '', lat: 41.3874, lon: 2.1686, max_minutes: null,
+    p!.destinations.push({ name: '', lat: center[0], lon: center[1], max_minutes: null,
                            minute_weight: 1, mode: 'transit', depart_at: '08:30' });
     picking = p!.destinations.length - 1;
   }
@@ -76,6 +77,7 @@
   let errors = $state<Record<string, string>>({});
   let saved = $state(false);
   let names = $state<string[]>([]);
+  let center = $state<[number, number]>([41.3874, 2.1686]);
   // Que parte del perfil se edita: Settings la parte en secciones.
   let { part = 'all' }: { part?: 'all' | 'basics' | 'places' | 'zones' } = $props();
   const show = (x: 'basics' | 'places' | 'zones') => part === 'all' || part === x;
@@ -86,6 +88,7 @@
     p = perfil;
     profiles = lista;
     meta = vocab;
+    if (show('places')) center = (await getCities().catch(() => null))?.active.center ?? center;
     if (show('zones')) names = (await getNeighbourhoods().catch(() => ({ names: [] }))).names;
   }
 
@@ -139,6 +142,7 @@
 {#if p && meta}
   {#if part === 'all'}<h1>{t('profile.title')}</h1>{/if}
   {#if show('basics')}
+  <CityPicker onchange={() => load()} />
   <DescribeProfile bind:text={p.description} onapply={applySuggestion} />
   {/if}
 
@@ -268,7 +272,7 @@
     {/each}
     <button onclick={addPlace}>{t('profile.addDestination')}</button>
     <p class="help">{t('profile.pickHelp')}</p>
-    <MapView label={t('profile.destinationsMap')} places={p.destinations} onpick={pick} onmove={move} height="300px" />
+    <MapView label={t('profile.destinationsMap')} places={p.destinations} onpick={pick} onmove={move} height="300px" {center} />
     {#if err('destinations')}<p class="error">{err('destinations')}</p>{/if}
   </fieldset>
   {/if}

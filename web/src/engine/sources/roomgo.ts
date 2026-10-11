@@ -11,8 +11,9 @@ const GENDERS: [string, Gender][] = [
   ['masculino', 'male_only'],
 ];
 
-export function buildUrl(city = 'barcelona', page = 1): string {
-  const url = `${BASE}/${city}/piso-compartido-${city}`;
+/** `path` es la ciudad en Roomgo: 'vizcaya/piso-compartido-bilbao'. */
+export function buildUrl(path: string, page = 1): string {
+  const url = `${BASE}/${path}`;
   return page > 1 ? `${url}?page=${page}` : url;
 }
 
@@ -25,7 +26,8 @@ function genderAndMates(text: string): [Gender, boolean, number | null] {
   return ['unknown', false, mates];
 }
 
-export function parseList(html: string): RawListing[] {
+/** Roomgo no pone el municipio en la tarjeta: es la ciudad que se busca. */
+export function parseList(html: string, municipality: string): RawListing[] {
   const doc = parseHtml(html);
   const out: RawListing[] = [];
   for (const card of doc.querySelectorAll('.listing_item')) {
@@ -51,7 +53,7 @@ export function parseList(html: string): RawListing[] {
       l.address = parts[0] ?? '';
       l.neighbourhood = parts.length > 1 ? parts.at(-1)! : '';
     }
-    l.municipality = 'Barcelona';
+    l.municipality = municipality;
     const mates = card.querySelector('.listing_item_nb_flatmates');
     if (mates) [l.gender, l.genderConfirmed, l.roommates] = genderAndMates(getText(mates));
     if (l.gender === 'unknown') { l.gender = inferGender(`${l.title} ${l.description}`); l.genderConfirmed = false; }
@@ -77,6 +79,6 @@ export const roomgo: Source = {
   minLength: 5000,
   perArea: false,
   pageSize: 1,
-  listUrl: (_area, _p, page) => buildUrl('barcelona', page),
-  parseList: (html) => parseList(html),
+  listUrl: (_area, _p, page, city) => (city.portals.roomgo ? buildUrl(city.portals.roomgo, page) : null),
+  parseList: (html, _type, city) => parseList(html, city.name),
 };

@@ -5,7 +5,7 @@
 // La usan tambien "Re-score now" y la importacion de un fichero.
 import { applyFacts, describeFacts, extractMany, type AICache, type AIDerived } from './ai/extract';
 import { AIError, type AIProvider } from './ai/providers';
-import { CITIES, selectAreas, type Trips } from './coverage';
+import { CITIES, selectAreas, type City, type Trips } from './coverage';
 import { dedupe } from './dedupe';
 import type { Geocoder } from './geocode';
 import { billsFromText, emptyDerived, listingId, type Derived, type FetchPage, type RawListing, type StoredListing } from './model';
@@ -41,6 +41,8 @@ export interface Deps {
   sleep(ms: number): Promise<void>;
   random(): number;
   signal?: AbortSignal;
+  /** La ciudad del perfil; sin ella, una de las hechas a mano. */
+  city?: City;
 }
 
 export interface SearchOptions { pages?: number; skipDetails?: boolean }
@@ -105,14 +107,14 @@ export async function readFullListing(l: RawListing, fetchPage: FetchPage): Prom
 
 // --- un portal ------------------------------------------------------------
 /** Zonas con URL propia; varias zonas pueden compartir una (Fotocasa: toda la ciudad). */
-function startUrls(src: Source, areas: Area[], p: SearchProfile): Map<string, Area | null> {
+function startUrls(src: Source, areas: Area[], p: SearchProfile, city: City): Map<string, Area | null> {
   const starts = new Map<string, Area | null>();
   for (const a of src.perArea ? areas : []) {
-    const u = src.listUrl(a, p, 1);
+    const u = src.listUrl(a, p, 1, city);
     if (u && !starts.has(u)) starts.set(u, a);
   }
   if (!starts.size) {
-    const u = src.listUrl(null, p, 1);
+    const u = src.listUrl(null, p, 1, city);
     if (u) starts.set(u, null);
   }
   return starts;
@@ -126,15 +128,15 @@ function sampleOf(batch: RawListing[]) {
 }
 
 /** Devuelve SIEMPRE lo recogido: un fallo en la zona N no invalida las anteriores. */
-async function crawlSource(src: Source, areas: Area[], p: SearchProfile, pages: number, deps: Deps,
+async function crawlSource(src: Source, areas: Area[], p: SearchProfile, city: City, pages: number, deps: Deps,
   emit: Emit): Promise<RawListing[]> {
   const out: RawListing[] = [];
   const seen = new Set<string>();
-  const starts = startUrls(src, areas, p);
+  const starts = startUrls(src, areas, p, city);
   let first = true;
   for (const area of starts.values()) {
     for (let page = 1; page <= pages; page++) {
-      const url = src.listUrl(area, p, page);
+      const url = src.listUrl(area, p, page, city);
       if (!url) break;
       if (!first) await pause(src, deps);
       first = false;
@@ -157,7 +159,7 @@ async function crawlSource(src: Source, areas: Area[], p: SearchProfile, pages: 
         emit('warning', `  ${src.name} ${area?.name ?? ''} page ${page} failed (${r.reason.slice(0, 60)}); going on`, { source: src.name });
         break;
       }
-      const batch = src.parseList(r.body, p.listing_type).filter((l) => !seen.has(l.sourceId));
+      const batch = src.parseList(r.body, p.listing_type, city).filter((l) => !seen.has(l.sourceId));
       batch.forEach((l) => seen.add(l.sourceId));
       out.push(...batch);
       emit('info', `  ${src.name} ${area ? area.name.split(',')[0] + ' ' : ''}page ${page}: ${batch.length} listings`,
@@ -351,8 +353,9 @@ export async function rescore(listings: StoredListing[], p: SearchProfile,
 
 // --- la busqueda ----------------------------------------------------------
 export async function runSearch(p: SearchProfile, deps: Deps, rawEmit: Emit, opts: SearchOptions = {}): Promise<SearchSummary> {
-  const city = CITIES[p.city];
-  if (!city) throw new Error(`unknown city ${p.city}`);
+  const city = deps.city ?? CITIES[p.city];
+  if (!city) throw new Error(`unknown city ${p.city}: choose it again in Settings`);
+  deps.geocoder.catalanStreets = city.catalanStreets;
   const pages = opts.pages ?? p.crawl.max_pages;
   // Cada evento lleva los segundos desde el inicio, y cada etapa dice cuanto
   // tardo: si una busqueda es lenta, el registro dice donde.
@@ -380,8 +383,8 @@ export async function runSearch(p: SearchProfile, deps: Deps, rawEmit: Emit, opt
     const names = activeSources(p).filter((n) => SOURCES[n]?.types.includes(p.listing_type));
     // Paginas como mucho por portal: la barra de progreso del rastreo.
     emit('info', `Reading ${names.join(', ')}...`,
-      { plan: Object.fromEntries(names.map((n) => [n, startUrls(SOURCES[n], areas, p).size * pages])) });
-    const results = await Promise.all(names.map((n) => crawlSource(SOURCES[n], areas, p, pages, deps, emit)
+      { plan: Object.fromEntries(names.map((n) => [n, startUrls(SOURCES[n], areas, p, city).size * pages])) });
+    const results = await Promise.all(names.map((n) => crawlSource(SOURCES[n], areas, p, city, pages, deps, emit)
       .catch((e) => {
         if (e instanceof Cancelled) throw e;
         // Que un portal falle no debe tumbar la busqueda entera.

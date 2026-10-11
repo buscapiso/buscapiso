@@ -2,13 +2,14 @@
 // (listings), lo de la usuaria (userState) y lo calculado (derived) van
 // separados para que importar, puntuar y editar no se pisen.
 export const DB_NAME = 'buscapiso';
-export const DB_VERSION = 1;
+// 2: ciudades descubiertas.
+export const DB_VERSION = 2;
 export const STORES = ['listings', 'userState', 'derived', 'profiles', 'settings', 'travelCache',
-  'geoCache', 'aiCache'] as const;
+  'geoCache', 'aiCache', 'cities'] as const;
 export type StoreName = (typeof STORES)[number];
 const KEYS: Record<StoreName, string | null> = {
   listings: 'id', userState: 'id', derived: 'id', profiles: 'name',
-  settings: null, travelCache: null, geoCache: null, aiCache: null,
+  settings: null, travelCache: null, geoCache: null, aiCache: null, cities: 'city',
 };
 
 const req = <T>(r: IDBRequest<T>) => new Promise<T>((ok, ko) => { r.onsuccess = () => ok(r.result); r.onerror = () => ko(r.error); });

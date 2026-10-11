@@ -10,6 +10,9 @@ import * as idealista from './idealista';
 import * as roomgo from './roomgo';
 import { SOURCES } from './index';
 import { defaultProfile } from '../profiles';
+import { CITIES } from '../coverage';
+
+const BCN = CITIES.barcelona;
 
 type Parser = (html: string, type: ListingType) => RawListing[];
 
@@ -81,17 +84,27 @@ describe('fotocasa', () => {
     const p = defaultProfile();
     p.budget.max_total = 520;
     // Escalones de 50, como los del propio buscador.
-    expect(SOURCES.idealista.listUrl(area, p, 1)).toContain('precio-hasta_550');
+    expect(SOURCES.idealista.listUrl(area, p, 1, BCN)).toContain('precio-hasta_550');
     p.idealista.max_price = 400;
-    expect(SOURCES.idealista.listUrl(area, p, 1)).toContain('precio-hasta_400');
+    expect(SOURCES.idealista.listUrl(area, p, 1, BCN)).toContain('precio-hasta_400');
     const flat = defaultProfile();
     flat.listing_type = 'flat';
     flat.flat.max_rent = 1200;
-    expect(SOURCES.idealista.listUrl(area, flat, 1)).toContain('precio-hasta_1200');
+    expect(SOURCES.idealista.listUrl(area, flat, 1, BCN)).toContain('precio-hasta_1200');
   });
   it('searches the whole city when an area has no fotocasa slug', () => {
     const p = defaultProfile();
-    expect(SOURCES.fotocasa.listUrl(null, p, 1)).toContain('barcelona-capital/todas-las-zonas');
+    expect(SOURCES.fotocasa.listUrl(null, p, 1, BCN)).toContain('barcelona-capital/todas-las-zonas');
+  });
+  it('take the whole-city slugs from the city, and skip a portal the city lacks', () => {
+    const p = defaultProfile();
+    const granada = { ...BCN, name: 'Granada', portals: { idealista: 'granada-granada', fotocasa: 'granada-capital/todas-las-zonas',
+      habitaclia: 'granada-provincia/granada-capital', roomgo: 'granada/piso-compartido-granada', depisoenpiso: null } };
+    expect(SOURCES.idealista.listUrl(null, p, 1, granada)).toContain('/alquiler-habitacion/granada-granada/');
+    expect(SOURCES.habitaclia.listUrl(null, p, 1, granada)).toContain('/alquiler/viviendas/granada-provincia/granada-capital/s');
+    expect(SOURCES.roomgo.listUrl(null, p, 2, granada)).toBe('https://www.roomgo.es/granada/piso-compartido-granada?page=2');
+    expect(SOURCES.depisoenpiso.listUrl(null, p, 1, granada)).toBeNull();
+    expect(SOURCES.roomgo.parseList(fixture('roomgo_listado.html'), 'room', granada)[0].municipality).toBe('Granada');
   });
   it('stops paging once a cheapest-first page is all above the ceiling', () => {
     const p = defaultProfile();
@@ -109,19 +122,19 @@ describe('habitaclia', () => {
     expectGolden((h) => habitaclia.parseList(h, now), 'habitaclia_pisos.html', 'habitaclia_pisos', 'flat'));
   it('reads the page count', () => expect(habitaclia.totalPages(fixture('habitaclia_pisos.html'))).toBe(golden('habitaclia_paginas')));
   it('builds URLs', () => {
-    expect(habitaclia.buildUrl('barcelona-capital'))
+    expect(habitaclia.buildUrl('barcelona-provincia/barcelona-capital'))
       .toBe('https://www.habitaclia.com/alquiler/viviendas/barcelona-provincia/barcelona-capital/s');
-    expect(habitaclia.buildUrl('barcelona-capital/eixample', 3)).toMatch(/\/barcelona-capital\/eixample\/s\/3$/);
+    expect(habitaclia.buildUrl('barcelona-provincia/barcelona-capital/eixample', 3)).toMatch(/\/barcelona-capital\/eixample\/s\/3$/);
   });
   it('returns nothing for a captcha page', () => expect(habitaclia.parseList('<html>captcha</html>')).toEqual([]));
 });
 
 describe('roomgo', () => {
   it('parses the listing page like the Python parser', () =>
-    expectGolden((h) => roomgo.parseList(h), 'roomgo_listado.html', 'roomgo_listado'));
+    expectGolden((h) => roomgo.parseList(h, 'Barcelona'), 'roomgo_listado.html', 'roomgo_listado'));
   it('builds URLs', () => {
-    expect(roomgo.buildUrl('barcelona', 1)).toMatch(/\/piso-compartido-barcelona$/);
-    expect(roomgo.buildUrl('barcelona', 3)).toMatch(/\?page=3$/);
+    expect(roomgo.buildUrl('barcelona/piso-compartido-barcelona', 1)).toBe('https://www.roomgo.es/barcelona/piso-compartido-barcelona');
+    expect(roomgo.buildUrl('barcelona/piso-compartido-barcelona', 3)).toMatch(/\?page=3$/);
   });
 });
 

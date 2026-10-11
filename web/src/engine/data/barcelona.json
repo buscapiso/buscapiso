@@ -1,12 +1,25 @@
 {
  "city": "barcelona",
  "name": "Barcelona",
+ "province": "Barcelona",
+ "center": [
+  41.3874,
+  2.1686
+ ],
  "box": [
   1.9,
   41.6,
   2.35,
   41.25
  ],
+ "catalanStreets": true,
+ "portals": {
+  "idealista": "barcelona-barcelona",
+  "fotocasa": "barcelona-capital/todas-las-zonas",
+  "habitaclia": "barcelona-provincia/barcelona-capital",
+  "roomgo": "barcelona/piso-compartido-barcelona",
+  "depisoenpiso": "Barcelona"
+ },
  "areas": [
   {
    "name": "Sants-Montjuïc, Barcelona",
@@ -14,7 +27,7 @@
    "lon": 2.1437553,
    "idealista": "barcelona/sants-montjuic",
    "fotocasa": "barcelona-capital/todas-las-zonas",
-   "habitaclia": "barcelona-capital/sants-montjuic"
+   "habitaclia": "barcelona-provincia/barcelona-capital/sants-montjuic"
   },
   {
    "name": "Les Corts, Barcelona",
@@ -22,7 +35,7 @@
    "lon": 2.1205352,
    "idealista": "barcelona/les-corts",
    "fotocasa": "barcelona-capital/todas-las-zonas",
-   "habitaclia": "barcelona-capital/les-corts"
+   "habitaclia": "barcelona-provincia/barcelona-capital/les-corts"
   },
   {
    "name": "Eixample, Barcelona",
@@ -30,7 +43,7 @@
    "lon": 2.1636552,
    "idealista": "barcelona/eixample",
    "fotocasa": "barcelona-capital/todas-las-zonas",
-   "habitaclia": "barcelona-capital/eixample"
+   "habitaclia": "barcelona-provincia/barcelona-capital/eixample"
   },
   {
    "name": "Ciutat Vella, Barcelona",
@@ -38,7 +51,7 @@
    "lon": 2.1804154,
    "idealista": "barcelona/ciutat-vella",
    "fotocasa": "barcelona-capital/todas-las-zonas",
-   "habitaclia": "barcelona-capital/ciutat-vella"
+   "habitaclia": "barcelona-provincia/barcelona-capital/ciutat-vella"
   },
   {
    "name": "Gràcia, Barcelona",
@@ -46,7 +59,7 @@
    "lon": 2.1582812,
    "idealista": "barcelona/gracia",
    "fotocasa": "barcelona-capital/todas-las-zonas",
-   "habitaclia": "barcelona-capital/gracia"
+   "habitaclia": "barcelona-provincia/barcelona-capital/gracia"
   },
   {
    "name": "Sarrià-Sant Gervasi, Barcelona",
@@ -54,7 +67,7 @@
    "lon": 2.1304579,
    "idealista": "barcelona/sarria-sant-gervasi",
    "fotocasa": "barcelona-capital/todas-las-zonas",
-   "habitaclia": "barcelona-capital/sarria-sant-gervasi"
+   "habitaclia": "barcelona-provincia/barcelona-capital/sarria-sant-gervasi"
   },
   {
    "name": "Sant Martí, Barcelona",
@@ -62,7 +75,7 @@
    "lon": 2.2031889,
    "idealista": "barcelona/sant-marti",
    "fotocasa": "barcelona-capital/todas-las-zonas",
-   "habitaclia": "barcelona-capital/sant-marti"
+   "habitaclia": "barcelona-provincia/barcelona-capital/sant-marti"
   },
   {
    "name": "Horta-Guinardó, Barcelona",
@@ -70,7 +83,7 @@
    "lon": 2.1532797,
    "idealista": "barcelona/horta-guinardo",
    "fotocasa": "barcelona-capital/todas-las-zonas",
-   "habitaclia": "barcelona-capital/horta-guinardo"
+   "habitaclia": "barcelona-provincia/barcelona-capital/horta-guinardo"
   },
   {
    "name": "Nou Barris, Barcelona",
@@ -78,7 +91,7 @@
    "lon": 2.1798006,
    "idealista": "barcelona/nou-barris",
    "fotocasa": "barcelona-capital/todas-las-zonas",
-   "habitaclia": "barcelona-capital/nou-barris"
+   "habitaclia": "barcelona-provincia/barcelona-capital/nou-barris"
   },
   {
    "name": "Sant Andreu, Barcelona",
@@ -86,7 +99,7 @@
    "lon": 2.1954872,
    "idealista": "barcelona/sant-andreu",
    "fotocasa": "barcelona-capital/todas-las-zonas",
-   "habitaclia": "barcelona-capital/sant-andreu"
+   "habitaclia": "barcelona-provincia/barcelona-capital/sant-andreu"
   },
   {
    "name": "L'Hospitalet de Llobregat",
@@ -94,7 +107,7 @@
    "lon": 2.0996318,
    "idealista": "hospitalet-de-llobregat-barcelona",
    "fotocasa": "l-hospitalet-de-llobregat/todas-las-zonas",
-   "habitaclia": "l-hospitalet-de-llobregat"
+   "habitaclia": "barcelona-provincia/l-hospitalet-de-llobregat"
   },
   {
    "name": "Cornellà de Llobregat",
@@ -102,7 +115,7 @@
    "lon": 2.0706225,
    "idealista": "cornella-de-llobregat-barcelona",
    "fotocasa": "cornella-de-llobregat/todas-las-zonas",
-   "habitaclia": "cornella-de-llobregat"
+   "habitaclia": "barcelona-provincia/cornella-de-llobregat"
   },
   {
    "name": "Esplugues de Llobregat",
@@ -110,7 +123,7 @@
    "lon": 2.0886257,
    "idealista": "esplugues-de-llobregat-barcelona",
    "fotocasa": "esplugues-de-llobregat/todas-las-zonas",
-   "habitaclia": "esplugues-de-llobregat"
+   "habitaclia": "barcelona-provincia/esplugues-de-llobregat"
   },
   {
    "name": "Sant Joan Despí",
@@ -118,7 +131,7 @@
    "lon": 2.0570346,
    "idealista": "sant-joan-despi-barcelona",
    "fotocasa": "sant-joan-despi/todas-las-zonas",
-   "habitaclia": "sant-joan-despi"
+   "habitaclia": "barcelona-provincia/sant-joan-despi"
   },
   {
    "name": "El Prat de Llobregat",
@@ -126,7 +139,7 @@
    "lon": 2.0930815,
    "idealista": null,
    "fotocasa": "el-prat-de-llobregat/todas-las-zonas",
-   "habitaclia": "el-prat-de-llobregat"
+   "habitaclia": "barcelona-provincia/el-prat-de-llobregat"
   },
   {
    "name": "Sant Boi de Llobregat",
@@ -134,7 +147,7 @@
    "lon": 2.0511278,
    "idealista": null,
    "fotocasa": "sant-boi-de-llobregat/todas-las-zonas",
-   "habitaclia": "sant-boi-de-llobregat"
+   "habitaclia": "barcelona-provincia/sant-boi-de-llobregat"
   },
   {
    "name": "Badalona",
@@ -142,7 +155,7 @@
    "lon": 2.248254,
    "idealista": "badalona-barcelona",
    "fotocasa": "badalona/todas-las-zonas",
-   "habitaclia": "badalona"
+   "habitaclia": "barcelona-provincia/badalona"
   },
   {
    "name": "Santa Coloma de Gramenet",
@@ -150,7 +163,7 @@
    "lon": 2.2080809,
    "idealista": null,
    "fotocasa": "santa-coloma-de-gramenet/todas-las-zonas",
-   "habitaclia": "santa-coloma-de-gramenet"
+   "habitaclia": "barcelona-provincia/santa-coloma-de-gramenet"
   },
   {
    "name": "Sant Adrià de Besòs",
@@ -158,7 +171,7 @@
    "lon": 2.2182775,
    "idealista": "sant-adria-de-besos-barcelona",
    "fotocasa": "sant-adria-de-besos/todas-las-zonas",
-   "habitaclia": "sant-adria-de-besos"
+   "habitaclia": "barcelona-provincia/sant-adria-de-besos"
   }
  ]
 }

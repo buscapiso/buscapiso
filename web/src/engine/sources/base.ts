@@ -1,4 +1,5 @@
 import type { Gender, ListingType, RawListing } from '../model';
+import type { City } from '../coverage';
 import type { SearchProfile } from '../profiles';
 
 // Solo idealista y roomgo publican el genero del piso como dato. En el resto
@@ -61,13 +62,14 @@ export interface Source {
   fatalMarkers?: string[];
   readyMarkers?: string[];
   minLength: number;                 // un HTML mas corto es un bloqueo
-  /** URL de la pagina `page` (1..) para esa zona, o null si el portal no la cubre. */
-  listUrl(area: Area | null, profile: SearchProfile, page: number): string | null;
+  /** URL de la pagina `page` (1..) para esa zona (null: la ciudad entera), o
+   * null si el portal no la cubre. */
+  listUrl(area: Area | null, profile: SearchProfile, page: number, city: City): string | null;
   /** true si la fuente recorre zonas; false si tiene una sola lista por ciudad. */
   perArea: boolean;
   /** Una pagina con menos anuncios que esto es la ultima. */
   pageSize: number;
-  parseList(html: string, type: ListingType): RawListing[];
+  parseList(html: string, type: ListingType, city: City): RawListing[];
   totalPages?(html: string): number;
   /** Corta la paginacion de una zona tras este lote (p. ej. ya supera el techo). */
   shouldStop?(batch: RawListing[], profile: SearchProfile): boolean;
