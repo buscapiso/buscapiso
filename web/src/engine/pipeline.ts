@@ -49,6 +49,10 @@ export interface Deps {
 export interface SearchOptions { pages?: number; skipDetails?: boolean }
 export interface SearchSummary { accepted: number; possible: number; new: number; crawled: number }
 
+/** Horario real para menos de esta parte de los anuncios (y al menos tantos
+ * anuncios): la cobertura es irregular y se estima para todos. */
+const PATCHY_SHARE = 0.8;
+const PATCHY_MIN_LISTINGS = 10;
 /** Cada cuanto se refresca la lista mientras se situan los anuncios. */
 const LIVE_PREVIEW_MS = 5_000;
 const localDate = (d: Date) => d.toLocaleDateString('sv-SE');
@@ -274,13 +278,22 @@ export async function rescore(listings: StoredListing[], p: SearchProfile,
         const who = cheap ? placed : top;
         if (!who.length) continue;
         const trips = await deps.travel.trips(origins(who), d);
+        const got = trips.filter(Boolean).length;
+        // Con horario real solo para una parte (a Transitous le faltan los
+        // autobuses de una ciudad), los de cerca del tranvia saldrian ganando:
+        // mejor estimar para todos y decirlo.
+        const patchy = got > 0 && who.length >= PATCHY_MIN_LISTINGS && got / who.length < PATCHY_SHARE;
         who.forEach((w, i) => {
-          const t = trips[i];
+          const t = patchy ? null : trips[i];
           if (t) setTravel(w, d, t);
           complete.set(w, (complete.get(w) ?? true) && !!t);
         });
-        const got = trips.filter(Boolean).length;
-        perPlace.push(`${d.name}: ${got} of ${who.length}`);
+        perPlace.push(`${d.name}: ${got} of ${who.length}${patchy ? ', estimated' : ''}`);
+        if (patchy) {
+          emit('warning', `    ${deps.travel.name} only has timetables near ${got} of ${who.length} listings for ${d.name}: `
+            + `it probably lacks some of this city's buses or trains. So that listings near the lines it has don't come `
+            + `out ahead, all times to ${d.name} are estimates.`, { place: d.name, patchy: true });
+        }
         if (!got && who.length >= 3) {
           // O el sitio esta mal puesto, o el proveedor no tiene calles ahi
           // (Transitous tiene huecos: el este del Retiro, en 2026-10).

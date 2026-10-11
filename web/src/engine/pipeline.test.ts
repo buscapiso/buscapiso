@@ -410,6 +410,32 @@ describe('rescore', () => {
     expect(info).toMatch(/Family: 0 of \d+/);
     expect(events.some((e) => e.kind === 'warning' && /Family/.test(e.message) && /Settings/.test(e.message))).toBe(true);
   });
+  // Transitous en Zaragoza (2026-10): solo el tranvia, asi que solo los pisos
+  // cerca de el tenian horario real. Mezclar reales con estimados no es justo.
+  it('uses estimates for everyone when real times reach only some listings, and says why', async () => {
+    const travel: TravelProvider = { name: 'transitous',
+      trips: async (o) => o.map((_, i) => (i % 10 < 3 ? { minutes: 12, detail: '', source: 'transitous' } : null)) };
+    const listings = await stored();
+    expect(listings.length).toBeGreaterThanOrEqual(10);
+    const { events, emit } = collect();
+    const ds = await rescore(listings, profile({ destinations: [work] }), { travel, ai: null, aiCache: noCache,
+      now: () => new Date() }, new Set(), emit);
+    expect(ds.some((x) => x.travel.Work === 12)).toBe(false);
+    expect(ds.every((x) => x.travelSource !== 'transitous')).toBe(true);
+    const warning = events.find((e) => e.kind === 'warning' && /only has timetables near/.test(e.message))!;
+    expect(warning.message).toMatch(/Work/);
+    expect(warning.message).toMatch(/estimates/);
+    expect(events.find((e) => e.message.includes('Real timetables'))!.message).toMatch(/Work: \d+ of \d+, estimated/);
+  });
+  it('keeps real times when they reach nearly every listing', async () => {
+    const travel: TravelProvider = { name: 'transitous',
+      trips: async (o) => o.map((_, i) => (i % 10 < 9 ? { minutes: 12, detail: '', source: 'transitous' } : null)) };
+    const { events, emit } = collect();
+    const ds = await rescore(await stored(), profile({ destinations: [work] }), { travel, ai: null, aiCache: noCache,
+      now: () => new Date() }, new Set(), emit);
+    expect(ds.some((x) => x.travel.Work === 12)).toBe(true);
+    expect(events.some((e) => /only has timetables near/.test(e.message))).toBe(false);
+  });
   it('asks the AI about several listings at once, but not all of them', async () => {
     let inFlight = 0, most = 0;
     const ai = fakeAI(async () => {
