@@ -29,7 +29,10 @@ function manifest(target) {
   else {
     m.background = { scripts: ['background.js'], type: 'module' };
     // Mozilla pide declarar que datos recoge la extension: ninguno.
+    // update_url: Firefox mira ahi cada dia si hay version nueva y la instala
+    // sola (la web publica ese fichero; ver docs/README.es.md, "Publicar").
     m.browser_specific_settings = { gecko: { id: 'extension@buscapiso.github.io', strict_min_version: '128.0',
+      update_url: 'https://buscapiso.github.io/buscapiso/extension-updates.json',
       data_collection_permissions: { required: ['none'] } } };
   }
   return m;

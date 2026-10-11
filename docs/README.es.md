@@ -127,21 +127,25 @@ usuarios.
 
 ### Cada versión de la extensión
 
-1. Subir la versión en `extension/build.mjs` y en `extension/src/protocol.js`.
-   Si cambia el protocolo, subir `PROTOCOL` también en la web; la web pide
-   actualizar a quien tenga una extensión más antigua.
-2. Etiquetar `ext-vX.Y.Z`: el workflow adjunta `buscapiso-chrome.zip` a la
-   release.
-3. Firmar la de Firefox (hace falta la clave de API de addons.mozilla.org, que
-   no se guarda en el repo) y subir el `.xpi` a la misma release:
+1. Subir la versión en `extension/build.mjs`, en `extension/src/protocol.js`
+   y en `LATEST_EXTENSION` (`web/src/lib/extension.ts`), y añadirla al final de
+   `web/public/extension-updates.json`. Un test comprueba que coinciden. Si
+   cambia el protocolo, subir `PROTOCOL` también; la web deja de usar una
+   extensión más antigua y pide actualizar.
+2. Etiquetar `ext-vX.Y.Z` y subir el tag: el workflow crea la release con
+   `buscapiso-chrome.zip`. Quitarle "latest" mientras no lleve el `.xpi`
+   (`gh release edit ext-vX.Y.Z --latest=false`): los enlaces de Firefox
+   apuntan a la última release.
+3. Firmar la de Firefox y subirla, que además la marca como "latest":
+   `./extension/release-firefox.sh`. Pide la clave de API de
+   addons.mozilla.org (no se guarda en el repo).
+4. Publicar la web (push a `main`). Su aviso pide actualizar a quien tenga una
+   versión anterior y la guía `#/extension` explica cómo.
 
-```bash
-node extension/build.mjs
-WEB_EXT_API_KEY=... WEB_EXT_API_SECRET=... npx web-ext sign \
-  --source-dir extension/dist/firefox --channel unlisted --artifacts-dir /tmp/xpi
-cp /tmp/xpi/*.xpi /tmp/buscapiso-firefox.xpi
-gh release upload ext-vX.Y.Z /tmp/buscapiso-firefox.xpi --clobber
-```
+Firefox se actualiza solo desde la 1.1.0: el manifiesto lleva `update_url`,
+que apunta a `extension-updates.json` de la web, y Firefox lo mira cada día.
+Chrome no: una extensión descomprimida solo se actualiza a mano (la guía
+lo explica), o publicándola en la Chrome Web Store.
 
 ### Comprobación en vivo antes de publicar
 

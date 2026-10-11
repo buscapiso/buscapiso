@@ -3,6 +3,7 @@
   import { getCities } from './lib/api';
   import Nav from './lib/components/Nav.svelte';
   import { t } from './lib/i18n';
+  import ExtensionGuide from './routes/ExtensionGuide.svelte';
   import ListingDetail from './routes/ListingDetail.svelte';
   import Rooms from './routes/Rooms.svelte';
   import Settings from './routes/Settings.svelte';
@@ -28,6 +29,8 @@
     <ListingDetail id={router.route.id} />
   {:else if router.route.name === 'settings'}
     <Settings section={router.route.section} />
+  {:else if router.route.name === 'extension'}
+    <ExtensionGuide />
   {:else}
     <Rooms filter={router.route.filter} view={router.route.view} />
   {/if}
@@ -36,6 +39,7 @@
 <footer>
   <p class="motto">{t('footer.privacy')}</p>
   <p>
+    <a href="#/extension">{t('footer.extension')}</a> ·
     <a href="https://github.com/buscapiso/buscapiso" target="_blank" rel="noopener">{t('footer.source')}</a> ·
     <a href="https://github.com/buscapiso/buscapiso/issues" target="_blank" rel="noopener">{t('footer.contact')}</a> ·
     {t('footer.travel')} <a href="https://transitous.org/sources/" target="_blank" rel="noopener">Transitous</a> ·

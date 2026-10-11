@@ -6,6 +6,8 @@ It is a website: open **https://buscapiso.github.io/buscapiso/**. There is nothi
 
 ## The browser extension
 
+The website walks you through this step by step at **https://buscapiso.github.io/buscapiso/#/extension**, and tells you when there is a new version.
+
 A website can't read other websites, so buscapiso uses a small extension to read the rental portals from your own browser, the same way you would browse them. It only reads Idealista, Fotocasa, Habitaclia, Roomgo, De Piso en Piso, pisos.com, Badi, HousingAnywhere and Spotahome, and only when you press Search. Version 1.1.0 added the last four; with an older version buscapiso skips them and tells you to update. It isn't in the browser stores; you install it from this repository.
 
 **Chrome, Edge, Brave, Vivaldi or Opera**

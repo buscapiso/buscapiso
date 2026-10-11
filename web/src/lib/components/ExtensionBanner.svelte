@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { LATEST_EXTENSION, stale } from '../extension';
   import { ext, platform, refreshExtension, STORE, type Platform } from '../extensionState.svelte';
   import { href } from '../router.svelte';
   import { t } from '../i18n';
@@ -8,10 +9,27 @@
   const store = $derived(where === 'firefox' || where === 'android-firefox' ? STORE.firefox : STORE.chrome);
 
   $effect(() => { if (!ext.status) refreshExtension(); });
+
+  // "Ahora no" se recuerda por version: la siguiente vuelve a avisar.
+  const KEY = 'buscapiso.extensionNotice';
+  let dismissed = $state((() => { try { return localStorage.getItem(KEY) === LATEST_EXTENSION; } catch { return false; } })());
+  function notNow() {
+    dismissed = true;
+    try { localStorage.setItem(KEY, LATEST_EXTENSION); } catch { /* sin almacenamiento: solo esta vez */ }
+  }
 </script>
 
 {#if status && status.outdated}
-  <div class="banner" role="status"><p>{t('extension.outdated')}</p></div>
+  <div class="banner" role="status"><p>{t('extension.outdated')}</p>
+    <a class="button primary" href={STORE.help}>{t('extension.howUpdate')}</a></div>
+{:else if stale(status) && !dismissed}
+  <div class="banner" role="status">
+    <p>{t('extension.newVersion', { version: LATEST_EXTENSION, whatsNew: t('extension.whatsNew') })}</p>
+    <div class="row">
+      <a class="button primary" href={STORE.help}>{t('extension.howUpdate')}</a>
+      <button onclick={notNow}>{t('extension.notNow')}</button>
+    </div>
+  </div>
 {:else if status && !status.installed}
   <div class="banner" role="status">
     {#if where === 'apple' || where === 'android'}
@@ -21,8 +39,8 @@
     {:else}
       <p>{t(where === 'firefox' || where === 'android-firefox' ? 'extension.addFirefox' : 'extension.add')}</p>
       <div class="row">
-        {#if store}<a class="button primary" href={store} target="_blank" rel="noopener">{t('extension.get')}</a>{/if}
-        <a href={STORE.help} target="_blank" rel="noopener">{t('extension.how')}</a>
+        <a class="button primary" href={STORE.help}>{t('extension.how')}</a>
+        {#if store}<a href={store}>{t('extension.get')}</a>{/if}
         <button onclick={refreshExtension}>{t('extension.check')}</button>
       </div>
       <p class="small">{t('extension.orImport')} <a href={href({ name: 'settings', section: 'data' })}>{t('extension.import')}</a></p>

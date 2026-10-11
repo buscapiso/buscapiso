@@ -8,6 +8,7 @@ test.each([
   ['#/listing/abc123', { name: 'listing', id: 'abc123' }],
   ['#/settings', { name: 'settings', section: 'search' }],
   ['#/settings/ai', { name: 'settings', section: 'ai' }],
+  ['#/extension', { name: 'extension' }],
   // Rutas antiguas: marcadores y enlaces que ya existan siguen funcionando.
   ['#/liked', { name: 'rooms', filter: 'liked', view: 'list' }],
   // "Ask first" ya no es una lista: el enlace viejo lleva a New.
@@ -27,6 +28,7 @@ test('href and parse agree', () => {
     { name: 'rooms', filter: 'progress', view: 'board' },
     { name: 'listing', id: 'x1' },
     { name: 'settings', section: 'places' },
+    { name: 'extension' },
   ] as const) {
     expect(parse(href(r))).toEqual(r);
   }

@@ -1,0 +1,12 @@
+{
+  "addons": {
+    "extension@buscapiso.github.io": {
+      "updates": [
+        {
+          "version": "1.1.0",
+          "update_link": "https://github.com/buscapiso/buscapiso/releases/download/ext-v1.1.0/buscapiso-firefox.xpi"
+        }
+      ]
+    }
+  }
+}

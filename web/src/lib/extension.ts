@@ -4,7 +4,24 @@
 import type { FetchPage, FetchRequest, FetchResult } from '../engine/model';
 
 export const PROTOCOL = 1;
+/** La ultima version publicada; igual que VERSION en extension/src/protocol.js
+ * (un test lo comprueba). Una mas antigua funciona, pero se le sugiere actualizar. */
+export const LATEST_EXTENSION = '1.1.0';
 export interface ExtensionStatus { installed: boolean; outdated: boolean; version: string | null; browser: string | null }
+
+/** true si la version `a` es anterior a `b` ('1.0.1' < '1.1.0'). */
+export function olderThan(a: string | null, b: string): boolean {
+  if (!a) return false;
+  const pa = a.split('.').map(Number), pb = b.split('.').map(Number);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const x = pa[i] || 0, y = pb[i] || 0;
+    if (x !== y) return x < y;
+  }
+  return false;
+}
+
+/** Instalada y usable, pero hay una version nueva. */
+export const stale = (s: ExtensionStatus | null) => !!s?.installed && !s.outdated && olderThan(s.version, LATEST_EXTENSION);
 
 type Pending = { resolve: (m: Record<string, unknown>) => void; onNeedsUser?: () => void };
 const pending = new Map<string, Pending>();
