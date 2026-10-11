@@ -43,11 +43,12 @@
   const shown = $derived((ofType ?? []).filter(MATCH[filter]));
   const count = (f: Filter) => (ofType ?? []).filter(MATCH[f]).length;
   const best = $derived(Math.max(0, ...shown.map((l) => l.score)));
-  const points = $derived<MapPoint[]>(shown.filter((l) => l.lat !== null && l.lon !== null).map((l) => {
+  const points = $derived<MapPoint[]>(shown.map((l, i) => ({ l, n: i + 1 })).filter(({ l }) => l.lat !== null && l.lon !== null).map(({ l, n }) => {
     const [place, minutes] = Object.entries(l.travel)[0] ?? ['', 0];
     return { id: l.id, lat: l.lat!, lon: l.lon!, label: l.title || l.neighbourhood,
       sub: place ? t('map.pointSub', { cost: l.total_cost ?? '?', minutes: Math.round(minutes), place }) : undefined,
-      href: href({ name: 'listing', id: l.id }), color: scoreColor(l.score, best) };
+      href: href({ name: 'listing', id: l.id }), color: scoreColor(l.score, best), n: view === 'list' ? n : undefined,
+      faint: l.group === 'possible' };
   }));
 
   async function load() {
@@ -80,24 +81,40 @@
 </script>
 
 <ExtensionBanner />
-<SearchPanel bind:this={panel} onresults={load} />
 
-{#if profile}<CriteriaBar {profile} onsave={saveCriteria} />{/if}
+<section class="front">
+  <article class="wanted" aria-label={t('wanted.title')}>
+    <h2 class="kicker">{t('wanted.title')}</h2>
+    {#if profile?.description}
+      <p class="text">{profile.description}</p>
+    {:else if profile}
+      <p class="text blank">{t('wanted.empty')}</p>
+    {/if}
+    {#if profile}<CriteriaBar {profile} onsave={saveCriteria} />{/if}
+    <a class="edit" href={href({ name: 'settings', section: 'search' })}>{t(profile?.description ? 'wanted.edit' : 'wanted.write')}</a>
+  </article>
+  {#if view !== 'board'}
+    <nav class="filters" aria-label={t('rooms.filters')}>
+      <h2 class="label">{t('rooms.inThisEdition')}</h2>
+      <ul>
+        {#each FILTERS as f}
+          <li><a href={href({ name: 'rooms', filter: f, view })} aria-current={f === filter ? 'page' : undefined}>
+            {t(`filter.${f}`)} <span>{count(f)}</span></a></li>
+        {/each}
+      </ul>
+    </nav>
+  {/if}
+  <div class="press"><SearchPanel bind:this={panel} onresults={load} /></div>
+</section>
+
 {#if changed}
   <p class="changed">{t('criteria.changed')}
     <button onclick={() => { changed = false; panel?.start(true); }}>{t('criteria.rescore')}</button></p>
 {/if}
 {#if error}<p class="error" role="alert">{error}</p>{/if}
 
-<div class="toolbar">
-  {#if view !== 'board'}
-    <nav class="filters" aria-label={t('rooms.filters')}>
-      {#each FILTERS as f}
-        <a href={href({ name: 'rooms', filter: f, view })} aria-current={f === filter ? 'page' : undefined}>
-          {t(`filter.${f}`)} <span>{count(f)}</span></a>
-      {/each}
-    </nav>
-  {/if}
+<div class="band">
+  <h2>{t(type === 'flat' ? 'band.flats' : 'band.rooms')}</h2>
   <nav class="views" aria-label={t('rooms.views')}>
     {#each VIEWS as v}
       <a href={href({ name: 'rooms', filter, view: v })} aria-current={v === view ? 'page' : undefined}>{t(`view.${v}`)}</a>
@@ -138,43 +155,78 @@
   <!-- En pantalla ancha, el mapa al lado de la lista; en el movil se queda la pestaña Mapa. -->
   <div class="split">
     <div class="cards">
-      {#each shown as l (l.id)}
-        <ListingCard listing={l} active={l.id === selected} onhover={(id) => (hovered = id)}
+      {#each shown as l, i (l.id)}
+        <ListingCard listing={l} n={i + 1} boxed={i === 0 && filter === 'new'} active={l.id === selected}
+          onhover={(id) => (hovered = id)}
           onstatus={filter === 'new' || filter === 'ask' ? (s) => changeStatus(l, s) : undefined} />
       {/each}
     </div>
     <aside class="side">
       <MapView label={t('map.title')} {points} places={profile?.destinations ?? []} height="calc(100vh - 32px)"
         highlight={hovered ?? selected} onselect={select} />
+      <p class="legend">{t('map.legend')}</p>
     </aside>
   </div>
 {/if}
 
 <style>
-  .split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(340px, 44%); gap: 20px; align-items: start; }
-  .side { position: sticky; top: 16px; }
+  /* Portada: el anuncio de lo que buscas, el indice y la imprenta. */
+  .front { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, .9fr) minmax(0, 1fr); gap: 24px;
+    margin-bottom: 22px; align-items: start; }
+  .wanted { border: 1.5px solid var(--ink); background: var(--box); padding: 12px 16px 14px; display: grid; gap: 8px;
+    justify-items: start; }
+  .kicker { margin: 0; font-family: var(--display); font-stretch: 75%; font-weight: 800; font-size: 24px; line-height: 1;
+    text-transform: uppercase; letter-spacing: .01em; }
+  .text { margin: 0; font-family: var(--serif); font-size: 17.5px; line-height: 1.45; max-width: 62ch;
+    display: -webkit-box; -webkit-line-clamp: 5; line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
+  .text.blank { font-style: italic; color: var(--muted); }
+  .edit { font-size: 14px; }
+  .label { margin: 0 0 6px; font-family: var(--text); font-size: 12px; font-weight: 700; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--muted); }
+  .filters ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
+  /* Linea de puntos entre el nombre y la cifra, como un indice de periodico. */
+  .filters a { display: flex; gap: 6px; align-items: baseline; color: var(--ink); text-decoration: none;
+    font-family: var(--serif); font-size: 18px; padding: 1px 0; }
+  .filters a::after { content: ''; order: 2; flex: 1; border-bottom: 2px dotted var(--line-strong); transform: translateY(-5px); }
+  .filters a span { order: 3; font-family: var(--display); font-stretch: 80%; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .filters a:hover { color: var(--accent); }
+  .filters a[aria-current='page'] { color: var(--gold-ink); font-weight: 600; }
+  .filters a[aria-current='page']::before { content: '▸'; font-size: 13px; margin-right: -2px; }
+  .band { background: var(--ink); color: var(--paper); display: flex; justify-content: space-between; align-items: center;
+    gap: 12px; flex-wrap: wrap; padding: 5px 6px 5px 14px; margin-bottom: 6px; }
+  .band h2 { margin: 0; font-family: var(--display); font-stretch: 75%; font-weight: 800; font-size: 26px; line-height: 1.1;
+    text-transform: uppercase; letter-spacing: .01em; }
+  .views { display: flex; gap: 2px; }
+  .views a { color: var(--paper); text-decoration: none; font-size: 14px; padding: 3px 12px; opacity: .8; }
+  .views a:hover { opacity: 1; text-decoration: underline; }
+  .views a[aria-current='page'] { background: var(--paper); color: var(--ink); opacity: 1; font-weight: 700; }
+  .split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(340px, 42%); gap: 24px; align-items: start; }
+  .side { position: sticky; top: 12px; }
+  .legend { margin: 6px 0 0; font-size: 13px; color: var(--muted); }
+  .changed { background: var(--box); border-left: 3px solid var(--gold); padding: 8px 12px; margin: 0 0 12px;
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 14px; }
+  .welcome { border: 1.5px solid var(--ink); background: var(--box); padding: 16px 20px; margin-top: 12px; }
+  .welcome h2 { margin-top: 0; }
+  .welcome li { margin: 8px 0; font-family: var(--serif); font-size: 17px; }
+  .welcome small { display: block; color: var(--muted); font-family: var(--text); font-size: 13px; }
+  .empty { text-align: center; padding: 44px 16px; color: var(--muted); border-bottom: 1px solid var(--line);
+    font-family: var(--serif); font-style: italic; font-size: 18px; }
+  .empty p { margin: 0 0 12px; }
+  .error { color: var(--bad); }
+  .muted { color: var(--muted); }
+  .other { font-size: 13px; margin: 6px 0; }
+  @media (max-width: 1100px) {
+    .front { grid-template-columns: 1fr 1fr; }
+    .wanted { grid-column: 1 / -1; }
+  }
   @media (max-width: 900px) {
     .split { display: block; }
     .side { display: none; }
   }
-  .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-  .filters { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
-  .filters a { border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; white-space: nowrap;
-    text-decoration: none; color: var(--ink); background: var(--surface); font-size: 14px; }
-  .filters a span { color: var(--muted); margin-left: 2px; }
-  .filters a[aria-current='page'] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
-  .filters a[aria-current='page'] span { color: var(--paper); opacity: .75; }
-  .views { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
-  .views a { padding: 4px 14px; text-decoration: none; color: var(--ink); background: var(--surface); font-size: 14px; }
-  .views a[aria-current='page'] { background: var(--accent); color: var(--paper); font-weight: 700; }
-  .changed { background: var(--surface); border-left: 3px solid var(--accent); padding: 8px 12px; margin: 0 0 10px;
-    display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 14px; }
-  .welcome { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 20px; }
-  .welcome h2 { margin-top: 0; }
-  .welcome li { margin: 8px 0; }
-  .welcome small { display: block; color: var(--muted); }
-  .empty { text-align: center; padding: 40px 16px; color: var(--muted); border: 1px dashed var(--line); border-radius: var(--radius); }
-  .error { color: var(--bad); }
-  .muted { color: var(--muted); }
-  .other { font-size: 13px; margin: 0 0 8px; }
+  @media (max-width: 600px) {
+    .front { grid-template-columns: 1fr; gap: 18px; }
+    .press { order: -1; }
+    .wanted { order: -2; }
+    .band h2 { font-size: 22px; }
+  }
 </style>

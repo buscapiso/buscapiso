@@ -65,10 +65,14 @@
 {:else if l}
   <article>
     {#if l.photo}<img class="hero" src={l.photo} alt="" />{/if}
-    <h1>{l.title || l.neighbourhood}</h1>
-    <p class="meta">{[l.neighbourhood, l.municipality].filter(Boolean).join(', ')}</p>
-    <p class="cost"><strong>{l.total_cost ?? '?'} €</strong> {t('listing.perMonth')}
-      <small>{costLine(l)}</small></p>
+    <header class="head">
+      <p class="ref">{l.portal}{#if l.published} · {l.published}{/if}</p>
+      <h1>{l.title || l.neighbourhood}</h1>
+      <p class="where">{[l.neighbourhood, l.municipality].filter(Boolean).join(', ')}</p>
+      <p class="cost"><strong>{l.total_cost ?? '?'} €</strong> {t('listing.perMonth')}
+        <small>{costLine(l)}</small></p>
+      <div class="score" class:ask={l.group === 'possible'} title={t('listing.score')}>{Math.round(l.score)}</div>
+    </header>
 
     {#if l.type === 'flat'}
       <ul class="facts">
@@ -167,31 +171,50 @@
 {/if}
 
 <style>
-  .aifacts { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 4px; font-size: 14px; }
+  article { display: grid; gap: 4px; }
+  .head { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 20px; border-bottom: 3px double var(--ink);
+    padding-bottom: 12px; margin-bottom: 8px; }
+  .head > :not(.score) { grid-column: 1; }
+  .ref { margin: 8px 0 0; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  h1 { margin: 2px 0 2px; font-size: clamp(26px, 4vw, 36px); line-height: 1.12; }
+  .where { margin: 0; font-family: var(--serif); font-size: 17px; color: var(--muted); }
+  .cost { margin: 8px 0 0; font-family: var(--serif); font-style: italic; color: var(--muted); }
+  .cost strong { font-family: var(--display); font-style: normal; font-stretch: 75%; font-weight: 800; font-size: 44px; line-height: .9;
+    letter-spacing: -0.02em; color: var(--ink); margin-right: 4px; }
+  .cost small { font-size: 15px; margin-left: 6px; }
+  .score { grid-column: 2; grid-row: 1 / span 4; align-self: center; width: 76px; height: 76px; border-radius: 50%;
+    border: 3px solid var(--gold); color: var(--gold-ink); display: grid; place-items: center; transform: rotate(-7deg);
+    font-family: var(--display); font-stretch: 75%; font-weight: 800; font-size: 32px; }
+  .score.ask { border-style: dashed; border-color: var(--line-strong); color: var(--muted); }
+  .hero { width: 100%; max-height: 360px; object-fit: cover; border: 1.5px solid var(--ink); }
+  /* Cada seccion abre con un filete, como en la pagina de un diario. */
+  h2 { font-family: var(--display); font-stretch: 75%; font-weight: 800; font-size: 20px; text-transform: uppercase;
+    letter-spacing: .02em; margin: 26px 0 8px; padding-top: 8px; border-top: 1px solid var(--ink); }
+  section p, .desc { font-family: var(--serif); font-size: 17px; line-height: 1.5; max-width: 68ch; }
+  section ul, section ol { font-family: var(--serif); font-size: 16px; padding-left: 20px; }
+  section li { margin: 2px 0; }
+  .aifacts { list-style: none; padding: 0 !important; margin: 8px 0; display: grid; gap: 4px; font-family: var(--text) !important; font-size: 14px !important; }
   .aifacts .k { color: var(--muted); display: inline-block; min-width: 9em; }
-  .aifacts .used { font-style: normal; font-size: 12px; color: var(--accent); margin-left: 6px; }
+  .aifacts .used { font-style: normal; font-size: 12px; color: var(--gold-ink); font-weight: 700; margin-left: 6px; }
   .legs { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; width: 100%; font-size: 13px; color: var(--muted); }
   .leg:not(:last-child)::after { content: ' ·'; }
   .facts { list-style: none; padding: 0; margin: 0 0 12px; display: flex; flex-wrap: wrap; gap: 6px; }
-  .facts li { border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; font-size: 14px;
-    background: var(--surface); }
-  .flags { border-left: 3px solid var(--warn); padding: 2px 12px; margin: 8px 0; }
+  .facts li { border: 1px solid var(--line-strong); border-radius: var(--radius); padding: 2px 10px; font-size: 14px; background: var(--surface); }
+  .flags { border-left: 4px solid var(--bad); background: var(--box); padding: 6px 14px; margin: 10px 0; }
   .flags ul, .proscons ul { margin: 4px 0; padding-left: 18px; }
-  .proscons { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; }
-  .hero { width: 100%; max-height: 320px; object-fit: cover; border-radius: var(--radius); }
-  h1 { margin: 16px 0 2px; }
-  .cost strong { font-family: var(--display); font-size: 30px; letter-spacing: -0.02em; }
-  .cost small { color: var(--muted); margin-left: 6px; }
-  .chip { background: var(--chip); color: #fff; font-size: 11px; font-weight: 700;
-    padding: 1px 6px; border-radius: 3px; margin-right: 2px; }
-  h2 { font-size: 15px; margin: 24px 0 8px; }
+  .proscons { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .chip { background: var(--chip); color: #fff; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 2px; margin-right: 2px; }
   .meta { color: var(--muted); font-size: 13px; margin: 0 0 6px; }
-  .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 12px 0; }
-  .travel { list-style: none; padding: 0; display: grid; gap: 8px; }
+  .row { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin: 12px 0; }
+  .travel { list-style: none; padding: 0; display: grid; gap: 10px; margin: 6px 0; }
+  .travel strong { font-size: 16px; }
   .travel small { display: block; color: var(--muted); }
   textarea { width: 100%; margin-bottom: 8px; }
   .desc { white-space: pre-line; }
-  .warn { border-left: 3px solid var(--warn); padding: 4px 12px; }
+  .warn { border-left: 4px solid var(--gold); background: var(--box); padding: 6px 12px; font-family: var(--serif); font-size: 16px; }
   .ok { color: var(--ok); margin-left: 8px; }
   .error { color: var(--bad); }
+  @media (max-width: 560px) {
+    .score { width: 60px; height: 60px; font-size: 25px; align-self: start; margin-top: 10px; }
+  }
 </style>

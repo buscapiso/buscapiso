@@ -50,18 +50,18 @@
   .name { text-transform: capitalize; font-weight: 600; }
   .count { font-variant-numeric: tabular-nums; color: var(--muted); }
   .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
-  .reading .dot { background: var(--ok); animation: pulse 1.2s ease-in-out infinite; }
+  .reading .dot { background: var(--gold); animation: pulse 1.2s ease-in-out infinite; }
   .captcha .dot { background: var(--warn); animation: pulse .6s ease-in-out infinite; }
   .done .dot { background: var(--ok); }
   .warn .dot { background: var(--warn); }
   .captcha .state, .warn .state { color: var(--warn); }
   .bar { height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; }
-  .bar span { display: block; height: 100%; background: var(--ok); transition: width .4s ease; }
+  .bar span { display: block; height: 100%; background: var(--ink); transition: width .4s ease; }
   .done .bar span { width: 100% !important; }
   .recent { list-style: none; padding: 0 0 4px; margin: 0; display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x proximity; }
   .recent li { flex: 0 0 132px; scroll-snap-align: start; animation: arrive .35s ease-out; }
   .recent a { display: grid; gap: 2px; color: inherit; text-decoration: none; font-size: 12px; }
-  .recent img, .nophoto { width: 132px; height: 84px; object-fit: cover; border-radius: 6px; background: var(--line); display: block; }
+  .recent img, .nophoto { width: 132px; height: 84px; object-fit: cover; background: var(--box); display: block; }
   .recent strong { font-size: 14px; }
   .title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .where { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

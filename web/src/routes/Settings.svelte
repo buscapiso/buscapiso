@@ -43,14 +43,18 @@
 <style>
   .settings { display: grid; grid-template-columns: 200px 1fr; gap: 24px; align-items: start; }
   nav { display: grid; gap: 2px; position: sticky; top: 90px; }
-  nav a { padding: 8px 10px; border-radius: 8px; color: var(--muted); text-decoration: none; }
-  nav a[aria-current='page'] { background: var(--surface); color: var(--ink); font-weight: 700;
-    border: 1px solid var(--line); }
+  nav { border-top: 3px double var(--ink); padding-top: 6px; }
+  nav a { padding: 6px 0; color: var(--ink); text-decoration: none; font-family: var(--serif); font-size: 17px;
+    border-bottom: 1px dotted var(--line-strong); }
+  nav a:hover { color: var(--accent); }
+  nav a[aria-current='page'] { color: var(--gold-ink); font-weight: 600; }
+  nav a[aria-current='page']::before { content: '▸ '; font-size: 13px; }
   .pane { min-width: 0; }
   h1 { margin-top: 0; }
   @media (max-width: 760px) {
     .settings { grid-template-columns: 1fr; gap: 12px; }
     nav { position: static; display: flex; overflow-x: auto; gap: 6px; }
-    nav a { white-space: nowrap; border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; }
+    nav { border-top: 0; padding-top: 0; border-bottom: 1px solid var(--ink); }
+    nav a { white-space: nowrap; border: 0; padding: 6px 12px 6px 0; font-size: 16px; }
   }
 </style>

@@ -31,10 +31,14 @@
 {/if}
 
 <style>
-  .banner { border-left: 3px solid var(--accent); background: var(--surface); padding: 10px 14px;
-    margin-bottom: 12px; display: grid; gap: 8px; justify-items: start; }
-  p { margin: 0; }
-  .small { font-size: 13px; color: var(--muted); }
-  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-  .button { display: inline-block; padding: 6px 12px; border-radius: 8px; text-decoration: none; }
+  /* Un aviso del editor: recuadro de tinta con una esquina mostaza. */
+  .banner { border: 1.5px solid var(--ink); border-left-width: 6px; border-left-color: var(--gold); background: var(--surface);
+    padding: 12px 16px; margin-bottom: 18px; display: grid; gap: 8px; justify-items: start; }
+  p { margin: 0; font-family: var(--serif); font-size: 17px; }
+  .small { font-family: var(--text); font-size: 13px; color: var(--muted); }
+  .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .button { display: inline-block; padding: 6px 14px; border-radius: var(--radius); text-decoration: none; }
+  .button.primary { background: var(--ink); color: var(--paper); font-family: var(--display); font-stretch: 80%; font-weight: 700;
+    letter-spacing: .03em; }
+  .button.primary:hover { background: #2d3e5f; }
 </style>

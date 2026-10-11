@@ -39,12 +39,12 @@
   .picker { display: grid; gap: 6px; position: relative; }
   label { display: grid; gap: 4px; font-size: 14px; }
   input { width: 100%; }
-  ul { list-style: none; margin: 0; padding: 4px; border: 1px solid var(--line); border-radius: 8px;
+  ul { list-style: none; margin: 0; padding: 4px; border: 1px solid var(--line-strong); border-radius: var(--radius);
     background: var(--surface); display: grid; }
   ul button { width: 100%; text-align: left; border: 0; background: none; min-height: 32px; }
   ul button:hover { background: var(--paper); }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; }
   .chip { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--line);
-    border-radius: 999px; padding: 1px 4px 1px 10px; font-size: 13px; background: var(--surface); }
+    border-radius: var(--radius); padding: 1px 4px 1px 10px; font-size: 13px; background: var(--surface); }
   .chip button { border: 0; background: none; min-height: 24px; padding: 0 6px; font-size: 16px; line-height: 1; }
 </style>

@@ -1,17 +1,27 @@
 <script lang="ts">
   import { router } from './lib/router.svelte';
+  import { getCities } from './lib/api';
   import Nav from './lib/components/Nav.svelte';
   import { t } from './lib/i18n';
   import ListingDetail from './routes/ListingDetail.svelte';
   import Rooms from './routes/Rooms.svelte';
   import Settings from './routes/Settings.svelte';
 
+  // Las "orejas" de la cabecera, como en un diario: la fecha y la edicion.
+  const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+  let city = $state('');
+  $effect(() => {
+    void router.route;
+    getCities().then((c) => { city = c.active.name; }).catch(() => {});
+  });
 </script>
 
-<header>
+<header class="masthead">
+  <p class="ear">{today}</p>
   <a class="brand" href="#/">{t('app.name')}</a>
-  <Nav route={router.route} />
+  <p class="ear right">{city ? t('masthead.edition', { city }) : ''}</p>
 </header>
+<Nav route={router.route} />
 
 <main class:wide={router.route.name === 'rooms'}>
   {#if router.route.name === 'listing'}
@@ -24,7 +34,7 @@
 </main>
 
 <footer>
-  <p>{t('footer.privacy')}</p>
+  <p class="motto">{t('footer.privacy')}</p>
   <p>
     <a href="https://github.com/buscapiso/buscapiso" target="_blank" rel="noopener">{t('footer.source')}</a> ·
     <a href="https://github.com/buscapiso/buscapiso/issues" target="_blank" rel="noopener">{t('footer.contact')}</a> ·
@@ -34,17 +44,33 @@
 </footer>
 
 <style>
-  header {
-    position: sticky; top: 0; z-index: 1; background: var(--paper);
-    border-bottom: 1px solid var(--line); padding: 10px 16px;
+  .masthead {
+    max-width: 1440px; margin: 0 auto; padding: 18px 20px 8px;
+    display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 16px;
   }
-  .brand { font-family: var(--display); font-size: 20px; font-weight: 700; letter-spacing: -0.02em;
-    text-decoration: none; color: var(--ink); }
-  main { max-width: 960px; margin: 0 auto; padding: 16px; }
-  /* La lista con su mapa al lado aprovecha la pantalla del portatil. */
+  .brand {
+    font-family: var(--masthead); font-style: italic; font-weight: 400; color: var(--ink); text-decoration: none;
+    font-size: clamp(44px, 7vw, 76px); line-height: .9; letter-spacing: -0.015em;
+  }
+  .ear {
+    margin: 0 0 6px; font-family: var(--serif); font-style: italic; font-size: 15px; color: var(--muted);
+    line-height: 1.3;
+  }
+  .ear.right { text-align: right; }
+  main { max-width: 960px; margin: 0 auto; padding: 18px 20px; }
   main.wide { max-width: 1440px; }
-  footer { max-width: 960px; margin: 24px auto 0; padding: 12px 16px 24px; border-top: 1px solid var(--line);
+  footer { max-width: 1440px; margin: 32px auto 0; padding: 10px 20px 28px; border-top: 3px double var(--ink);
     font-size: 13px; color: var(--muted); }
   footer p { margin: 4px 0; }
-  @media (max-width: 560px) { main { padding-bottom: 16px; } footer { padding-bottom: 96px; } }
+  .motto { font-family: var(--serif); font-style: italic; font-size: 16px; color: var(--ink); }
+  @media (max-width: 640px) {
+    .masthead { grid-template-columns: 1fr; justify-items: center; text-align: center; gap: 0; padding: 12px 16px 8px;
+      border-bottom: 3px double var(--ink); }
+    .brand { padding-bottom: 6px; }
+    .ear { margin: 0; font-size: 13px; }
+    .ear:first-child { order: 2; }
+    .ear.right { order: 3; text-align: center; }
+    main { padding: 14px 16px; }
+    footer { padding-inline: 16px; padding-bottom: 96px; }
+  }
 </style>

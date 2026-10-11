@@ -338,6 +338,7 @@
   .weights { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; margin-top: 8px; }
   .help { color: var(--muted); font-size: 13px; margin: 0; }
   .error { color: var(--bad); margin: 0; font-size: 13px; }
-  .save { position: sticky; bottom: 0; background: var(--paper); padding: 12px 0; display: flex; gap: 12px; align-items: center; }
+  .save { position: sticky; bottom: 0; background: var(--paper); padding: 12px 0; display: flex; gap: 12px; align-items: center;
+    border-top: 3px double var(--ink); z-index: 1; }
   .ok { color: var(--ok); }
 </style>

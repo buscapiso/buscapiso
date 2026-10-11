@@ -12,6 +12,8 @@ export interface Listing {
   photo: string; description: string;
   travel: Record<string, number>; routes: Record<string, string>; travel_source: string;
   summary: string; pros: string[]; cons: string[]; red_flags: string[];
+  /** Lo que pediste con tus palabras y el anuncio cumple o descarta. */
+  wishes_met?: string[]; wishes_missed?: string[];
   /** Lo que la IA leyo, en palabras; `used` si cambio la puntuacion. */
   ai_facts?: { label: string; value: string; used: boolean }[];
   /** Por que la IA no lo leyo; '' si lo leyo. */

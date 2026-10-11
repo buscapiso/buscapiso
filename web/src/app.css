@@ -1,42 +1,71 @@
-/* Tokens. Paper is neutral, not cream; colour is reserved for information:
-   metro line colours on travel times, status, and the single accent. */
+/* The morning paper: navy ink on white newsprint. Mustard is the one
+   accent, kept for what the app judges (the score, a stamp, the current
+   filter); green and brick only say yes and no. Metro line colours stay
+   their own. Light only, like paper. */
 :root {
-  --paper: #f6f6f3; --surface: #ffffff; --ink: #1c1e22; --muted: #5f636b;
-  --line: #dfe0e3; --accent: #1f5fa8; --ok: #1d7a4a; --bad: #b3261e; --warn: #b85a00;
-  --display: 'Bricolage Grotesque Variable', 'Atkinson Hyperlegible Next', system-ui, sans-serif;
+  --paper: #fbfaf6;      /* the page */
+  --surface: #fffefb;    /* fields, the map frame */
+  --box: #f3f0e6;        /* a boxed ad, the wanted ad */
+  --ink: #1f2c45;        /* navy: text, rules, the solid button */
+  --muted: #5d6475;
+  --line: #d9d5c8;       /* hairlines between ads */
+  --line-strong: #a9aab2;
+  --accent: #2b558f;     /* links and focus */
+  --gold: #c1931f;       /* the score ring, stamps */
+  --gold-ink: #8a6410;   /* mustard you can read */
+  --ok: #3b6b47;
+  --bad: #a3361f;
+  --warn: #93590c;
+  --masthead: 'Libre Caslon Text', Georgia, serif;
+  --display: 'Bricolage Grotesque Variable', 'Arial Narrow', system-ui, sans-serif;
+  --serif: 'Newsreader Variable', Georgia, 'Times New Roman', serif;
   --text: 'Atkinson Hyperlegible Next', system-ui, sans-serif;
-  --radius: 10px; --gap: 12px;
-  color-scheme: light dark;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --paper: #121418; --surface: #1a1d22; --ink: #ececea; --muted: #a0a4ab;
-    --line: #2c3036; --accent: #7fb0ec; --ok: #5cc48d; --bad: #ef7d74; --warn: #f0a050;
-  }
+  --radius: 2px; --gap: 12px;
+  color-scheme: light;
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.5 var(--text); }
-h1, h2, h3 { font-family: var(--display); font-weight: 650; line-height: 1.2; letter-spacing: -0.01em; }
-h1 { font-size: 26px; margin: 8px 0 12px; }
-h2 { font-size: 18px; margin: 24px 0 8px; }
-a { color: var(--accent); }
+h1, h2, h3 { font-family: var(--serif); font-weight: 600; line-height: 1.15; letter-spacing: -0.005em; text-wrap: balance; }
+h1 { font-size: 30px; margin: 8px 0 14px; }
+h2 { font-size: 20px; margin: 24px 0 8px; }
+a { color: var(--accent); text-underline-offset: 3px; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+::selection { background: color-mix(in srgb, var(--gold) 35%, transparent); }
 button, input, select, textarea { font: inherit; color: inherit; }
 button {
-  border: 1px solid var(--line); background: var(--surface); border-radius: 8px;
-  padding: 6px 14px; cursor: pointer; min-height: 36px;
+  border: 1px solid var(--line-strong); background: transparent; border-radius: var(--radius);
+  padding: 5px 14px; cursor: pointer; min-height: 36px;
 }
-button:hover { border-color: var(--muted); }
-button.primary { background: var(--accent); border-color: var(--accent); color: var(--paper); font-weight: 700; }
-button:disabled { opacity: 0.55; cursor: default; }
+button:hover { border-color: var(--ink); background: var(--surface); }
+button.primary {
+  background: var(--ink); border-color: var(--ink); color: var(--paper);
+  font-family: var(--display); font-stretch: 80%; font-weight: 700; letter-spacing: .03em;
+}
+button.primary:hover { background: #2d3e5f; }
+button:disabled, button:disabled:hover { opacity: 0.5; cursor: default; background: transparent; border-color: var(--line-strong); }
+button.primary:disabled { background: var(--ink); border-color: var(--ink); }
 input, select, textarea {
-  border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 7px 9px;
+  border: 1px solid var(--line-strong); background: var(--surface); border-radius: var(--radius); padding: 7px 9px;
   min-height: 36px;
 }
+input:focus, select:focus, textarea:focus { border-color: var(--ink); }
+textarea { font-family: var(--serif); font-size: 17px; line-height: 1.45; }
+fieldset legend { font-family: var(--display); font-stretch: 80%; font-weight: 700; font-size: 17px; letter-spacing: .01em; }
+progress { accent-color: var(--ink); }
 .visually-hidden {
   position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0);
 }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
-input[type='checkbox'] { min-height: auto; width: 18px; height: 18px; accent-color: var(--accent); }
+input[type='checkbox'], input[type='radio'] { min-height: auto; width: 18px; height: 18px; accent-color: var(--ink); }
+
+/* Leaflet, inked to match: tiles washed to newsprint, controls as plain boxes. */
+.leaflet-container { font: 14px/1.4 var(--text); background: var(--box); }
+.leaflet-tile-pane { filter: grayscale(0.9) sepia(0.12) contrast(0.92) brightness(1.04); }
+.leaflet-bar, .leaflet-control-zoom { border: 1px solid var(--ink) !important; border-radius: var(--radius) !important; box-shadow: none !important; }
+.leaflet-bar a { color: var(--ink) !important; border-radius: 0 !important; }
+.leaflet-popup-content-wrapper, .leaflet-popup-tip { border-radius: var(--radius); box-shadow: 0 2px 10px rgb(31 44 69 / .18); }
+.leaflet-popup-content { font-family: var(--serif); font-size: 15px; margin: 10px 12px; }
+.leaflet-tooltip { font-family: var(--text); font-weight: 700; color: var(--ink); border-radius: var(--radius); border-color: var(--ink); }
+.leaflet-control-attribution { font-size: 11px; background: rgb(251 250 246 / .85) !important; }

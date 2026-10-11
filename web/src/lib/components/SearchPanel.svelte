@@ -49,14 +49,16 @@
 </script>
 
 <section class="panel" aria-label={t('search.title')}>
+  <h2 class="label">{t('search.press')}</h2>
+  <button class="primary go" onclick={() => start(false)} disabled={running || noExtension}
+    title={noExtension ? t('search.needsExtension') : undefined}>
+    {running ? t('search.running') : t('search.now')}</button>
+  {#if noExtension && !running}<p class="muted">{t('search.needsExtension')}</p>{/if}
   <div class="row">
-    <button class="primary" onclick={() => start(false)} disabled={running || noExtension}
-      title={noExtension ? t('search.needsExtension') : undefined}>
-      {running ? t('search.running') : t('search.now')}</button>
     {#if running}<button onclick={() => stopSearch()}>{t('search.stop')}</button>{/if}
     <button onclick={() => start(true)} disabled={running}>{t('search.rescore')}</button>
-    <label class="check"><input type="checkbox" bind:checked={skipDetails} disabled={running} /> {t('search.skip')}</label>
   </div>
+  <label class="check"><input type="checkbox" bind:checked={skipDetails} disabled={running} /> {t('search.skip')}</label>
   {#if busy}<p class="warn">{busy}</p>{/if}
   {#if running}
     <progress max={view.total} value={Math.max(0, view.step - 1 + view.fraction)} aria-label={t('search.running')}></progress>
@@ -81,15 +83,19 @@
 </section>
 
 <style>
-  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
-    padding: 10px 12px; display: grid; gap: 8px; margin-bottom: 12px; }
+  .panel { display: grid; gap: 8px; align-content: start; }
+  .label { margin: 0 0 -2px; font-family: var(--text); font-size: 12px; font-weight: 700; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--muted); }
+  .go { font-size: 21px; font-stretch: 75%; font-weight: 800; text-transform: uppercase; letter-spacing: .04em;
+    padding: 10px 16px; min-height: 50px; text-align: left; }
   .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .row button { font-size: 14px; }
   .check { display: flex; gap: 6px; align-items: center; font-size: 14px; color: var(--muted); }
   progress { width: 100%; height: 6px; }
   p { margin: 0; font-size: 14px; }
   .muted { color: var(--muted); }
-  .captcha { border-left: 3px solid var(--warn); padding: 4px 10px; font-weight: 700; }
-  .ok { color: var(--ok); }
+  .captcha { border-left: 3px solid var(--gold); background: var(--box); padding: 6px 10px; font-weight: 700; }
+  .ok { color: var(--ok); font-family: var(--serif); font-size: 16px; }
   .error { color: var(--bad); }
   .warn { color: var(--warn); }
   summary { font-size: 13px; color: var(--muted); cursor: pointer; }

@@ -120,7 +120,7 @@
   legend { font-weight: 600; padding: 0 4px; }
   .now { margin: 0; }
   .saved { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-  .chip { border-radius: 999px; padding: 4px 12px; }
+  .chip { padding: 4px 12px; }
   .find { display: flex; gap: 8px; align-items: end; flex-wrap: wrap; }
   .find label { display: grid; gap: 4px; font-size: 14px; flex: 1 1 220px; }
   .find input { width: 100%; }

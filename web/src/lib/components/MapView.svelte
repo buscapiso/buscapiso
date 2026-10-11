@@ -4,7 +4,13 @@
   import { onMount } from 'svelte';
   import { popupContent } from '../mapPopup';
 
-  export interface MapPoint { id: string; lat: number; lon: number; label: string; sub?: string; href?: string; color: string }
+  export interface MapPoint {
+    id: string; lat: number; lon: number; label: string; sub?: string; href?: string; color: string;
+    /** Numero del anuncio en la lista de al lado: la chincheta lo lleva. */
+    n?: number;
+    /** Aun por confirmar (preguntar antes): chincheta hueca. */
+    faint?: boolean;
+  }
   export interface MapPlace { name: string; lat: number; lon: number }
   /** Un tramo de camino: color de la linea, a trazos si se va andando. */
   export interface MapRoute { points: [number, number][]; color: string; dashed?: boolean; stops?: MapPlace[] }
@@ -27,7 +33,7 @@
   let el: HTMLDivElement;
   let map = $state.raw<L.Map | null>(null);
   let layer: L.LayerGroup;
-  let markers = new Map<string, L.CircleMarker>();
+  let markers = new Map<string, L.Marker>();
   let bounds: L.LatLngExpression[] = [];
   // Se encuadra mientras llegan datos (el anuncio, luego los destinos, luego
   // el camino) hasta que la persona toca el mapa: desde entonces manda ella.
@@ -88,8 +94,11 @@
     }
     markers = new Map();
     for (const p of points) {
-      const m = L.circleMarker([p.lat, p.lon], { radius: 7, color: '#fff', weight: 2,
-        fillColor: resolve(p.color), fillOpacity: 1 })
+      // Con numero, una chincheta que casa con la tarjeta; sin el, un punto del color de su puntuacion.
+      const icon = p.n !== undefined
+        ? L.divIcon({ className: `pin${p.faint ? ' faint' : ''}`, html: String(p.n), iconSize: [26, 26], iconAnchor: [13, 13] })
+        : L.divIcon({ className: 'dot', html: `<i style="background:${resolve(p.color)}"></i>`, iconSize: [16, 16], iconAnchor: [8, 8] });
+      const m = L.marker([p.lat, p.lon], { icon, keyboard: false, riseOnHover: true })
         .bindPopup(popupContent(p)).addTo(layer);
       if (onselect) m.on('click', () => onselect(p.id));
       markers.set(p.id, m);
@@ -114,20 +123,26 @@
     void points;
     if (!map) return;
     for (const [id, m] of markers) {
-      m.setRadius(id === h ? 12 : 7);
-      m.setStyle({ weight: id === h ? 3 : 2 });
+      m.getElement()?.classList.toggle('hot', id === h);
+      m.setZIndexOffset(id === h ? 1000 : 0);
     }
-    if (h) markers.get(h)?.bringToFront();
   });
 </script>
 
 <div class="map" bind:this={el} style:height role="region" aria-label={label}></div>
 
 <style>
-  .map { width: 100%; border-radius: var(--radius); border: 1px solid var(--line); z-index: 0; }
-  .map :global(.place-pin) { background: var(--ink); border: 3px solid var(--paper); border-radius: 50%;
-    box-shadow: 0 1px 4px rgb(0 0 0 / .35); }
+  .map { width: 100%; border: 1.5px solid var(--ink); border-radius: var(--radius); z-index: 0; }
+  .map :global(.place-pin) { background: var(--gold); border: 3px solid var(--ink); transform: rotate(45deg); border-radius: 2px; }
   .map :global(.leaflet-marker-draggable.place-pin) { cursor: grab; }
-  .map :global(.fit-all) { width: 30px; height: 30px; border: 2px solid rgb(0 0 0 / .2); border-radius: 4px;
-    background: #fff; color: #333; font-size: 16px; cursor: pointer; background-clip: padding-box; }
+  .map :global(.pin) { display: grid; place-items: center; border-radius: 50%; background: var(--ink); color: var(--paper);
+    border: 2px solid var(--paper); box-shadow: 0 0 0 1px var(--ink); font: 800 13px/1 var(--display); font-stretch: 80%;
+    font-variant-numeric: tabular-nums; transition: transform .12s ease; }
+  .map :global(.pin.faint) { background: var(--paper); color: var(--ink); border-color: var(--ink); box-shadow: none; }
+  .map :global(.pin.hot) { transform: scale(1.35); background: var(--gold); color: var(--ink); }
+  .map :global(.dot) { display: grid; place-items: center; }
+  .map :global(.dot i) { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--paper); box-shadow: 0 0 0 1px var(--ink); }
+  .map :global(.dot.hot i) { width: 16px; height: 16px; }
+  .map :global(.fit-all) { width: 30px; height: 30px; min-height: 0; padding: 0; border: 1px solid var(--ink); border-radius: var(--radius);
+    background: var(--surface); font-size: 16px; line-height: 1; cursor: pointer; }
 </style>

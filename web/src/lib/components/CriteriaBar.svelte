@@ -107,11 +107,13 @@
 
 <style>
   .criteria { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 0 0 10px; }
-  .chip { border-radius: 999px; padding: 2px 12px; min-height: 30px; font-size: 14px; }
-  .chip.on { border-color: var(--accent); color: var(--accent); }
+  .chip { border-radius: var(--radius); border-color: var(--line-strong); background: var(--surface); padding: 2px 10px;
+    min-height: 30px; font-size: 14px; }
+  .chip:hover { border-color: var(--ink); }
+  .chip.on { border-color: var(--ink); box-shadow: inset 0 -2px 0 var(--gold); }
   .chip.type { font-weight: 700; }
   a { font-size: 14px; margin-left: 4px; }
-  .editor { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  .editor { background: var(--surface); border: 1.5px solid var(--ink); border-radius: var(--radius);
     padding: 12px; margin: 0 0 12px; display: grid; gap: 10px; max-width: 420px; }
   label { display: grid; gap: 4px; font-size: 14px; }
   .check { display: flex; gap: 8px; align-items: center; }

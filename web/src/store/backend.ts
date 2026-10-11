@@ -186,6 +186,7 @@ export function createBackend(deps: BackendDeps) {
       photo: /^https?:\/\//i.test(l.photo) ? l.photo : '', description: l.description,
       travel: dd.travel, routes: dd.routes, travel_source: dd.travelSource,
       summary: dd.summary, pros: dd.pros, cons: dd.cons, red_flags: dd.redFlags,
+      wishes_met: dd.wishesMet ?? [], wishes_missed: dd.wishesMissed ?? [],
       ai_facts: dd.aiFacts ?? [], ai_note: dd.aiNote ?? '', detail_read: l.detailRead,
       score: dd.score, reasons: dd.group === 'rejected' ? [`no longer fits: ${dd.rejectReason}`] : dd.reasons,
       gender: l.gender, gender_confirmed: l.genderConfirmed, roommates: l.roommates, bedrooms: l.bedrooms,
