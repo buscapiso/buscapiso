@@ -2,7 +2,7 @@
   import { router } from './lib/router.svelte';
   import { getCities } from './lib/api';
   import Nav from './lib/components/Nav.svelte';
-  import { t } from './lib/i18n';
+  import { LOCALES, locale, setLocale, t, type Locale } from './lib/i18n';
   import ExtensionGuide from './routes/ExtensionGuide.svelte';
   import ListingDetail from './routes/ListingDetail.svelte';
   import Rooms from './routes/Rooms.svelte';
@@ -10,7 +10,7 @@
   import Welcome from './routes/Welcome.svelte';
 
   // Las "orejas" de la cabecera, como en un diario: la fecha y la edicion.
-  const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+  const today = new Date().toLocaleDateString(locale() === 'en' ? 'en-GB' : locale(), { weekday: 'long', day: 'numeric', month: 'long' });
   let city = $state('');
   $effect(() => {
     void router.route;
@@ -48,6 +48,12 @@
     {t('footer.travel')} <a href="https://transitous.org/sources/" target="_blank" rel="noopener">Transitous</a> ·
     {t('footer.maps')} <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap</a>
   </p>
+  <p class="langs">
+    {#each Object.entries(LOCALES) as [code, name]}
+      {#if code === locale()}<strong lang={code}>{name}</strong>{:else}<button class="lang" lang={code}
+        onclick={() => setLocale(code as Locale)}>{name}</button>{/if}
+    {/each}
+  </p>
 </footer>
 
 <style>
@@ -80,4 +86,6 @@
     main { padding: 14px 16px; }
     footer { padding-inline: 16px; padding-bottom: 96px; }
   }
+  .langs { display: flex; gap: 12px; align-items: center; }
+  .lang { border: 0; background: none; padding: 0; min-height: 0; text-decoration: underline; color: inherit; font: inherit; }
 </style>

@@ -3,7 +3,7 @@
   import { SOURCES } from '../engine/sources';
   import { LATEST_EXTENSION, stale } from '../lib/extension';
   import { ext, platform, STORE, watchExtension } from '../lib/extensionState.svelte';
-  import { t } from '../lib/i18n';
+  import { locale, t } from '../lib/i18n';
   import { href } from '../lib/router.svelte';
 
   type Browser = 'chrome' | 'firefox';
@@ -32,7 +32,7 @@
 
   // Lo que la extension lee de verdad: los portales que no admiten CORS.
   const portals = Object.values(SOURCES).filter((s) => !s.net.direct).map((s) => s.label);
-  const portalList = `${portals.slice(0, -1).join(', ')} and ${portals.at(-1)}`;
+  const portalList = new Intl.ListFormat(locale(), { type: 'conjunction' }).format(portals);
 
   let copied = $state(false);
   async function copy(text: string) {

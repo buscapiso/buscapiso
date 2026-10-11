@@ -294,7 +294,7 @@
   "furnished.any": "Doesn't matter",
   "furnished.yes": "Furnished",
   "furnished.no": "Unfurnished",
-  "profile.flatSourcesHelp": "Idealista isn't searched for whole flats yet.",
+  "profile.flatSourcesHelp": "Roomgo and De Piso en Piso only list rooms, so they don't appear here.",
   "listing.flatFacts": "{bedrooms} bedrooms · {m2} m²",
   "listing.bedrooms": "{count} bedrooms",
   "listing.bathrooms": "{count} bathrooms",
