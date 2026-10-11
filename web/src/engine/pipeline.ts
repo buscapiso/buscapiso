@@ -13,7 +13,7 @@ import { activeSources, type Destination, type SearchProfile } from './profiles'
 import { filter, score, type Scorable } from './ranking';
 import { inferGender, type Area, type Source } from './sources/base';
 import { SOURCES } from './sources/index';
-import { estimateTrip, TravelError, type Origin, type Trip, type TravelProvider } from './travel';
+import { estimateTrip, haversineM, TravelError, type Origin, type Trip, type TravelProvider } from './travel';
 
 export type EventKind = 'stage' | 'progress' | 'info' | 'warning' | 'captcha' | 'done' | 'error';
 export interface SearchEvent { kind: EventKind; message: string; data: Record<string, unknown> }
@@ -290,6 +290,8 @@ export async function rescore(listings: StoredListing[], p: SearchProfile,
       if (why) w.derived.aiNote = `Not sent to the AI: ${why}`;
       else candidates.push(w);
     }
+    // Los mejores primero: si la cuota se acaba a medias, se quedan sin IA los peores.
+    candidates.sort((a, b) => b.derived.score - a.derived.score);
     const byListing = new Map(candidates.map((w) => [w.stored, w]));
     const r = await extractMany(ai, candidates.map((w) => w.stored), deps.aiCache, { sleep: deps.sleep,
       cacheOnly: opts.aiCacheOnly, breaker: opts.breaker, seeker: p.description,
@@ -328,6 +330,9 @@ export async function rescore(listings: StoredListing[], p: SearchProfile,
   if (deps.travel && p.destinations.length) {
     const top = ranked(ws).filter((w) => placed.includes(w)).slice(0, p.crawl.real_travel_times);
     const complete = new Map<Working, boolean>();
+    // Por sitio: un sitio mal situado (en otra ciudad) no debe esconder que
+    // los demas si tienen horario real.
+    const perPlace: string[] = [];
     try {
       for (const d of p.destinations) {
         const cheap = deps.travel.name === 'transitous' && d.mode === 'transit';
@@ -339,9 +344,15 @@ export async function rescore(listings: StoredListing[], p: SearchProfile,
           if (t) setTravel(w, d, t);
           complete.set(w, (complete.get(w) ?? true) && !!t);
         });
+        const got = trips.filter(Boolean).length;
+        perPlace.push(`${d.name}: ${got} of ${who.length}`);
+        if (!got && who.length >= 3) {
+          emit('warning', `    No ${d.mode === 'transit' ? 'public transport' : 'route'} reaches ${d.name} from any of these listings `
+            + `within 90 min. Check where ${d.name} is on the map in Settings → Places & travel.`, { place: d.name });
+        }
       }
       for (const [w, ok] of complete) if (ok) w.derived.travelSource = deps.travel.name;
-      emit('info', `    Real timetables (${deps.travel.name}) for ${[...complete.values()].filter(Boolean).length} listings`);
+      emit('info', `    Real timetables (${deps.travel.name}): ${perPlace.join(', ')}`);
     } catch (e) {
       if (!(e instanceof TravelError)) throw e;
       emit('warning', `    ${deps.travel.name} did not answer (${e.message}); using estimated times`, { provider: deps.travel.name });
@@ -376,6 +387,12 @@ export async function runSearch(p: SearchProfile, deps: Deps, rawEmit: Emit, opt
     await deps.store.saveDerived(ds);
     emit('info', `    ${message}`, { results: true });
   };
+  // Un sitio a cientos de km (situado en otra ciudad) estropea los trayectos y la eleccion de zonas.
+  for (const d of p.destinations) {
+    const km = haversineM(city.center[0], city.center[1], d.lat, d.lon) / 1000;
+    if (km > 60) emit('warning', `${d.name} is ${Math.round(km)} km from ${city.name}. If that's wrong, move it in Settings → Places & travel.`,
+      { place: d.name });
+  }
   try {
     stage(emit, 1, 'Choosing areas and reading the portals...');
     const areas = await selectAreas(city.areas, p.destinations, tripsWithFallback(deps.travel, emit));

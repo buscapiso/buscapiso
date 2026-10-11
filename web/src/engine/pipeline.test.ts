@@ -234,6 +234,13 @@ describe('runSearch', () => {
     expect(seen[0]).toBeGreaterThan(0);
   }, 30_000);
 
+  it('warns when one of your places is far from the city you search in', async () => {
+    const { d } = deps();
+    const { events, emit } = collect();
+    await runSearch(profile({ sources: ['fotocasa'], destinations: [{ name: 'Familia', lat: 40.42, lon: -3.68, max_minutes: null }] }),
+      d, emit);
+    expect(events.some((e) => e.kind === 'warning' && /Familia.*km from Barcelona/.test(e.message))).toBe(true);
+  });
   it('says how long each stage took', async () => {
     let t = Date.parse('2026-10-09T10:00:00Z');
     const { d } = deps({ now: () => new Date((t += 61_000)) });
@@ -377,6 +384,28 @@ describe('rescore', () => {
       now: () => new Date() }, new Set(), undefined, { aiCacheOnly: true });
     expect(prompts).toEqual([]);
     expect(ds[0].summary).toBe('');
+  });
+  it('sends the best listings to the AI first, so a quota that runs out leaves the worst without it', async () => {
+    const prompts: string[] = [];
+    const ai = fakeAI(async () => FACTS, prompts);
+    // Llegan de peor (mas caro) a mejor; la IA debe empezar por los baratos.
+    const ls = Array.from({ length: 12 }, (_, i) => room(String(i), { title: `R${11 - i}`, price: 300 + (11 - i) * 15 }));
+    await rescore(ls, tight(), { travel: null, ai, aiCache: noCache, now: () => new Date(), sleep: async () => {} }, new Set());
+    expect(prompts[0]).toContain('Title: R0\n');
+    expect(prompts[0]).not.toContain('Title: R11\n');
+  });
+  it('reports real times per place, and warns about a place no transport reaches', async () => {
+    const far = { name: 'Family', lat: 40.42, lon: -3.68, max_minutes: null };
+    const travel: TravelProvider = { name: 'transitous',
+      trips: async (o, d) => o.map(() => (d.name === 'Work' ? { minutes: 12, detail: '', source: 'transitous' } : null)) };
+    const { events, emit } = collect();
+    const ds = await rescore(await stored(), profile({ destinations: [work, far] }), { travel, ai: null, aiCache: noCache,
+      now: () => new Date() }, new Set(), emit);
+    expect(ds.some((x) => x.travel.Work === 12)).toBe(true);
+    const info = events.find((e) => e.message.includes('Real timetables'))!.message;
+    expect(info).toMatch(/Work: \d+ of \d+/);
+    expect(info).toMatch(/Family: 0 of \d+/);
+    expect(events.some((e) => e.kind === 'warning' && /Family/.test(e.message) && /Settings/.test(e.message))).toBe(true);
   });
   it('asks the AI about several listings at once, but not all of them', async () => {
     let inFlight = 0, most = 0;
