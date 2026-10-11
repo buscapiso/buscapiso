@@ -64,7 +64,20 @@ export function estimateCost(model: string, u: Usage): number | null {
   return p ? (u.inputTokens * p[0] + u.outputTokens * p[1]) / 1_000_000 : null;
 }
 
-const FENCE = /^\s*```(?:json)?\s*([\s\S]*?)\s*```\s*$/;
+const FENCE = /```(?:json)?\s*([\s\S]*?)\s*```/;
+
+/** El objeto JSON de una respuesta, aunque venga entre ``` o con frases
+ * alrededor; undefined si no hay ninguno legible. */
+function parseReply(raw: string): unknown {
+  const tries = [raw, raw.match(FENCE)?.[1] ?? '', raw.slice(raw.indexOf('{'), raw.lastIndexOf('}') + 1)];
+  for (const t of tries) {
+    if (!t.trim()) continue;
+    try { return JSON.parse(t); } catch { /* el siguiente */ }
+  }
+  return undefined;
+}
+/** Margen para las respuestas JSON: los modelos que piensan gastan tokens antes de contestar. */
+const JSON_MAX_TOKENS = 16_384;
 
 /** El esquema en la forma que exigen los modos estrictos: cada objeto cierra
  * sus propiedades y las pide todas (lo opcional ya admite null), y cada enum
@@ -99,12 +112,13 @@ async function jsonWithRetry<T>(complete: (system: string) => Promise<string>, s
   const base = `${system}\n\nReply with a single JSON object that matches this JSON Schema, and nothing else:\n${JSON.stringify(jsonSchema)}`;
   let sys = base;
   let problem = '';
+  let began = '';
   for (let i = 0; i < 2; i++) {
     const raw = await complete(sys);
-    const m = raw.match(FENCE);
-    let data: unknown;
-    try { data = JSON.parse(m ? m[1] : raw); } catch {
+    const data = parseReply(raw);
+    if (data === undefined) {
       problem = '';
+      began = raw.trim().replace(/\s+/g, ' ').slice(0, 80);
       sys = `${base}\n\nYour previous reply was not valid JSON. Reply with the JSON object only.`;
       continue;
     }
@@ -114,7 +128,7 @@ async function jsonWithRetry<T>(complete: (system: string) => Promise<string>, s
     sys = `${base}\n\nYour previous reply did not match the schema (${problem}). Reply again with a corrected JSON object.`;
   }
   throw new AIError(problem ? `The model's answer did not match what buscapiso expects (${problem})`
-    : 'The model did not return valid JSON');
+    : began ? `The model did not return valid JSON (its reply began: "${began}")` : 'The model returned an empty reply');
 }
 
 /** Un 400 que habla del formato de salida: el proveedor no admite esquemas. */
@@ -153,7 +167,7 @@ export class ClaudeProvider implements AIProvider {
   }
 
   text(system: string, user: string, maxTokens = 1024) { return this.complete(system, user, maxTokens); }
-  json<T>(system: string, user: string, schema: Schema<T>, jsonSchema: object, maxTokens = 4096) {
+  json<T>(system: string, user: string, schema: Schema<T>, jsonSchema: object, maxTokens = JSON_MAX_TOKENS) {
     return jsonWithRetry((sys) => this.complete(sys, user, maxTokens, jsonSchema), system, schema, jsonSchema);
   }
 }
@@ -189,6 +203,9 @@ export class OpenAICompatProvider implements AIProvider {
     if (!content && choice.finish_reason === 'length') {
       throw new AIError('The model ran out of room before answering (it spends tokens thinking). Try a lighter model.');
     }
+    if (jsonSchema && choice.finish_reason === 'length') {
+      throw new AIError('The answer was cut short: the model ran out of room (it spends tokens thinking). Try a lighter model.');
+    }
     return content;
   }
 
@@ -197,7 +214,7 @@ export class OpenAICompatProvider implements AIProvider {
     if (!t) throw new AIError('The AI provider returned no text');
     return t;
   }
-  json<T>(system: string, user: string, schema: Schema<T>, jsonSchema: object, maxTokens = 4096) {
+  json<T>(system: string, user: string, schema: Schema<T>, jsonSchema: object, maxTokens = JSON_MAX_TOKENS) {
     return jsonWithRetry((sys) => this.complete(sys, user, maxTokens, jsonSchema), system, schema, jsonSchema);
   }
 }

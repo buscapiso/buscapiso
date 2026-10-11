@@ -47,8 +47,9 @@ describe('Claude', () => {
 });
 
 describe('OpenAI-compatible', () => {
-  const ok = (content: unknown) => ({ status: 200, data: { choices: [{ message: { content: JSON.stringify(content) } }],
+  const plain = (content: string) => ({ status: 200, data: { choices: [{ message: { content } }],
     usage: { prompt_tokens: 3, completion_tokens: 4 } } });
+  const ok = (content: unknown) => plain(JSON.stringify(content));
   it('asks for the exact JSON schema, strictly, and sends the key as a bearer token', async () => {
     const { calls, post } = recorder([ok(FACTS)]);
     const p = new OpenAICompatProvider('k', 'https://api.openai.com/v1/', 'gpt-x', post);
@@ -70,6 +71,23 @@ describe('OpenAI-compatible', () => {
     const { calls, post } = recorder([ok({ summary: 3 }), ok(FACTS)]);
     await new OpenAICompatProvider('k', 'https://x/v1', 'm', post).json('s', 'u', listingFacts, {});
     expect(calls[1].body.messages[0].content).toMatch(/household_gender/);
+  });
+  it('finds the JSON object inside prose and fences', async () => {
+    const { post } = recorder([plain('Here you go:\n```json\n' + JSON.stringify(FACTS) + '\n```\nHope it helps')]);
+    expect((await new OpenAICompatProvider('k', 'https://x/v1', 'm', post).json('s', 'u', listingFacts, {})).summary).toBe('Bright room.');
+  });
+  it('says when the answer was cut short, and how it began when it is not JSON', async () => {
+    const cut = { status: 200, data: { choices: [{ message: { content: '{"household_gender": "mix' }, finish_reason: 'length' }] } };
+    await expect(new OpenAICompatProvider('k', 'https://x/v1', 'm', recorder([cut, cut]).post).json('s', 'u', listingFacts, {}))
+      .rejects.toThrow(/cut short/);
+    const prose = plain('Lo siento, no puedo ayudar con eso');
+    await expect(new OpenAICompatProvider('k', 'https://x/v1', 'm', recorder([prose, prose]).post).json('s', 'u', listingFacts, {}))
+      .rejects.toThrow(/did not return valid JSON.*Lo siento/);
+  });
+  it('gives JSON answers room to think', async () => {
+    const { calls, post } = recorder([ok(FACTS)]);
+    await new OpenAICompatProvider('k', 'https://x/v1', 'm', post).json('s', 'u', listingFacts, {});
+    expect(calls[0].body.max_tokens).toBe(16384);
   });
   it('says which field broke when the answer never fits', async () => {
     const { post } = recorder([ok({ summary: 3 }), ok({ summary: 3 })]);
