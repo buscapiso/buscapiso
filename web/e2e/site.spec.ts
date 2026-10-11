@@ -40,6 +40,11 @@ test('the site runs with no server, imports a shared file and scores it here', a
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(String(e)));
   await page.goto(SITE);
+  // La primera visita empieza por la bienvenida; su primer paso ve la extension.
+  await expect(page.getByRole('heading', { name: 'Welcome to buscapiso' })).toBeVisible();
+  await expect(page.getByText(/Connected: version/)).toBeVisible();
+  await page.getByRole('button', { name: "Skip, I'll set it up myself" }).click();
+  await page.goto(`${SITE}#/`);
   // Con la extension instalada no hay aviso, y se puede buscar.
   await expect(page.getByRole('button', { name: 'Search now' })).toBeEnabled();
   await expect(page.getByText(/add the buscapiso extension/)).toHaveCount(0);
@@ -61,6 +66,9 @@ test('without the extension the site still opens and explains what to do', async
   const plain = await chromium.launch({ headless: true });
   const page = await plain.newPage();
   await page.goto(SITE);
+  await expect(page.getByText(/Not installed in this browser yet/)).toBeVisible();
+  await page.getByRole('button', { name: "Skip, I'll set it up myself" }).click();
+  await page.goto(`${SITE}#/`);
   await expect(page.getByText(/add the buscapiso extension/)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Search now' })).toBeDisabled();
   await plain.close();
